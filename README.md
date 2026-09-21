@@ -12,12 +12,18 @@
 - **資料管理** - 動態定義資料集合與欄位結構，支援多種資料類型
 - **網站預覽** - 即時預覽子網站首頁效果
 
+### 資料庫功能
+- **IndexedDB** 本地資料庫 - 結構化資料儲存，支援索引查詢
+- **資料匯出/匯入** - 可將資料庫匯出為 JSON 備份，或從 JSON 匯入還原
+- **大容量儲存** - 比 localStorage 支援更大的資料量（可達數百 MB）
+- **資料持久化** - 關閉瀏覽器後資料不會遺失
+
 ### 技術架構
 - React 18 + TypeScript
 - Tailwind CSS 4
 - Vite 6
 - Lucide React Icons
-- LocalStorage 資料持久化
+- IndexedDB 資料庫（透過 database.ts 封裝）
 
 ## 📦 安裝與執行
 

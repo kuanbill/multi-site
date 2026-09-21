@@ -1,22 +1,49 @@
-import { useState } from 'react';
-import { getSites, getMenusBySite, getCollectionsBySite, getRecordsByCollection } from '../store';
-import { Eye, ExternalLink, Globe, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Site, MenuItem, DataCollection, DataRecord } from '../types';
+import { getSites, getMenusBySite, getCollectionsBySite, getRecordsByCollection } from '../database';
+import { Eye, ExternalLink, Globe } from 'lucide-react';
 
 interface SitePreviewProps {
   selectedSiteId: string;
 }
 
 export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
-  const sites = getSites();
-  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || sites[0]?.id || '');
-  const site = sites.find(s => s.id === activeSiteId);
-  const menus = activeSiteId ? getMenusBySite(activeSiteId).filter(m => m.visible) : [];
-  const collections = activeSiteId ? getCollectionsBySite(activeSiteId) : [];
+  const [sites, setSites] = useState<Site[]>([]);
+  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || '');
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [collections, setCollections] = useState<DataCollection[]>([]);
+  const [allRecords, setAllRecords] = useState<(DataRecord & { collectionName: string })[]>([]);
 
-  // Get records for display
-  const allRecords = collections.flatMap(col =>
-    getRecordsByCollection(col.id).map(r => ({ ...r, collectionName: col.name, fields: col.fields }))
-  );
+  useEffect(() => {
+    const init = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+      const siteId = selectedSiteId || allSites[0]?.id || '';
+      setActiveSiteId(siteId);
+    };
+    init();
+  }, [selectedSiteId]);
+
+  useEffect(() => {
+    const loadSiteData = async () => {
+      if (!activeSiteId) return;
+      const siteMenus = await getMenusBySite(activeSiteId);
+      setMenus(siteMenus.filter(m => m.visible));
+      
+      const cols = await getCollectionsBySite(activeSiteId);
+      setCollections(cols);
+      
+      const records: (DataRecord & { collectionName: string })[] = [];
+      for (const col of cols) {
+        const recs = await getRecordsByCollection(col.id);
+        recs.forEach(r => records.push({ ...r, collectionName: col.name }));
+      }
+      setAllRecords(records);
+    };
+    loadSiteData();
+  }, [activeSiteId]);
+
+  const site = sites.find(s => s.id === activeSiteId);
 
   if (!site) {
     return (
@@ -35,25 +62,19 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
           <p className="text-sm text-gray-500 mt-1">預覽子網站的首頁效果</p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={activeSiteId}
-            onChange={e => setActiveSiteId(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <select value={activeSiteId} onChange={e => setActiveSiteId(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {sites.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
           <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm">
-            <ExternalLink className="w-4 h-4" />
-            新視窗開啟
+            <ExternalLink className="w-4 h-4" /> 新視窗開啟
           </button>
         </div>
       </div>
 
-      {/* Browser Frame */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-lg">
-        {/* Browser Chrome */}
         <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-400" />
@@ -68,9 +89,7 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
           </div>
         </div>
 
-        {/* Site Preview */}
         <div className="min-h-[600px]" style={{ fontFamily: 'system-ui, sans-serif' }}>
-          {/* Site Header */}
           <header className="border-b border-gray-200" style={{ backgroundColor: site.theme.primaryColor }}>
             <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -79,11 +98,7 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
               </div>
               <nav className="flex items-center gap-1">
                 {menus.map(menu => (
-                  <a
-                    key={menu.id}
-                    href="#"
-                    className="px-3 py-1.5 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                  >
+                  <a key={menu.id} href="#" className="px-3 py-1.5 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded-md transition-colors">
                     {menu.label}
                   </a>
                 ))}
@@ -91,31 +106,25 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
             </div>
           </header>
 
-          {/* Hero Section */}
           <section className="py-16 px-6" style={{ background: `linear-gradient(135deg, ${site.theme.primaryColor}15, ${site.theme.primaryColor}05)` }}>
             <div className="max-w-6xl mx-auto text-center">
               <h2 className="text-4xl font-bold text-gray-800 mb-4">歡迎來到 {site.name}</h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">{site.description}</p>
-              <button
-                className="px-6 py-3 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-shadow"
-                style={{ backgroundColor: site.theme.primaryColor }}
-              >
+              <button className="px-6 py-3 text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition-shadow"
+                style={{ backgroundColor: site.theme.primaryColor }}>
                 了解更多
               </button>
             </div>
           </section>
 
-          {/* Features Section */}
           <section className="py-12 px-6 bg-white">
             <div className="max-w-6xl mx-auto">
               <h3 className="text-2xl font-bold text-center text-gray-800 mb-8">特色功能</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {menus.slice(0, 3).map((menu, i) => (
                   <div key={menu.id} className="p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow text-center">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white mx-auto mb-4"
-                      style={{ backgroundColor: site.theme.primaryColor }}
-                    >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white mx-auto mb-4"
+                      style={{ backgroundColor: site.theme.primaryColor }}>
                       {i === 0 ? '🚀' : i === 1 ? '💡' : '🎯'}
                     </div>
                     <h4 className="font-semibold text-gray-800 mb-2">{menu.label}</h4>
@@ -126,7 +135,6 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
             </div>
           </section>
 
-          {/* Data Section */}
           {allRecords.length > 0 && (
             <section className="py-12 px-6 bg-gray-50">
               <div className="max-w-6xl mx-auto">
@@ -156,7 +164,6 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
             </section>
           )}
 
-          {/* Footer */}
           <footer className="bg-gray-900 text-white py-8 px-6">
             <div className="max-w-6xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -169,7 +176,6 @@ export default function SitePreview({ selectedSiteId }: SitePreviewProps) {
         </div>
       </div>
 
-      {/* Site Info */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
           <Globe className="w-4 h-4 text-blue-600" />

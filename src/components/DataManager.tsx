@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { DataCollection, FieldDefinition } from '../types';
+import { useState, useEffect } from 'react';
+import { DataCollection, DataRecord, FieldDefinition, Site } from '../types';
 import {
   getCollectionsBySite, getRecordsByCollection, getSites,
   saveCollection, deleteCollection, saveRecord, deleteRecord, generateId
-} from '../store';
+} from '../database';
 import { Plus, Edit2, Trash2, X, Check, Database, FolderOpen, Table, ChevronRight } from 'lucide-react';
 
 interface DataManagerProps {
@@ -13,36 +13,44 @@ interface DataManagerProps {
 const FIELD_TYPES: FieldDefinition['type'][] = ['text', 'number', 'date', 'boolean', 'select', 'textarea'];
 
 export default function DataManager({ selectedSiteId }: DataManagerProps) {
-  const sites = getSites();
-  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || sites[0]?.id || '');
-  const [collections, setCollections] = useState<DataCollection[]>(activeSiteId ? getCollectionsBySite(activeSiteId) : []);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || '');
+  const [collections, setCollections] = useState<DataCollection[]>([]);
   const [selectedCollection, setSelectedCollection] = useState<DataCollection | null>(null);
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<DataRecord[]>([]);
   const [showCollectionForm, setShowCollectionForm] = useState(false);
   const [showRecordForm, setShowRecordForm] = useState(false);
   const [editingCollection, setEditingCollection] = useState<DataCollection | null>(null);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<DataRecord | null>(null);
   const [collectionForm, setCollectionForm] = useState({ name: '', description: '', fields: [] as FieldDefinition[] });
   const [recordForm, setRecordForm] = useState<Record<string, any>>({});
 
-  const refreshCollections = () => {
-    setCollections(activeSiteId ? getCollectionsBySite(activeSiteId) : []);
-  };
+  useEffect(() => {
+    const init = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+      const siteId = selectedSiteId || allSites[0]?.id || '';
+      setActiveSiteId(siteId);
+      if (siteId) {
+        const cols = await getCollectionsBySite(siteId);
+        setCollections(cols);
+      }
+    };
+    init();
+  }, [selectedSiteId]);
 
-  const refreshRecords = (collectionId: string) => {
-    setRecords(getRecordsByCollection(collectionId));
-  };
-
-  const handleSiteChange = (siteId: string) => {
+  const handleSiteChange = async (siteId: string) => {
     setActiveSiteId(siteId);
-    setCollections(getCollectionsBySite(siteId));
+    const cols = await getCollectionsBySite(siteId);
+    setCollections(cols);
     setSelectedCollection(null);
     setRecords([]);
   };
 
-  const selectCollection = (col: DataCollection) => {
+  const selectCollection = async (col: DataCollection) => {
     setSelectedCollection(col);
-    refreshRecords(col.id);
+    const recs = await getRecordsByCollection(col.id);
+    setRecords(recs);
   };
 
   const openCreateCollection = () => {
@@ -57,7 +65,7 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
     setShowCollectionForm(true);
   };
 
-  const handleSaveCollection = () => {
+  const handleSaveCollection = async () => {
     if (!collectionForm.name) return;
     const col: DataCollection = {
       id: editingCollection?.id || generateId('col'),
@@ -67,15 +75,17 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
       fields: collectionForm.fields,
       createdAt: editingCollection?.createdAt || new Date().toISOString(),
     };
-    saveCollection(col);
-    refreshCollections();
+    await saveCollection(col);
+    const cols = await getCollectionsBySite(activeSiteId);
+    setCollections(cols);
     setShowCollectionForm(false);
   };
 
-  const handleDeleteCollection = (id: string) => {
+  const handleDeleteCollection = async (id: string) => {
     if (confirm('確定要刪除此資料集合嗎？所有相關資料也會被刪除。')) {
-      deleteCollection(id);
-      refreshCollections();
+      await deleteCollection(id);
+      const cols = await getCollectionsBySite(activeSiteId);
+      setCollections(cols);
       if (selectedCollection?.id === id) {
         setSelectedCollection(null);
         setRecords([]);
@@ -115,31 +125,35 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
     setShowRecordForm(true);
   };
 
-  const openEditRecord = (record: any) => {
+  const openEditRecord = (record: DataRecord) => {
     setEditingRecord(record);
     setRecordForm({ ...record.data });
     setShowRecordForm(true);
   };
 
-  const handleSaveRecord = () => {
+  const handleSaveRecord = async () => {
     if (!selectedCollection) return;
-    const record = {
+    const record: DataRecord = {
       id: editingRecord?.id || generateId('rec'),
       siteId: activeSiteId,
       collection: selectedCollection.id,
-      data: recordForm,
+      ['data']: recordForm,
       createdAt: editingRecord?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    saveRecord(record);
-    refreshRecords(selectedCollection.id);
+    await saveRecord(record);
+    const recs = await getRecordsByCollection(selectedCollection.id);
+    setRecords(recs);
     setShowRecordForm(false);
   };
 
-  const handleDeleteRecord = (id: string) => {
+  const handleDeleteRecord = async (id: string) => {
     if (confirm('確定要刪除此筆資料嗎？')) {
-      deleteRecord(id);
-      if (selectedCollection) refreshRecords(selectedCollection.id);
+      await deleteRecord(id);
+      if (selectedCollection) {
+        const recs = await getRecordsByCollection(selectedCollection.id);
+        setRecords(recs);
+      }
     }
   };
 
@@ -162,24 +176,19 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={activeSiteId}
-            onChange={e => handleSiteChange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <select value={activeSiteId} onChange={e => handleSiteChange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {sites.map(site => (
               <option key={site.id} value={site.id}>{site.name}</option>
             ))}
           </select>
           <button onClick={openCreateCollection} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            新增集合
+            <Plus className="w-4 h-4" /> 新增集合
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Collections List */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2">
             <FolderOpen className="w-4 h-4 text-blue-600" />
@@ -187,13 +196,11 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
           </div>
           <div className="divide-y divide-gray-100">
             {collections.map(col => (
-              <div
-                key={col.id}
+              <div key={col.id}
                 className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-colors ${
                   selectedCollection?.id === col.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : 'hover:bg-gray-50'
                 }`}
-                onClick={() => selectCollection(col)}
-              >
+                onClick={() => selectCollection(col)}>
                 <div className="flex items-center gap-3">
                   <Table className="w-4 h-4 text-gray-400" />
                   <div>
@@ -214,13 +221,10 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
             ))}
           </div>
           {collections.length === 0 && (
-            <div className="text-center py-6 text-gray-500 text-sm">
-              <p>尚無資料集合</p>
-            </div>
+            <div className="text-center py-6 text-gray-500 text-sm"><p>尚無資料集合</p></div>
           )}
         </div>
 
-        {/* Records Table */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 overflow-hidden">
           {selectedCollection ? (
             <>
@@ -231,8 +235,7 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
                   <span className="text-xs text-gray-500">({records.length} 筆)</span>
                 </div>
                 <button onClick={openCreateRecord} className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-                  <Plus className="w-3.5 h-3.5" />
-                  新增資料
+                  <Plus className="w-3.5 h-3.5" /> 新增資料
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -267,9 +270,7 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
                 </table>
               </div>
               {records.length === 0 && (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  <p>此集合尚無資料</p>
-                </div>
+                <div className="text-center py-8 text-gray-500 text-sm"><p>此集合尚無資料</p></div>
               )}
             </>
           ) : (
@@ -283,7 +284,6 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
         </div>
       </div>
 
-      {/* Collection Form Modal */}
       {showCollectionForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -315,21 +315,14 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
                   {collectionForm.fields.map((field, index) => (
                     <div key={index} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
                       <div className="flex-1 grid grid-cols-2 gap-2">
-                        <input
-                          type="text" value={field.name} placeholder="欄位名稱(英文)"
+                        <input type="text" value={field.name} placeholder="欄位名稱(英文)"
                           onChange={e => updateField(index, { name: e.target.value })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <input
-                          type="text" value={field.label} placeholder="顯示名稱"
+                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        <input type="text" value={field.label} placeholder="顯示名稱"
                           onChange={e => updateField(index, { label: e.target.value })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <select
-                          value={field.type}
-                          onChange={e => updateField(index, { type: e.target.value as FieldDefinition['type'] })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
+                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                        <select value={field.type} onChange={e => updateField(index, { type: e.target.value as FieldDefinition['type'] })}
+                          className="px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                           {FIELD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                         <label className="flex items-center gap-1 text-sm">
@@ -356,7 +349,6 @@ export default function DataManager({ selectedSiteId }: DataManagerProps) {
         </div>
       )}
 
-      {/* Record Form Modal */}
       {showRecordForm && selectedCollection && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">

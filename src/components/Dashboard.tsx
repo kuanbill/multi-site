@@ -1,5 +1,7 @@
-import { getSites, getUsers, getMenus, getCollections, getRecords } from '../store';
-import { Globe, Users, Menu, Database, TrendingUp, Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { getSites, getUsers, getMenus, getCollections, getRecords, exportDatabase, importDatabase } from '../database';
+import { Site, User, MenuItem, DataCollection, DataRecord } from '../types';
+import { Globe, Users, Menu, Database, TrendingUp, Activity, Download, Upload, HardDrive } from 'lucide-react';
 
 interface DashboardProps {
   selectedSiteId: string;
@@ -7,12 +9,30 @@ interface DashboardProps {
   session: { type: 'admin' | 'user'; id: string };
 }
 
-export default function Dashboard({ selectedSiteId, isAdmin }: DashboardProps) {
-  const sites = getSites();
-  const users = getUsers();
-  const menus = getMenus();
-  const collections = getCollections();
-  const records = getRecords();
+export default function Dashboard({ selectedSiteId }: DashboardProps) {
+  const [sites, setSites] = useState<Site[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [menus, setMenus] = useState<MenuItem[]>([]);
+  const [collections, setCollections] = useState<DataCollection[]>([]);
+  const [records, setRecords] = useState<DataRecord[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const [allSites, allUsers, allMenus, allCollections, allRecords] = await Promise.all([
+        getSites(),
+        getUsers(),
+        getMenus(),
+        getCollections(),
+        getRecords(),
+      ]);
+      setSites(allSites);
+      setUsers(allUsers);
+      setMenus(allMenus);
+      setCollections(allCollections);
+      setRecords(allRecords);
+    };
+    loadData();
+  }, []);
 
   const filteredSites = selectedSiteId ? sites.filter(s => s.id === selectedSiteId) : sites;
   const filteredUsers = selectedSiteId ? users.filter(u => u.siteId === selectedSiteId) : users;
@@ -88,6 +108,70 @@ export default function Dashboard({ selectedSiteId, isAdmin }: DashboardProps) {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Database Management */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+          <HardDrive className="w-5 h-5 text-blue-600" />
+          <h3 className="font-semibold text-gray-800">資料庫管理</h3>
+          <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">IndexedDB</span>
+        </div>
+        <div className="p-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <p className="text-2xl font-bold text-blue-600">{sites.length}</p>
+              <p className="text-xs text-gray-500">子網站</p>
+            </div>
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <p className="text-2xl font-bold text-green-600">{users.length}</p>
+              <p className="text-xs text-gray-500">使用者</p>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <p className="text-2xl font-bold text-purple-600">{collections.length}</p>
+              <p className="text-xs text-gray-500">資料集合</p>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <p className="text-2xl font-bold text-orange-600">{records.length}</p>
+              <p className="text-xs text-gray-500">資料記錄</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={async () => {
+                const data = await exportDatabase();
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `database-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              匯出資料庫
+            </button>
+            <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm cursor-pointer">
+              <Upload className="w-4 h-4" />
+              匯入資料庫
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (!confirm('匯入將覆蓋所有現有資料，確定要繼續嗎？')) return;
+                  const text = await file.text();
+                  await importDatabase(text);
+                  window.location.reload();
+                }}
+              />
+            </label>
+          </div>
         </div>
       </div>
 

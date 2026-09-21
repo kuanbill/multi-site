@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { MenuItem } from '../types';
-import { getMenusBySite, getSites, saveMenu, deleteMenu, generateId } from '../store';
+import { useState, useEffect } from 'react';
+import { MenuItem, Site } from '../types';
+import { getMenusBySite, getSites, saveMenu, deleteMenu, generateId } from '../database';
 import { Plus, Edit2, Trash2, X, Check, Menu as MenuIcon, GripVertical, Eye, EyeOff, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface MenuManagerProps {
@@ -10,9 +10,9 @@ interface MenuManagerProps {
 const ICON_OPTIONS = ['Home', 'Info', 'Package', 'Mail', 'Grid', 'ShoppingCart', 'User', 'Settings', 'FileText', 'Calendar', 'Image', 'Video', 'Book', 'Star', 'Heart', 'Search'];
 
 export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
-  const sites = getSites();
-  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || sites[0]?.id || '');
-  const [menus, setMenus] = useState<MenuItem[]>(activeSiteId ? getMenusBySite(activeSiteId) : []);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || '');
+  const [menus, setMenus] = useState<MenuItem[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [form, setForm] = useState({
@@ -20,13 +20,31 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
     order: 1, visible: true, permission: 'public',
   });
 
-  const refresh = () => {
-    setMenus(activeSiteId ? getMenusBySite(activeSiteId) : []);
+  useEffect(() => {
+    const init = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+      const siteId = selectedSiteId || allSites[0]?.id || '';
+      setActiveSiteId(siteId);
+      if (siteId) {
+        const siteMenus = await getMenusBySite(siteId);
+        setMenus(siteMenus);
+      }
+    };
+    init();
+  }, [selectedSiteId]);
+
+  const handleSiteChange = async (siteId: string) => {
+    setActiveSiteId(siteId);
+    const siteMenus = await getMenusBySite(siteId);
+    setMenus(siteMenus);
   };
 
-  const handleSiteChange = (siteId: string) => {
-    setActiveSiteId(siteId);
-    setMenus(getMenusBySite(siteId));
+  const refresh = async () => {
+    if (activeSiteId) {
+      const siteMenus = await getMenusBySite(activeSiteId);
+      setMenus(siteMenus);
+    }
   };
 
   const openCreate = () => {
@@ -44,49 +62,41 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.label || !form.path) return;
     const menu: MenuItem = {
       id: editingMenu?.id || generateId('menu'),
       siteId: activeSiteId,
-      label: form.label,
-      icon: form.icon,
-      path: form.path,
-      parentId: form.parentId,
-      order: form.order,
-      visible: form.visible,
-      permission: form.permission,
+      label: form.label, icon: form.icon, path: form.path,
+      parentId: form.parentId, order: form.order, visible: form.visible, permission: form.permission,
     };
-    saveMenu(menu);
-    refresh();
+    await saveMenu(menu);
+    await refresh();
     setShowForm(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('確定要刪除此功能表項目嗎？')) {
-      deleteMenu(id);
-      refresh();
+      await deleteMenu(id);
+      await refresh();
     }
   };
 
-  const moveItem = (index: number, direction: 'up' | 'down') => {
+  const moveItem = async (index: number, direction: 'up' | 'down') => {
     const newMenus = [...menus];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newMenus.length) return;
-    
     const tempOrder = newMenus[index].order;
     newMenus[index] = { ...newMenus[index], order: newMenus[targetIndex].order };
     newMenus[targetIndex] = { ...newMenus[targetIndex], order: tempOrder };
-    
     [newMenus[index], newMenus[targetIndex]] = [newMenus[targetIndex], newMenus[index]];
-    
-    newMenus.forEach(m => saveMenu(m));
-    refresh();
+    for (const m of newMenus) { await saveMenu(m); }
+    await refresh();
   };
 
-  const toggleVisibility = (menu: MenuItem) => {
-    saveMenu({ ...menu, visible: !menu.visible });
-    refresh();
+  const toggleVisibility = async (menu: MenuItem) => {
+    await saveMenu({ ...menu, visible: !menu.visible });
+    await refresh();
   };
 
   if (!activeSiteId) {
@@ -110,23 +120,18 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={activeSiteId}
-            onChange={e => handleSiteChange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <select value={activeSiteId} onChange={e => handleSiteChange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {sites.map(site => (
               <option key={site.id} value={site.id}>{site.name}</option>
             ))}
           </select>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            新增項目
+            <Plus className="w-4 h-4" /> 新增項目
           </button>
         </div>
       </div>
 
-      {/* Menu Preview */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-200">
           <h3 className="text-sm font-medium text-gray-600">功能表預覽</h3>
@@ -145,7 +150,6 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
         </div>
       </div>
 
-      {/* Menu Items List */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="divide-y divide-gray-100">
           {menus.map((menu, index) => (
@@ -183,13 +187,10 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
           ))}
         </div>
         {menus.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p>尚無功能表項目，點擊「新增項目」來建立</p>
-          </div>
+          <div className="text-center py-8 text-gray-500"><p>尚無功能表項目，點擊「新增項目」來建立</p></div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg">
@@ -203,23 +204,19 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">標籤名稱 *</label>
                 <input type="text" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例：首頁" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例：首頁" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">路徑 *</label>
                 <input type="text" value={form.path} onChange={e => setForm({ ...form, path: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例：/about" />
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例：/about" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">圖示</label>
                   <select value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    {ICON_OPTIONS.map(icon => (
-                      <option key={icon} value={icon}>{icon}</option>
-                    ))}
+                    {ICON_OPTIONS.map(icon => (<option key={icon} value={icon}>{icon}</option>))}
                   </select>
                 </div>
                 <div>
@@ -256,12 +253,9 @@ export default function MenuManager({ selectedSiteId }: MenuManagerProps) {
               </label>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                取消
-              </button>
-              <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                儲存
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <Check className="w-4 h-4" /> 儲存
               </button>
             </div>
           </div>

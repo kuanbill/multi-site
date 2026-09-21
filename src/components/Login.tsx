@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { validateAdmin, getUsers, getSites } from '../store';
+import { useState, useEffect } from 'react';
+import { validateAdmin, getUsers, getSites } from '../database';
+import { Site } from '../types';
 import { Shield, User, Globe, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
@@ -13,20 +14,29 @@ export default function Login({ onLogin }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [selectedSiteId, setSelectedSiteId] = useState('');
+  const [sites, setSites] = useState<Site[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const loadSites = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+    };
+    loadSites();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     if (tab === 'admin') {
-      const admin = validateAdmin(username, password);
+      const admin = await validateAdmin(username, password);
       if (admin) {
         onLogin('admin', admin.id);
       } else {
         setError('管理員帳號或密碼錯誤');
       }
     } else {
-      const users = getUsers();
+      const users = await getUsers();
       const user = users.find(u => u.username === username && u.password === password && u.siteId === selectedSiteId);
       if (user) {
         onLogin('user', user.id);
@@ -79,7 +89,7 @@ export default function Login({ onLogin }: LoginProps) {
                   className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-300/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="" className="bg-slate-800">請選擇子網站</option>
-                  {getSites().map(site => (
+                  {sites.map(site => (
                     <option key={site.id} value={site.id} className="bg-slate-800">
                       {site.name} ({site.domain})
                     </option>

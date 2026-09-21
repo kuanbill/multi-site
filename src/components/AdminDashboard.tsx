@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Page } from '../types';
-import { getAdmins, getUsers, getSites } from '../store';
+import { getAdmins, getUsers, getSites } from '../database';
+import { AdminUser, User, Site } from '../types';
 import Dashboard from './Dashboard';
 import SiteManager from './SiteManager';
 import UserManager from './UserManager';
@@ -29,10 +30,29 @@ export default function AdminDashboard({ session, onLogout }: AdminDashboardProp
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
   const [selectedSiteId, setSelectedSiteId] = useState<string>('');
   const [collapsed, setCollapsed] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [adminName, setAdminName] = useState('');
+  const [userInfo, setUserInfo] = useState<User | null>(null);
 
   const isAdmin = session.type === 'admin';
-  const adminName = isAdmin ? getAdmins().find(a => a.id === session.id)?.username || 'Admin' : '';
-  const userInfo = !isAdmin ? getUsers().find(u => u.id === session.id) : null;
+
+  useEffect(() => {
+    const loadData = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+      
+      if (isAdmin) {
+        const admins = await getAdmins();
+        const admin = admins.find(a => a.id === session.id);
+        setAdminName(admin?.username || 'Admin');
+      } else {
+        const users = await getUsers();
+        const user = users.find(u => u.id === session.id);
+        setUserInfo(user || null);
+      }
+    };
+    loadData();
+  }, [session.id, isAdmin]);
 
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin);
 
@@ -128,7 +148,7 @@ export default function AdminDashboard({ session, onLogout }: AdminDashboardProp
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">全部子網站</option>
-                {getSites().map(site => (
+                {sites.map(site => (
                   <option key={site.id} value={site.id}>{site.name}</option>
                 ))}
               </select>

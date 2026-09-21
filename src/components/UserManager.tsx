@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '../types';
-import { getUsersBySite, getSites, saveUser, deleteUser, generateId } from '../store';
+import { getUsersBySite, getSites, saveUser, deleteUser, generateId } from '../database';
+import { Site } from '../types';
 import { Plus, Edit2, Trash2, X, Check, Users, Search } from 'lucide-react';
 
 interface UserManagerProps {
@@ -18,9 +19,9 @@ const ALL_PERMISSIONS = [
 ];
 
 export default function UserManager({ selectedSiteId }: UserManagerProps) {
-  const sites = getSites();
-  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || sites[0]?.id || '');
-  const [users, setUsers] = useState<User[]>(activeSiteId ? getUsersBySite(activeSiteId) : []);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || '');
+  const [users, setUsers] = useState<User[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,13 +30,24 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
     permissions: [] as string[], status: 'active' as User['status'],
   });
 
-  const refresh = () => {
-    setUsers(activeSiteId ? getUsersBySite(activeSiteId) : []);
-  };
+  useEffect(() => {
+    const init = async () => {
+      const allSites = await getSites();
+      setSites(allSites);
+      const siteId = selectedSiteId || allSites[0]?.id || '';
+      setActiveSiteId(siteId);
+      if (siteId) {
+        const siteUsers = await getUsersBySite(siteId);
+        setUsers(siteUsers);
+      }
+    };
+    init();
+  }, [selectedSiteId]);
 
-  const handleSiteChange = (siteId: string) => {
+  const handleSiteChange = async (siteId: string) => {
     setActiveSiteId(siteId);
-    setUsers(getUsersBySite(siteId));
+    const siteUsers = await getUsersBySite(siteId);
+    setUsers(siteUsers);
   };
 
   const filteredUsers = users.filter(u =>
@@ -58,7 +70,7 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.username || !form.password || !form.email) return;
     const user: User = {
       id: editingUser?.id || generateId('user'),
@@ -71,15 +83,17 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
       status: form.status,
       createdAt: editingUser?.createdAt || new Date().toISOString(),
     };
-    saveUser(user);
-    refresh();
+    await saveUser(user);
+    const siteUsers = await getUsersBySite(activeSiteId);
+    setUsers(siteUsers);
     setShowForm(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('確定要刪除此使用者嗎？')) {
-      deleteUser(id);
-      refresh();
+      await deleteUser(id);
+      const siteUsers = await getUsersBySite(activeSiteId);
+      setUsers(siteUsers);
     }
   };
 
@@ -111,33 +125,25 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <select
-            value={activeSiteId}
-            onChange={e => handleSiteChange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <select value={activeSiteId} onChange={e => handleSiteChange(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             {sites.map(site => (
               <option key={site.id} value={site.id}>{site.name}</option>
             ))}
           </select>
           <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            新增使用者
+            <Plus className="w-4 h-4" /> 新增使用者
           </button>
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+        <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
           placeholder="搜尋使用者..."
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
       </div>
 
-      {/* Users Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -204,13 +210,10 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
           </table>
         </div>
         {filteredUsers.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <p>尚無使用者，點擊「新增使用者」來建立</p>
-          </div>
+          <div className="text-center py-8 text-gray-500"><p>尚無使用者，點擊「新增使用者」來建立</p></div>
         )}
       </div>
 
-      {/* Create/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -262,11 +265,8 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
                   {ALL_PERMISSIONS.map(perm => (
                     <label key={perm} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
-                      <input
-                        type="checkbox" checked={form.permissions.includes(perm)}
-                        onChange={() => togglePermission(perm)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+                      <input type="checkbox" checked={form.permissions.includes(perm)} onChange={() => togglePermission(perm)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                       <span className="text-gray-700">{perm}</span>
                     </label>
                   ))}
@@ -274,12 +274,9 @@ export default function UserManager({ selectedSiteId }: UserManagerProps) {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 sticky bottom-0 bg-white">
-              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-                取消
-              </button>
-              <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                儲存
+              <button onClick={() => setShowForm(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                <Check className="w-4 h-4" /> 儲存
               </button>
             </div>
           </div>
