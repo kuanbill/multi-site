@@ -8,6 +8,7 @@ import UserManager from './UserManager';
 import MenuManager from './MenuManager';
 import DataManager from './DataManager';
 import SitePreview from './SitePreview';
+import AccountManager from './AccountManager';
 import {
   LayoutDashboard, Globe, Users, Menu, Database, Eye, LogOut, ChevronLeft, ChevronRight, Shield
 } from 'lucide-react';
@@ -19,6 +20,7 @@ interface AdminDashboardProps {
 
 const menuItems: { key: Page; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
   { key: 'dashboard', label: '儀表板', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { key: 'accounts', label: '帳號管理', icon: <Users className="w-5 h-5" />, adminOnly: true },
   { key: 'sites', label: '子網站管理', icon: <Globe className="w-5 h-5" />, adminOnly: true },
   { key: 'users', label: '使用者管理', icon: <Users className="w-5 h-5" />, adminOnly: true },
   { key: 'menus', label: '功能表管理', icon: <Menu className="w-5 h-5" />, adminOnly: true },
@@ -60,6 +62,8 @@ export default function AdminDashboard({ session, onLogout }: AdminDashboardProp
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard selectedSiteId={selectedSiteId} isAdmin={isAdmin} session={session} />;
+      case 'accounts':
+        return <AccountManager />;
       case 'sites':
         return <SiteManager onSelectSite={setSelectedSiteId} />;
       case 'users':

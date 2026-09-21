@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getSites, getUsers, getMenus, getCollections, getRecords, exportDatabase, importDatabase } from '../database';
-import { Site, User, MenuItem, DataCollection, DataRecord } from '../types';
+import { getSites, getUsers, getMenus, getCollections, getRecords, getAccounts, exportDatabase, importDatabase } from '../database';
+import { Site, User, MenuItem, DataCollection, DataRecord, Account } from '../types';
 import { Globe, Users, Menu, Database, TrendingUp, Activity, Download, Upload, HardDrive } from 'lucide-react';
 
 interface DashboardProps {
@@ -15,21 +15,24 @@ export default function Dashboard({ selectedSiteId }: DashboardProps) {
   const [menus, setMenus] = useState<MenuItem[]>([]);
   const [collections, setCollections] = useState<DataCollection[]>([]);
   const [records, setRecords] = useState<DataRecord[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
-      const [allSites, allUsers, allMenus, allCollections, allRecords] = await Promise.all([
+      const [allSites, allUsers, allMenus, allCollections, allRecords, allAccounts] = await Promise.all([
         getSites(),
         getUsers(),
         getMenus(),
         getCollections(),
         getRecords(),
+        getAccounts(),
       ]);
       setSites(allSites);
       setUsers(allUsers);
       setMenus(allMenus);
       setCollections(allCollections);
       setRecords(allRecords);
+      setAccounts(allAccounts);
     };
     loadData();
   }, []);
@@ -119,7 +122,7 @@ export default function Dashboard({ selectedSiteId }: DashboardProps) {
           <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">IndexedDB</span>
         </div>
         <div className="p-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg">
               <p className="text-2xl font-bold text-blue-600">{sites.length}</p>
               <p className="text-xs text-gray-500">子網站</p>
@@ -127,6 +130,10 @@ export default function Dashboard({ selectedSiteId }: DashboardProps) {
             <div className="text-center p-3 bg-green-50 rounded-lg">
               <p className="text-2xl font-bold text-green-600">{users.length}</p>
               <p className="text-xs text-gray-500">使用者</p>
+            </div>
+            <div className="text-center p-3 bg-indigo-50 rounded-lg">
+              <p className="text-2xl font-bold text-indigo-600">{accounts.length}</p>
+              <p className="text-xs text-gray-500">帳號</p>
             </div>
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <p className="text-2xl font-bold text-purple-600">{collections.length}</p>

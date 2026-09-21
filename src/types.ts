@@ -68,4 +68,15 @@ export interface AdminUser {
   role: 'superadmin';
 }
 
-export type Page = 'dashboard' | 'sites' | 'users' | 'menus' | 'data' | 'preview';
+export interface Account {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+  permissionType: 'admin' | 'editor' | 'viewer';
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type Page = 'dashboard' | 'sites' | 'users' | 'menus' | 'data' | 'preview' | 'accounts';

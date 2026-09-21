@@ -1,4 +1,4 @@
-import { Site, User, MenuItem, DataCollection, DataRecord, AdminUser } from './types';
+import { Site, User, MenuItem, DataCollection, DataRecord, AdminUser, Account } from './types';
 
 // IndexedDB 資料庫名稱和版本
 const DB_NAME = 'MultiSiteManagementDB';
@@ -13,6 +13,7 @@ const STORES = {
   RECORDS: 'records',
   ADMINS: 'admins',
   SESSION: 'session',
+  ACCOUNTS: 'accounts',
 };
 
 let db: IDBDatabase | null = null;
@@ -78,6 +79,13 @@ export function initDatabase(): Promise<IDBDatabase> {
 
       if (!database.objectStoreNames.contains(STORES.SESSION)) {
         database.createObjectStore(STORES.SESSION, { keyPath: 'id' });
+      }
+
+      if (!database.objectStoreNames.contains(STORES.ACCOUNTS)) {
+        const accountStore = database.createObjectStore(STORES.ACCOUNTS, { keyPath: 'id' });
+        accountStore.createIndex('username', 'username', { unique: true });
+        accountStore.createIndex('permissionType', 'permissionType', { unique: false });
+        accountStore.createIndex('status', 'status', { unique: false });
       }
     };
   });
@@ -452,11 +460,92 @@ export async function initializeDatabase(): Promise<void> {
       await saveRecord(record);
     }
   }
+
+  // 檢查是否已有帳號
+  const accounts = await getAccounts();
+  if (accounts.length === 0) {
+    const defaultAccounts: Account[] = [
+      {
+        id: 'acc-001',
+        name: '王小明',
+        username: 'wangxm',
+        password: 'pass123',
+        permissionType: 'admin',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'acc-002',
+        name: '李小華',
+        username: 'lisa',
+        password: 'pass123',
+        permissionType: 'editor',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'acc-003',
+        name: '張大偉',
+        username: 'zhangdw',
+        password: 'pass123',
+        permissionType: 'viewer',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'acc-004',
+        name: '陳美玲',
+        username: 'chenml',
+        password: 'pass123',
+        permissionType: 'editor',
+        status: 'inactive',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ];
+    for (const account of defaultAccounts) {
+      await saveAccount(account);
+    }
+  }
 }
 
 // 產生唯一 ID
 export function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// ============ 帳號管理操作 ============
+
+export async function getAccounts(): Promise<Account[]> {
+  return getAll<Account>(STORES.ACCOUNTS);
+}
+
+export async function getAccountById(id: string): Promise<Account | undefined> {
+  return getById<Account>(STORES.ACCOUNTS, id);
+}
+
+export async function getAccountsByPermission(permissionType: Account['permissionType']): Promise<Account[]> {
+  return getByIndex<Account>(STORES.ACCOUNTS, 'permissionType', permissionType);
+}
+
+export async function getAccountsByStatus(status: Account['status']): Promise<Account[]> {
+  return getByIndex<Account>(STORES.ACCOUNTS, 'status', status);
+}
+
+export async function saveAccount(account: Account): Promise<void> {
+  await put(STORES.ACCOUNTS, { ...account, updatedAt: new Date().toISOString() });
+}
+
+export async function deleteAccount(id: string): Promise<void> {
+  await remove(STORES.ACCOUNTS, id);
+}
+
+export async function validateAccount(username: string, password: string): Promise<Account | null> {
+  const accounts = await getAccounts();
+  return accounts.find(a => a.username === username && a.password === password && a.status === 'active') || null;
 }
 
 // 匯出資料庫
@@ -468,6 +557,7 @@ export async function exportDatabase(): Promise<string> {
     collections: await getCollections(),
     records: await getRecords(),
     admins: await getAdmins(),
+    accounts: await getAccounts(),
     exportedAt: new Date().toISOString(),
   };
   return JSON.stringify(data, null, 2);
@@ -483,6 +573,7 @@ export async function importDatabase(jsonData: string): Promise<void> {
   await clearStore(STORES.COLLECTIONS);
   await clearStore(STORES.RECORDS);
   await clearStore(STORES.ADMINS);
+  await clearStore(STORES.ACCOUNTS);
 
   if (data.admins) {
     for (const admin of data.admins) {
@@ -507,6 +598,11 @@ export async function importDatabase(jsonData: string): Promise<void> {
   if (data.collections) {
     for (const collection of data.collections) {
       await saveCollection(collection);
+    }
+  }
+  if (data.accounts) {
+    for (const account of data.accounts) {
+      await saveAccount(account);
     }
   }
   if (data.records) {
