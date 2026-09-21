@@ -467,9 +467,9 @@ export async function initializeDatabase(): Promise<void> {
     const defaultAccounts: Account[] = [
       {
         id: 'acc-001',
-        name: '王小明',
-        username: 'wangxm',
-        password: 'pass123',
+        name: '系統管理者',
+        username: 'admin',
+        password: 'Super6608551',
         permissionType: 'admin',
         status: 'active',
         createdAt: new Date().toISOString(),
