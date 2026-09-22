@@ -1,9 +1,15 @@
+import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { getAdminSession } from '@/lib/auth'
 import ToggleRoleButton from './ToggleRoleButton'
+import DeleteUserButton from './DeleteUserButton'
 
 export const dynamic = 'force-dynamic'
 
 export default async function UsersPage() {
+  if (!await getAdminSession()) redirect('/')
+
   const users = await prisma.user.findMany({
     select: {
       id: true,
@@ -17,7 +23,12 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">使用者管理</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">使用者管理</h2>
+        <Link href="/users/new" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          新增使用者
+        </Link>
+      </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="w-full">
@@ -48,7 +59,13 @@ export default async function UsersPage() {
                   {new Date(user.createdAt).toLocaleDateString('zh-TW')}
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <ToggleRoleButton id={user.id} currentRole={user.role} />
+                  <div className="flex justify-end items-center gap-4">
+                    <Link href={`/users/${user.id}/edit`} className="text-blue-600 hover:underline">
+                      編輯
+                    </Link>
+                    <ToggleRoleButton id={user.id} currentRole={user.role} />
+                    <DeleteUserButton id={user.id} />
+                  </div>
                 </td>
               </tr>
             ))}

@@ -5,16 +5,22 @@
 
 set -e
 
+DOCKER_BIN="${DOCKER_BIN:-docker}"
+WINDOWS_DOCKER_BIN="/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe"
+if [ "$DOCKER_BIN" = "docker" ] && [ -f "$WINDOWS_DOCKER_BIN" ]; then
+    DOCKER_BIN="$WINDOWS_DOCKER_BIN"
+fi
+
 echo "🚀 開始部署 Multi-Site 管理系統..."
 
 # 檢查 Docker 是否安裝
-if ! command -v docker &> /dev/null; then
+if ! "$DOCKER_BIN" version &> /dev/null; then
     echo "❌ Docker 未安裝，請先安裝 Docker"
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose 未安裝，請先安裝 Docker Compose"
+if ! "$DOCKER_BIN" compose version &> /dev/null; then
+    echo "❌ Docker Compose plugin 未安裝，請先安裝 Docker Compose"
     exit 1
 fi
 
@@ -27,16 +33,16 @@ if [ ! -f .env.production ]; then
     cat > .env.production << EOF
 DATABASE_URL="file:/app/data/prod.db"
 NEXTAUTH_SECRET="$(openssl rand -hex 32)"
-NEXTAUTH_URL="http://192.168.6.6:3000"
+NEXTAUTH_URL="https://ur.landagent.com.tw"
 EOF
 fi
 
 # 建置並啟動容器
 echo "🔨 建置 Docker 映像..."
-docker-compose build
+"$DOCKER_BIN" compose --env-file .env.production build
 
 echo "🚀 啟動容器..."
-docker-compose up -d
+"$DOCKER_BIN" compose --env-file .env.production up -d
 
 # 等待應用啟動
 echo "⏳ 等待應用啟動..."
@@ -44,26 +50,24 @@ sleep 10
 
 # 執行資料庫遷移
 echo "📦 執行資料庫遷移..."
-docker-compose exec multi-site npx prisma migrate deploy
+"$DOCKER_BIN" compose --env-file .env.production exec multi-site npx prisma migrate deploy
 
-# 執行種子資料（僅首次）
-if [ ! -f data/.seeded ]; then
+# 執行種子資料（僅明確 opt-in 且僅首次）
+if [ "${SEED_DATABASE:-}" = "true" ] && [ ! -f data/.seeded ]; then
     echo "🌱 執行種子資料..."
-    docker-compose exec multi-site npx prisma db seed
+    "$DOCKER_BIN" compose --env-file .env.production exec multi-site npx prisma db seed > /dev/null
     touch data/.seeded
 fi
+
+NEXTAUTH_URL="$(awk '/^NEXTAUTH_URL=/ { sub(/^[^=]*=/, ""); sub(/^"/, ""); sub(/"$/, ""); print; exit }' .env.production)"
 
 echo ""
 echo "✅ 部署完成！"
 echo ""
-echo "🌐 應用網址: http://192.168.6.6:3000"
-echo ""
-echo "📋 測試帳號:"
-echo "   管理員: admin@example.com / admin123"
-echo "   編輯者: editor@example.com / editor123"
+echo "🌐 應用網址: ${NEXTAUTH_URL}"
 echo ""
 echo "🔧 常用命令:"
-echo "   查看日誌: docker-compose logs -f"
-echo "   停止服務: docker-compose down"
-echo "   重啟服務: docker-compose restart"
-echo "   進入容器: docker-compose exec multi-site sh"
+echo "   查看日誌: $DOCKER_BIN compose --env-file .env.production logs -f"
+echo "   停止服務: $DOCKER_BIN compose --env-file .env.production down"
+echo "   重啟服務: $DOCKER_BIN compose --env-file .env.production restart"
+echo "   進入容器: $DOCKER_BIN compose --env-file .env.production exec multi-site sh"

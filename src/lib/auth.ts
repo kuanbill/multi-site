@@ -1,4 +1,4 @@
-import { NextAuthOptions, DefaultSession } from 'next-auth'
+import { getServerSession, NextAuthOptions, DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
@@ -82,4 +82,9 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/login'
   }
+}
+
+export async function getAdminSession() {
+  const session = await getServerSession(authOptions)
+  return session?.user.role === 'admin' ? session : null
 }

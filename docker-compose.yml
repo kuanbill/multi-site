@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   multi-site:
     build:
@@ -8,15 +6,15 @@ services:
     container_name: multi-site-app
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "80:3000"
     environment:
-      - DATABASE_URL=file:/app/data/prod.db
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-multi-site-secret-key-change-in-production}
-      - NEXTAUTH_URL=http://192.168.6.6:3000
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:?NEXTAUTH_URL is required}
     volumes:
       - ./data:/app/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
