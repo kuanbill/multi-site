@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@prisma/orm-sqlite": "^8.0.0-rc.11",
     "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^18.0.2",
     "next": "16.3.5",
     "next-auth": "^4.24.15",
