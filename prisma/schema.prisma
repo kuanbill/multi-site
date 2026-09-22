@@ -4,5 +4,77 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("editor") // admin, editor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sites     SiteUser[]
+}
+
+model Site {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       SiteUser[]
+  pages       Page[]
+  posts       Post[]
+  media       Media[]
+}
+
+model SiteUser {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  siteId    Int
+  role      String   @default("editor") // admin, editor, viewer
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  site      Site     @relation(fields: [siteId], references: [id])
+
+  @@unique([userId, siteId])
+}
+
+model Page {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  title     String
+  slug      String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  site      Site     @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, slug])
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  title     String
+  slug      String
+  content   String?
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  site      Site     @relation(fields: [siteId], references: [id])
+
+  @@unique([siteId, slug])
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  filename  String
+  url       String
+  type      String
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id])
 }
