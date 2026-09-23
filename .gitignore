@@ -43,3 +43,6 @@ dev.db
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# isolated agent worktrees
+/.worktrees/
