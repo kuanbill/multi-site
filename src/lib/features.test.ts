@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { mergeSiteFeatures } from './features';
+import { getImplementedAdminFeatures, mergeSiteFeatures } from './features';
 
 describe('site feature settings', () => {
+  it('only exposes feature links backed by implemented admin pages', () => {
+    expect(getImplementedAdminFeatures([
+      { key: 'announcements', path: 'announcement' },
+      { key: 'posts', path: 'posts' },
+      { key: 'maps', path: 'maps' },
+      { key: 'custom', path: 'custom' },
+    ])).toEqual([
+      { key: 'announcements', path: 'announcement' },
+      { key: 'maps', path: 'maps' },
+    ]);
+  });
+
   it('keeps catalog fields and applies site settings including visibility', () => {
     expect(
       mergeSiteFeatures(

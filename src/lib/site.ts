@@ -16,7 +16,16 @@ export async function getEnabledFeatures(siteId: number) {
     include: { feature: true },
     orderBy: { sortOrder: 'asc' },
   });
-  return rows.map((r) => ({ ...r.feature, visibility: r.visibility }));
+  return rows.map((r) => ({
+    ...r.feature,
+    enabled: r.enabled,
+    sortOrder: r.sortOrder,
+    visibility: r.visibility,
+  }));
+}
+
+export function getPublicNavigationFeatures<T extends { enabled: boolean; sortOrder: number }>(features: T[]) {
+  return features.filter((feature) => feature.enabled).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function getSiteFeatures(siteId: number) {

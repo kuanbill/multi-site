@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
-import { getSiteBySlug, isFeatureEnabled, getFeatureDisplayMode } from '@/lib/site';
+import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +11,7 @@ export default async function PublicPostsPage({
   params: Promise<{ siteSlug: string }>;
 }) {
   const { siteSlug } = await params;
-  const site = await getSiteBySlug(siteSlug);
-  if (!site) notFound();
-  if (!(await isFeatureEnabled(site.id, 'posts'))) notFound();
+  const { site } = await requirePublicFeature(siteSlug, 'posts');
   const posts = await prisma.post.findMany({
     where: { siteId: site.id, published: true },
     orderBy: { createdAt: 'desc' },

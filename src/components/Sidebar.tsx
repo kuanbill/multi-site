@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { getImplementedAdminFeatures } from '@/lib/features'
 
 const globalMenuItems = [
   { href: '/', label: '儀表板', icon: '📊' },
@@ -29,8 +30,7 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
   if (siteSlug && features) {
     const featureItems = [
       { href: `/${siteSlug}/admin/home`, label: '首頁設定', icon: '🏠' },
-      ...features
-        .filter((f) => !['pages', 'posts', 'media'].includes(f.key) && !['pages', 'posts', 'media'].includes(f.path))
+      ...getImplementedAdminFeatures(features)
         .map((f) => ({
           href: `/${siteSlug}/admin/${f.path}`,
           label: f.label,

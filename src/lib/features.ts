@@ -12,6 +12,11 @@ export const CONTENT_FEATURES = [
 
 export type FeatureKey = (typeof CONTENT_FEATURES)[number]['key'] | string
 
+export function getImplementedAdminFeatures<T extends { key: string }>(features: T[]) {
+  const implementedKeys = new Set<string>(CONTENT_FEATURES.map((feature) => feature.key));
+  return features.filter((feature) => implementedKeys.has(feature.key));
+}
+
 type FeatureCatalogItem = {
   id: number
   key: string
