@@ -58,4 +58,15 @@ describe('content validation', () => {
     expect(() => validateAsset(new File(['script'], 'script.js', { type: 'text/javascript' }))).toThrow('檔案');
   });
 
+  it('derives safe extensions from MIME types regardless of client filename', () => {
+    expect(validateAsset(new File(['image'], 'payload.bin', { type: 'image/png' }))).toEqual({
+      extension: 'png',
+      mimeType: 'image/png',
+    });
+    expect(validateAsset(new File(['pdf'], 'payload', { type: 'application/pdf' }))).toEqual({
+      extension: 'pdf',
+      mimeType: 'application/pdf',
+    });
+  });
+
 });

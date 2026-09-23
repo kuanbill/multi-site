@@ -18,16 +18,6 @@ const ASSET_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-const ASSET_FILE_EXTENSIONS: Record<string, readonly string[]> = {
-  'application/pdf': ['pdf'],
-  'image/avif': ['avif'],
-  'image/gif': ['gif'],
-  'image/jpeg': ['jpg', 'jpeg'],
-  'image/png': ['png'],
-  'image/svg+xml': ['svg'],
-  'image/webp': ['webp'],
-};
-
 const FIELD_LABELS: Record<string, string> = {
   name: '名稱',
   title: '標題',
@@ -101,12 +91,8 @@ export function validateDateRange(
 export function validateAsset(file: File): { extension: string; mimeType: string } {
   const mimeType = typeof file?.type === 'string' ? file.type.toLowerCase() : '';
   const extension = ASSET_EXTENSIONS[mimeType];
-  const filenameExtension = extensionFromFilename(file?.name);
   if (!extension) {
     throw new Error('檔案僅允許圖片或 PDF');
-  }
-  if (!ASSET_FILE_EXTENSIONS[mimeType].includes(filenameExtension)) {
-    throw new Error('檔案副檔名與類型不符');
   }
 
   return { extension, mimeType };
@@ -117,9 +103,4 @@ function parseOptionalDate(value: unknown, label: string): Date | null {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
   if (Number.isNaN(date.getTime())) throw new Error(`${label}格式無效`);
   return date;
-}
-
-function extensionFromFilename(filename: string | undefined): string {
-  const match = filename ? /\.([a-z0-9]+)$/i.exec(filename) : null;
-  return match?.[1].toLowerCase() ?? '';
 }
