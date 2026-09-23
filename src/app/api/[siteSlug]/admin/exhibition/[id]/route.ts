@@ -90,18 +90,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       );
       if (record.startDate !== undefined) startDate = range.startDate;
       if (record.endDate !== undefined) endDate = range.endDate;
-      if (record.startDate !== undefined && record.endDate !== undefined) {
-        startDate = range.startDate;
-        endDate = range.endDate;
-      } else if (record.startDate !== undefined) {
-        const check = validateDateRange(record.startDate, existing.endDate);
-        startDate = check.startDate;
-        endDate = check.endDate;
-      } else if (record.endDate !== undefined) {
-        const check = validateDateRange(existing.startDate, record.endDate);
-        startDate = check.startDate;
-        endDate = check.endDate;
-      }
     }
     if (record.attachmentIds !== undefined || record.attachments !== undefined || record.mediaIds !== undefined) {
       attachmentIds = parseAttachmentIds(record.attachmentIds ?? record.attachments ?? record.mediaIds);

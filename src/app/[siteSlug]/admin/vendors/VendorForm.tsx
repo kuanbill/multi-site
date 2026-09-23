@@ -60,7 +60,7 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
         .map((s) => Number(s))
         .filter((n) => Number.isInteger(n) && n > 0);
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: values.name,
         category: values.category,
         summary: values.summary || null,
@@ -72,8 +72,10 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
         logoMediaId: values.logoMediaId ? Number(values.logoMediaId) : null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
-        attachmentIds,
       };
+      if (values.attachmentIds.trim() !== '') {
+        payload.attachmentIds = attachmentIds;
+      }
       const url = initial
         ? `/api/${siteSlug}/admin/vendors/${initial.id}`
         : `/api/${siteSlug}/admin/vendors`;

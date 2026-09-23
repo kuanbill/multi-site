@@ -170,26 +170,56 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       });
 
       if (attachmentIds !== undefined || imageAttachmentIds !== undefined) {
-        await tx.contentAttachment.deleteMany({
-          where: { siteId: context.site.id, ownerType: 'meeting', ownerId: meetingId },
-        });
-        const createData: Array<{ siteId: number; mediaId: number; ownerType: string; ownerId: number; sortOrder: number; label: string | null }> = [];
-        const finalAttachmentIds = attachmentIds ?? [];
-        const finalImageIds = imageAttachmentIds ?? [];
-        // If only one list provided and the other undefined, we replace with provided list only.
-        // If caller sent only attachmentIds, image list is considered empty; if only image list, main list empty.
-        // To allow partial attachment update, require both or handle accordingly: we already have logic.
-        // If one is undefined, we treat missing as empty only if the other was explicitly provided.
-        // However if both were undefined we wouldn't be here.
-        finalAttachmentIds.forEach((mediaId, index) => {
-          createData.push({ siteId: context.site.id, mediaId, ownerType: 'meeting', ownerId: meetingId, sortOrder: index, label: 'pdf' });
-        });
-        const offset = finalAttachmentIds.length;
-        finalImageIds.forEach((mediaId, index) => {
-          createData.push({ siteId: context.site.id, mediaId, ownerType: 'meeting', ownerId: meetingId, sortOrder: offset + index, label: 'image' });
-        });
-        if (createData.length > 0) {
-          await tx.contentAttachment.createMany({ data: createData });
+        if (attachmentIds !== undefined && imageAttachmentIds !== undefined) {
+          await tx.contentAttachment.deleteMany({
+            where: { siteId: context.site.id, ownerType: 'meeting', ownerId: meetingId },
+          });
+          const createData: Array<{ siteId: number; mediaId: number; ownerType: string; ownerId: number; sortOrder: number; label: string | null }> = [];
+          attachmentIds.forEach((mediaId, index) => {
+            createData.push({ siteId: context.site.id, mediaId, ownerType: 'meeting', ownerId: meetingId, sortOrder: index, label: 'pdf' });
+          });
+          const offset = attachmentIds.length;
+          imageAttachmentIds.forEach((mediaId, index) => {
+            createData.push({ siteId: context.site.id, mediaId, ownerType: 'meeting', ownerId: meetingId, sortOrder: offset + index, label: 'image' });
+          });
+          if (createData.length > 0) {
+            await tx.contentAttachment.createMany({ data: createData });
+          }
+        } else if (attachmentIds !== undefined) {
+          await tx.contentAttachment.deleteMany({
+            where: { siteId: context.site.id, ownerType: 'meeting', ownerId: meetingId, label: 'pdf' },
+          });
+          if (attachmentIds.length > 0) {
+            await tx.contentAttachment.createMany({
+              data: attachmentIds.map((mediaId, index) => ({
+                siteId: context.site.id,
+                mediaId,
+                ownerType: 'meeting',
+                ownerId: meetingId,
+                sortOrder: index,
+                label: 'pdf',
+              })),
+            });
+          }
+        } else if (imageAttachmentIds !== undefined) {
+          await tx.contentAttachment.deleteMany({
+            where: { siteId: context.site.id, ownerType: 'meeting', ownerId: meetingId, label: 'image' },
+          });
+          if (imageAttachmentIds.length > 0) {
+            const existingPdfCount = await tx.contentAttachment.count({
+              where: { siteId: context.site.id, ownerType: 'meeting', ownerId: meetingId, label: 'pdf' },
+            });
+            await tx.contentAttachment.createMany({
+              data: imageAttachmentIds.map((mediaId, index) => ({
+                siteId: context.site.id,
+                mediaId,
+                ownerType: 'meeting',
+                ownerId: meetingId,
+                sortOrder: existingPdfCount + index,
+                label: 'image',
+              })),
+            });
+          }
         }
       }
 

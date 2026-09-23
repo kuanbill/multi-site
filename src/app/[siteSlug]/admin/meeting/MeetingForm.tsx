@@ -67,7 +67,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
         .map((s) => Number(s))
         .filter((n) => Number.isInteger(n) && n > 0);
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         meetingType: values.meetingType,
         meetingNo: values.meetingNo || null,
         title: values.title,
@@ -75,9 +75,13 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
         summary: values.summary || null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
-        attachmentIds,
-        imageAttachmentIds,
       };
+      if (values.attachmentIds.trim() !== '') {
+        payload.attachmentIds = attachmentIds;
+      }
+      if (values.imageAttachmentIds.trim() !== '') {
+        payload.imageAttachmentIds = imageAttachmentIds;
+      }
       const url = initial
         ? `/api/${siteSlug}/admin/meeting/${initial.id}`
         : `/api/${siteSlug}/admin/meeting`;

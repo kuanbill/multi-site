@@ -63,7 +63,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
         .map((s) => Number(s))
         .filter((n) => Number.isInteger(n) && n > 0);
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         title: values.title,
         slug: values.slug,
         startDate: values.startDate || null,
@@ -73,8 +73,10 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
         feedbackSummary: values.feedbackSummary || null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
-        attachmentIds,
       };
+      if (values.attachmentIds.trim() !== '') {
+        payload.attachmentIds = attachmentIds;
+      }
       const url = initial
         ? `/api/${siteSlug}/admin/exhibition/${initial.id}`
         : `/api/${siteSlug}/admin/exhibition`;
