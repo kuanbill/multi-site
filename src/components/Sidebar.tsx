@@ -27,11 +27,16 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
   const pathname = usePathname()
 
   if (siteSlug && features) {
-    const featureItems = features.map((f) => ({
-      href: `/${siteSlug}/admin/${f.path}`,
-      label: f.label,
-      icon: f.icon || '•',
-    }))
+    const featureItems = [
+      { href: `/${siteSlug}/admin/home`, label: '首頁設定', icon: '🏠' },
+      ...features
+        .filter((f) => !['pages', 'posts', 'media'].includes(f.key) && !['pages', 'posts', 'media'].includes(f.path))
+        .map((f) => ({
+          href: `/${siteSlug}/admin/${f.path}`,
+          label: f.label,
+          icon: f.icon || '•',
+        })),
+    ]
     const siteMenu = [
       { href: `/${siteSlug}/admin`, label: '站點儀表板', icon: '📊' },
       ...featureItems,

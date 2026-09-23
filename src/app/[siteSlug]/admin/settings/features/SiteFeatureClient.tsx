@@ -12,9 +12,18 @@ interface Item {
   enabled: boolean;
   sortOrder: number;
   displayMode: string;
+  visibility: 'public' | 'members';
 }
 
-export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: string; initial: Item[] }) {
+export default function SiteFeatureClient({
+  siteSlug,
+  initial,
+  canChangeVisibility,
+}: {
+  siteSlug: string;
+  initial: Item[];
+  canChangeVisibility: boolean;
+}) {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>(() => [...initial].sort((a, b) => a.sortOrder - b.sortOrder));
   const [saving, setSaving] = useState(false);
@@ -32,6 +41,10 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
     setItems(items.map((it) => (it.id === id ? { ...it, displayMode: mode } : it)));
   }
 
+  function changeVisibility(id: number, visibility: Item['visibility']) {
+    setItems(items.map((it) => (it.id === id ? { ...it, visibility } : it)));
+  }
+
   async function save() {
     setSaving(true);
     setMsg('');
@@ -39,7 +52,13 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        features: items.map((it) => ({ featureId: it.id, enabled: it.enabled, sortOrder: it.sortOrder, displayMode: it.displayMode })),
+        features: items.map((it) => ({
+          featureId: it.id,
+          enabled: it.enabled,
+          sortOrder: it.sortOrder,
+          displayMode: it.displayMode,
+          visibility: it.visibility,
+        })),
       }),
     });
     if (res.ok) {
@@ -61,6 +80,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
             <th className="px-4 py-2 text-left text-sm">名稱</th>
             <th className="px-4 py-2 text-left text-sm">路徑</th>
             <th className="px-4 py-2 text-left text-sm">顯示</th>
+            <th className="px-4 py-2 text-left text-sm">前台可見性</th>
             <th className="px-4 py-2 text-left text-sm">排序</th>
           </tr>
         </thead>
@@ -74,11 +94,22 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
                 {it.icon} {it.label} <span className="text-gray-400 text-xs">({it.key})</span>
               </td>
               <td className="px-4 py-2 text-gray-500">{it.path}</td>
-              <td className="px-4 py-2">
-                <select value={it.displayMode} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm">
+               <td className="px-4 py-2">
+                 <select value={it.displayMode} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm">
                   <option value="list">條列</option>
                   <option value="card">卡片</option>
                   <option value="grid">網格</option>
+                 </select>
+               </td>
+              <td className="px-4 py-2">
+                <select
+                  value={it.visibility}
+                  disabled={!canChangeVisibility}
+                  onChange={(e) => changeVisibility(it.id, e.target.value as Item['visibility'])}
+                  className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
+                >
+                  <option value="public">公開</option>
+                  <option value="members">僅限成員</option>
                 </select>
               </td>
               <td className="px-4 py-2">

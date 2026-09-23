@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseContentStatus,
+  parseFeatureVisibility,
   validateAsset,
   validateDateRange,
   validateExternalUrl,
+  validateSiteHomeInput,
   validateMeetingType,
   validateProgressStatus,
   validateRequiredText,
@@ -67,6 +69,44 @@ describe('content validation', () => {
       extension: 'pdf',
       mimeType: 'application/pdf',
     });
+  });
+
+  it('validates editable homepage fields without accepting site ownership fields', () => {
+    expect(
+      validateSiteHomeInput({
+        tagline: '  安心重建  ',
+        intro: '專案簡介',
+        currentStage: '',
+        contactName: '聯絡人',
+        contactPhone: '02-1234-5678',
+        contactEmail: 'hello@example.com',
+        contactAddress: '台北市',
+        heroMediaId: 7,
+        heroMediaUrl: 'https://cdn.example.com/hero.jpg',
+        siteId: 999,
+      }),
+    ).toEqual({
+      tagline: '安心重建',
+      intro: '專案簡介',
+      currentStage: null,
+      contactName: '聯絡人',
+      contactPhone: '02-1234-5678',
+      contactEmail: 'hello@example.com',
+      contactAddress: '台北市',
+      heroMediaId: 7,
+      heroMediaUrl: 'https://cdn.example.com/hero.jpg',
+    });
+  });
+
+  it('rejects invalid homepage values', () => {
+    expect(() => validateSiteHomeInput({ tagline: '', contactEmail: 'not-an-email' })).toThrow('標語');
+    expect(() => validateSiteHomeInput({ tagline: '標語', contactEmail: 'not-an-email' })).toThrow('電子郵件');
+  });
+
+  it('accepts only public and members feature visibility', () => {
+    expect(parseFeatureVisibility('public')).toBe('public');
+    expect(parseFeatureVisibility('members')).toBe('members');
+    expect(() => parseFeatureVisibility('private')).toThrow('可見性');
   });
 
 });

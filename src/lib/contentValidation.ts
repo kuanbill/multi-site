@@ -7,6 +7,20 @@ import {
 
 export const PROGRESS_STATUSES = ['completed', 'current', 'upcoming'] as const;
 export type ProgressStatus = (typeof PROGRESS_STATUSES)[number];
+export const FEATURE_VISIBILITIES = ['public', 'members'] as const;
+export type FeatureVisibility = (typeof FEATURE_VISIBILITIES)[number];
+
+export type SiteHomeInput = {
+  tagline: string | null;
+  intro: string | null;
+  currentStage: string | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  contactAddress: string | null;
+  heroMediaId: number | null;
+  heroMediaUrl: string | null;
+};
 
 const ASSET_EXTENSIONS: Record<string, string> = {
   'application/pdf': 'pdf',
@@ -28,6 +42,41 @@ export function parseContentStatus(value: unknown): ContentStatus {
     return value as ContentStatus;
   }
   throw new Error('內容狀態無效');
+}
+
+export function parseFeatureVisibility(value: unknown): FeatureVisibility {
+  if (typeof value === 'string' && FEATURE_VISIBILITIES.includes(value as FeatureVisibility)) {
+    return value as FeatureVisibility;
+  }
+  throw new Error('功能可見性無效');
+}
+
+export function validateSiteHomeInput(value: unknown): SiteHomeInput {
+  const body = isRecord(value) ? value : {};
+  const tagline = optionalText(body.tagline);
+  if (body.tagline !== undefined && !tagline) throw new Error('標語不得為空');
+
+  const contactEmail = optionalText(body.contactEmail);
+  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
+    throw new Error('聯絡電子郵件格式無效');
+  }
+
+  const heroMediaId = body.heroMediaId === undefined || body.heroMediaId === null || body.heroMediaId === ''
+    ? null
+    : parsePositiveInteger(body.heroMediaId, '首頁主圖');
+  const heroMediaUrl = optionalText(body.heroMediaUrl);
+
+  return {
+    tagline,
+    intro: optionalText(body.intro),
+    currentStage: optionalText(body.currentStage),
+    contactName: optionalText(body.contactName),
+    contactPhone: optionalText(body.contactPhone),
+    contactEmail,
+    contactAddress: optionalText(body.contactAddress),
+    heroMediaId,
+    heroMediaUrl,
+  };
 }
 
 export function validateSlug(value: unknown): string {
@@ -103,4 +152,21 @@ function parseOptionalDate(value: unknown, label: string): Date | null {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
   if (Number.isNaN(date.getTime())) throw new Error(`${label}格式無效`);
   return date;
+}
+
+function optionalText(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') throw new Error('文字欄位格式無效');
+  const text = value.trim();
+  return text || null;
+}
+
+function parsePositiveInteger(value: unknown, label: string): number {
+  const number = typeof value === 'number' ? value : Number(value);
+  if (!Number.isInteger(number) || number < 1) throw new Error(`${label}編號格式無效`);
+  return number;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

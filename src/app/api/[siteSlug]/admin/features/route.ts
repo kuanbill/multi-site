@@ -1,56 +1,122 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { parseFeatureVisibility } from '@/lib/contentValidation';
+import { mergeSiteFeatures } from '@/lib/features';
 
-export async function GET(_req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
+type RouteContext = { params: Promise<{ siteSlug: string }> };
+
+export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isAdmin = session.user.role === 'admin';
-  const has = isAdmin || session.user.siteRoles?.some((r) => r.slug === siteSlug);
-  if (!has) return NextResponse.json({ error: '無權限' }, { status: 403 });
-
+  const { site } = await requireSiteContext(siteSlug);
   const definitions = await prisma.featureDefinition.findMany({ orderBy: { createdAt: 'asc' } });
   const siteFeatures = await prisma.siteFeature.findMany({ where: { siteId: site.id } });
-  const map = new Map(siteFeatures.map((sf) => [sf.featureId, sf]));
-  const merged = definitions.map((def) => ({
-    ...def,
-    enabled: map.get(def.id)?.enabled ?? false,
-    sortOrder: map.get(def.id)?.sortOrder ?? 0,
-    displayMode: map.get(def.id)?.displayMode ?? def.displayMode ?? 'list',
-  }));
-  return NextResponse.json(merged);
+  return NextResponse.json(
+    mergeSiteFeatures(
+      definitions,
+      siteFeatures.map((feature) => ({
+        featureId: feature.featureId,
+        enabled: feature.enabled,
+        sortOrder: feature.sortOrder,
+        displayMode: feature.displayMode,
+        visibility: parseFeatureVisibility(feature.visibility),
+      })),
+    ),
+  );
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
+async function saveFeatures(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isAdmin = session.user.role === 'admin';
-  const membership = session.user.siteRoles?.find((r) => r.slug === siteSlug);
-  const canEdit = isAdmin || membership?.role === 'admin';
-  if (!canEdit) return NextResponse.json({ error: '只有站點管理員可設定' }, { status: 403 });
+  const context = await requireContentPermission(siteSlug, 'write');
+  const canChangeVisibility = context.siteRole === 'global-admin' || context.siteRole === 'admin';
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
+  }
 
   try {
-    const body = await req.json();
-    const features = body.features as { featureId: number; enabled: boolean; sortOrder?: number; displayMode?: string }[];
-    if (!Array.isArray(features)) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
+    const features = readFeaturePayload(body);
+    const definitions = await prisma.featureDefinition.findMany({ orderBy: { createdAt: 'asc' } });
+    const definitionIds = new Set(definitions.map((definition) => definition.id));
+    const existing = await prisma.siteFeature.findMany({ where: { siteId: context.site.id } });
+    const existingMap = new Map(existing.map((feature) => [feature.featureId, feature]));
+    const normalized = features.map((feature) => {
+      if (!definitionIds.has(feature.featureId)) throw new Error('功能參數錯誤');
+      if (typeof feature.enabled !== 'boolean') throw new Error('功能參數錯誤');
+      const sortOrder = feature.sortOrder ?? 0;
+      if (!Number.isInteger(sortOrder)) throw new Error('排序參數錯誤');
+      const displayMode = feature.displayMode ?? 'list';
+      if (!['list', 'card', 'grid'].includes(displayMode)) throw new Error('顯示方式無效');
+      const current = existingMap.get(feature.featureId);
+      const visibility = feature.visibility === undefined
+        ? parseFeatureVisibility(current?.visibility ?? 'public')
+        : parseFeatureVisibility(feature.visibility);
+      if (!canChangeVisibility && current && visibility !== current.visibility) {
+        throw new Error('只有站點管理員可設定功能可見性');
+      }
+      if (!canChangeVisibility && !current && visibility !== 'public') {
+        throw new Error('只有站點管理員可設定功能可見性');
+      }
+      return { ...feature, sortOrder, displayMode, visibility };
+    });
 
-    for (const f of features) {
-      const dm = typeof f.displayMode === 'string' && ['list', 'card', 'grid'].includes(f.displayMode) ? f.displayMode : 'list';
+    for (const feature of normalized) {
       await prisma.siteFeature.upsert({
-        where: { siteId_featureId: { siteId: site.id, featureId: f.featureId } },
-        update: { enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0, displayMode: dm },
-        create: { siteId: site.id, featureId: f.featureId, enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0, displayMode: dm },
+        where: { siteId_featureId: { siteId: context.site.id, featureId: feature.featureId } },
+        update: {
+          enabled: feature.enabled,
+          sortOrder: feature.sortOrder,
+          displayMode: feature.displayMode,
+          visibility: feature.visibility,
+        },
+        create: {
+          siteId: context.site.id,
+          featureId: feature.featureId,
+          enabled: feature.enabled,
+          sortOrder: feature.sortOrder,
+          displayMode: feature.displayMode,
+          visibility: feature.visibility,
+        },
       });
     }
     return NextResponse.json({ message: '已更新' });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && [
+      '參數錯誤',
+      '功能參數錯誤',
+      '排序參數錯誤',
+      '顯示方式無效',
+      '功能可見性無效',
+      '只有站點管理員可設定功能可見性',
+    ].includes(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: error.message.includes('只有') ? 403 : 400 });
+    }
     return NextResponse.json({ error: '更新失敗' }, { status: 500 });
   }
+}
+
+function readFeaturePayload(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !Array.isArray((value as { features?: unknown }).features)) {
+    throw new Error('參數錯誤');
+  }
+  return (value as { features: FeaturePayload[] }).features;
+}
+
+type FeaturePayload = {
+  featureId: number;
+  enabled: boolean;
+  sortOrder?: number;
+  displayMode?: string;
+  visibility?: unknown;
+};
+
+export async function PUT(request: Request, context: RouteContext) {
+  return saveFeatures(request, context);
+}
+
+export async function POST(request: Request, context: RouteContext) {
+  return saveFeatures(request, context);
 }

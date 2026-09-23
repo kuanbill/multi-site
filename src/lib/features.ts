@@ -1,3 +1,5 @@
+import type { FeatureVisibility } from './contentValidation'
+
 export const CONTENT_FEATURES = [
   { key: 'announcements', label: '公告欄', icon: '📢', path: 'announcement', isSystem: true, defaultVisibility: 'public' },
   { key: 'progress', label: '都更進度', icon: '📈', path: 'progress', isSystem: true, defaultVisibility: 'public' },
@@ -9,3 +11,35 @@ export const CONTENT_FEATURES = [
 ] as const
 
 export type FeatureKey = (typeof CONTENT_FEATURES)[number]['key'] | string
+
+type FeatureCatalogItem = {
+  id: number
+  key: string
+  label: string
+  icon: string | null
+  path: string
+  displayMode: string
+}
+
+type SiteFeatureSetting = {
+  featureId: number
+  enabled: boolean
+  sortOrder: number
+  displayMode: string
+  visibility: FeatureVisibility
+}
+
+export function mergeSiteFeatures(catalog: FeatureCatalogItem[], settings: SiteFeatureSetting[]) {
+  const settingMap = new Map(settings.map((setting) => [setting.featureId, setting]))
+  return catalog.map((feature) => {
+    const setting = settingMap.get(feature.id)
+    const catalogItem = CONTENT_FEATURES.find((item) => item.key === feature.key)
+    return {
+      ...feature,
+      enabled: setting?.enabled ?? false,
+      sortOrder: setting?.sortOrder ?? 0,
+      displayMode: setting?.displayMode ?? feature.displayMode ?? 'list',
+      visibility: setting?.visibility ?? catalogItem?.defaultVisibility ?? 'public',
+    }
+  })
+}
