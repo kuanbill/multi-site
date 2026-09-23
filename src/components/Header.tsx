@@ -8,12 +8,13 @@ interface HeaderProps {
     email?: string | null
     role?: string | null
   }
+  siteName?: string
 }
 
-export default function Header({ user }: HeaderProps) {
+export default function Header({ user, siteName }: HeaderProps) {
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6">
-      <div></div>
+      <div>{siteName && <span className="text-sm text-gray-500">{siteName}</span>}</div>
 
       <div className="flex items-center gap-4">
         <div className="text-right">

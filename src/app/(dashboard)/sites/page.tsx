@@ -49,6 +49,12 @@ export default async function SitesPage() {
                   {new Date(site.createdAt).toLocaleDateString('zh-TW')}
                 </td>
                 <td className="px-6 py-4 text-right">
+                  <Link href={`/${site.slug}`} className="text-gray-600 hover:underline mr-3">
+                    前台
+                  </Link>
+                  <Link href={`/${site.slug}/admin`} className="text-blue-600 hover:underline mr-3">
+                    管理
+                  </Link>
                   <Link
                     href={`/sites/${site.id}/edit`}
                     className="text-blue-600 hover:underline mr-4"
