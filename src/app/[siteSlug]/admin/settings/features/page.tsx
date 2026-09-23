@@ -18,6 +18,7 @@ export default async function SiteFeaturesPage({ params }: { params: Promise<{ s
     ...def,
     enabled: map.get(def.id)?.enabled ?? false,
     sortOrder: map.get(def.id)?.sortOrder ?? 0,
+    displayMode: map.get(def.id)?.displayMode ?? def.displayMode ?? 'list',
   }));
   return (
     <div>

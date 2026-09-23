@@ -21,6 +21,8 @@ export async function POST(req: Request) {
     const icon = typeof body.icon === 'string' ? body.icon.trim() : null;
     const path = typeof body.path === 'string' ? body.path.trim() : '';
     const description = typeof body.description === 'string' ? body.description.trim() : null;
+    const displayModeRaw = typeof body.displayMode === 'string' ? body.displayMode.trim() : 'list';
+    const displayMode = ['list', 'card', 'grid'].includes(displayModeRaw) ? displayModeRaw : 'list';
 
     if (!label || !path) {
       return NextResponse.json({ error: '名稱與路徑為必填' }, { status: 400 });
@@ -33,7 +35,7 @@ export async function POST(req: Request) {
     if (existing) return NextResponse.json({ error: '此 key 已存在' }, { status: 409 });
 
     const feature = await prisma.featureDefinition.create({
-      data: { key, label, icon, path, description, isSystem: false },
+      data: { key, label, icon, path, description, isSystem: false, displayMode },
     });
     return NextResponse.json(feature, { status: 201 });
   } catch {

@@ -11,6 +11,7 @@ interface Item {
   path: string;
   enabled: boolean;
   sortOrder: number;
+  displayMode: string;
 }
 
 export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: string; initial: Item[] }) {
@@ -27,6 +28,10 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
     setItems(items.map((it) => (it.id === id ? { ...it, sortOrder: order } : it)));
   }
 
+  function changeDisplayMode(id: number, mode: string) {
+    setItems(items.map((it) => (it.id === id ? { ...it, displayMode: mode } : it)));
+  }
+
   async function save() {
     setSaving(true);
     setMsg('');
@@ -34,7 +39,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        features: items.map((it) => ({ featureId: it.id, enabled: it.enabled, sortOrder: it.sortOrder })),
+        features: items.map((it) => ({ featureId: it.id, enabled: it.enabled, sortOrder: it.sortOrder, displayMode: it.displayMode })),
       }),
     });
     if (res.ok) {
@@ -55,6 +60,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
             <th className="px-4 py-2 text-left text-sm">啟用</th>
             <th className="px-4 py-2 text-left text-sm">名稱</th>
             <th className="px-4 py-2 text-left text-sm">路徑</th>
+            <th className="px-4 py-2 text-left text-sm">顯示</th>
             <th className="px-4 py-2 text-left text-sm">排序</th>
           </tr>
         </thead>
@@ -68,6 +74,13 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
                 {it.icon} {it.label} <span className="text-gray-400 text-xs">({it.key})</span>
               </td>
               <td className="px-4 py-2 text-gray-500">{it.path}</td>
+              <td className="px-4 py-2">
+                <select value={it.displayMode} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm">
+                  <option value="list">條列</option>
+                  <option value="card">卡片</option>
+                  <option value="grid">網格</option>
+                </select>
+              </td>
               <td className="px-4 py-2">
                 <input
                   type="number"

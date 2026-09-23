@@ -20,6 +20,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ siteSlu
     ...def,
     enabled: map.get(def.id)?.enabled ?? false,
     sortOrder: map.get(def.id)?.sortOrder ?? 0,
+    displayMode: map.get(def.id)?.displayMode ?? def.displayMode ?? 'list',
   }));
   return NextResponse.json(merged);
 }
@@ -37,14 +38,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug
 
   try {
     const body = await req.json();
-    const features = body.features as { featureId: number; enabled: boolean; sortOrder?: number }[];
+    const features = body.features as { featureId: number; enabled: boolean; sortOrder?: number; displayMode?: string }[];
     if (!Array.isArray(features)) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
 
     for (const f of features) {
+      const dm = typeof f.displayMode === 'string' && ['list', 'card', 'grid'].includes(f.displayMode) ? f.displayMode : 'list';
       await prisma.siteFeature.upsert({
         where: { siteId_featureId: { siteId: site.id, featureId: f.featureId } },
-        update: { enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0 },
-        create: { siteId: site.id, featureId: f.featureId, enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0 },
+        update: { enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0, displayMode: dm },
+        create: { siteId: site.id, featureId: f.featureId, enabled: !!f.enabled, sortOrder: f.sortOrder ?? 0, displayMode: dm },
       });
     }
     return NextResponse.json({ message: '已更新' });

@@ -40,18 +40,20 @@ model FeatureDefinition {
   path         String
   description  String?
   isSystem     Boolean       @default(false)
+  displayMode  String        @default("list")
   createdAt    DateTime      @default(now())
   siteFeatures SiteFeature[]
 }
 
 model SiteFeature {
-  id        Int               @id @default(autoincrement())
-  siteId    Int
-  featureId Int
-  enabled   Boolean           @default(true)
-  sortOrder Int               @default(0)
-  site      Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  feature   FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  id          Int               @id @default(autoincrement())
+  siteId      Int
+  featureId   Int
+  enabled     Boolean           @default(true)
+  sortOrder   Int               @default(0)
+  displayMode String            @default("list")
+  site        Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  feature     FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, featureId])
 }

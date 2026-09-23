@@ -31,6 +31,15 @@ export async function isFeatureEnabled(siteId: number, featureKey: string) {
   return row.enabled;
 }
 
+export async function getFeatureDisplayMode(siteId: number, featureKey: string): Promise<string> {
+  const row = await prisma.siteFeature.findFirst({
+    where: { siteId, feature: { key: featureKey } },
+    include: { feature: true },
+  });
+  if (!row) return 'list';
+  return row.displayMode || row.feature.displayMode || 'list';
+}
+
 export function clearSiteCache(slug?: string) {
   if (slug) siteCache.delete(slug);
   else siteCache.clear();
