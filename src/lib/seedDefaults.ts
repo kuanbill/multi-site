@@ -34,7 +34,8 @@ export function mergeSeedSites<T extends { id: number }>(knownSites: readonly T[
 export function buildNewSiteFeatureSettings(definitions: readonly { id: number; key: string }[]) {
   return definitions.map((definition, sortOrder) => ({
     featureId: definition.id,
-    enabled: ['pages', 'posts', 'media'].includes(definition.key),
+    enabled: CONTENT_FEATURES.some((feature) => feature.key === definition.key)
+      || ['pages', 'posts', 'media'].includes(definition.key),
     sortOrder,
     visibility: CONTENT_FEATURES.find((feature) => feature.key === definition.key)?.defaultVisibility ?? 'public',
   }))

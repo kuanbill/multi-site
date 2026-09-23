@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPerformContentAction } from './contentAccess';
+import { canManageSiteSettings, canPerformContentAction } from './contentAccess';
 
 describe('content permissions', () => {
   it('allows the documented action matrix', () => {
@@ -9,5 +9,12 @@ describe('content permissions', () => {
     expect(canPerformContentAction('editor', 'delete')).toBe(false);
     expect(canPerformContentAction('viewer', 'read')).toBe(true);
     expect(canPerformContentAction('viewer', 'write')).toBe(false);
+  });
+
+  it('limits feature settings to site and global administrators', () => {
+    expect(canManageSiteSettings('global-admin')).toBe(true);
+    expect(canManageSiteSettings('admin')).toBe(true);
+    expect(canManageSiteSettings('editor')).toBe(false);
+    expect(canManageSiteSettings('viewer')).toBe(false);
   });
 });

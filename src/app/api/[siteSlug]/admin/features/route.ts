@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { canManageSiteSettings, requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
 import { parseFeatureVisibility } from '@/lib/contentValidation';
 import { mergeSiteFeatures } from '@/lib/features';
 
@@ -28,7 +28,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
 async function saveFeatures(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'write');
-  const canChangeVisibility = context.siteRole === 'global-admin' || context.siteRole === 'admin';
+  const canChangeVisibility = canManageSiteSettings(context.siteRole);
+  if (!canChangeVisibility) {
+    return NextResponse.json({ error: '只有站點管理員可修改功能設定' }, { status: 403 });
+  }
 
   let body: unknown;
   try {

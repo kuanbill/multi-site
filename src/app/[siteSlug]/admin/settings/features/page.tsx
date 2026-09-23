@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { requireSiteContext } from '@/lib/contentAccess';
+import { canManageSiteSettings, requireSiteContext } from '@/lib/contentAccess';
 import { mergeSiteFeatures } from '@/lib/features';
 import SiteFeatureClient from './SiteFeatureClient';
 
@@ -21,12 +21,14 @@ export default async function SiteFeaturesPage({ params }: { params: Promise<{ s
       visibility: feature.visibility === 'members' ? 'members' : 'public',
     })),
   );
-  const canChangeVisibility = context.siteRole === 'global-admin' || context.siteRole === 'admin';
+  const canManageSettings = canManageSiteSettings(context.siteRole);
   return (
     <div>
       <h2 className="text-2xl font-bold mb-2">{site.name} - 功能設定</h2>
-      <p className="text-gray-500 mb-6">勾選啟用功能，拖曳或編號調整排序。</p>
-      <SiteFeatureClient siteSlug={siteSlug} initial={merged} canChangeVisibility={canChangeVisibility} />
+      <p className="text-gray-500 mb-6">
+        勾選啟用功能並調整前台排序與可見性。僅站點管理員可修改設定。
+      </p>
+      <SiteFeatureClient siteSlug={siteSlug} initial={merged} canManageSettings={canManageSettings} />
     </div>
   );
 }

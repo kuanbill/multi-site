@@ -26,3 +26,23 @@
 - Docker 無法執行（`docker --version` 回報找不到命令），因此未進行 Docker data volume 驗證。
 - 上傳 URL `/uploads/<filename>` 是媒體 URL；地圖檔案下載連結額外經過站點/發布狀態守衛。媒體直接 URL 的圖片預覽仍可由持有 URL 的人直接讀取，頁面層 members guard 不會隱藏這個已知媒體 URL。
 - 對錯誤 MIME 標示的實際內容未進行檔案特徵（magic-byte）檢測；現有 shared helper 的 MIME allowlist 以瀏覽器提交的 MIME 為準。
+
+## Review Fix Appendix
+
+### Findings Fixed
+
+- Protected direct `/uploads/{filename}` requests by resolving the owning site, requiring a published and enabled feature reference, and checking the current `SiteUser` membership for member-only media. Unpublished or unreferenced assets return 404; non-members receive 403; anonymous visitors to member-only media are redirected to the site's login page.
+- Set all media responses to `Cache-Control: private, no-store` so a former public response cannot remain cached after visibility changes.
+- Moved reference checks and database row deletion into one transaction. The filesystem file is removed only after the database transaction succeeds; if file cleanup fails, the orphaned file has no database URL lookup and is not served.
+- Localized file-not-found responses.
+
+### Verification
+
+- `npx tsc --noEmit` — passed.
+- `npm run lint` — 0 errors; 6 existing warnings remain in unrelated legacy API routes.
+- `npm test` — 8 files, 26 tests passed.
+
+### Remaining Manual Checks
+
+- Actual upload/restart persistence and Docker volume checks remain unavailable in this environment; Docker is not installed.
+- MIME is validated from the uploaded file's declared MIME type; magic-byte inspection is not implemented.

@@ -18,11 +18,11 @@ interface Item {
 export default function SiteFeatureClient({
   siteSlug,
   initial,
-  canChangeVisibility,
+  canManageSettings,
 }: {
   siteSlug: string;
   initial: Item[];
-  canChangeVisibility: boolean;
+  canManageSettings: boolean;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>(() => [...initial].sort((a, b) => a.sortOrder - b.sortOrder));
@@ -73,6 +73,7 @@ export default function SiteFeatureClient({
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
+      {!canManageSettings && <p className="mb-4 text-sm text-amber-700">您只有檢視權限，請聯絡站點管理員修改功能設定。</p>}
       <table className="w-full mb-4">
         <thead className="bg-gray-50">
           <tr>
@@ -88,14 +89,14 @@ export default function SiteFeatureClient({
           {items.map((it) => (
             <tr key={it.id}>
               <td className="px-4 py-2">
-                <input type="checkbox" checked={it.enabled} onChange={() => toggle(it.id)} />
+                <input type="checkbox" checked={it.enabled} disabled={!canManageSettings} onChange={() => toggle(it.id)} />
               </td>
               <td className="px-4 py-2">
                 {it.icon} {it.label} <span className="text-gray-400 text-xs">({it.key})</span>
               </td>
               <td className="px-4 py-2 text-gray-500">{it.path}</td>
                <td className="px-4 py-2">
-                 <select value={it.displayMode} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm">
+                  <select value={it.displayMode} disabled={!canManageSettings} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm disabled:bg-gray-100">
                   <option value="list">條列</option>
                   <option value="card">卡片</option>
                   <option value="grid">網格</option>
@@ -104,7 +105,7 @@ export default function SiteFeatureClient({
               <td className="px-4 py-2">
                 <select
                   value={it.visibility}
-                  disabled={!canChangeVisibility}
+                   disabled={!canManageSettings}
                   onChange={(e) => changeVisibility(it.id, e.target.value as Item['visibility'])}
                   className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
                 >
@@ -116,6 +117,7 @@ export default function SiteFeatureClient({
                 <input
                   type="number"
                   value={it.sortOrder}
+                  disabled={!canManageSettings}
                   onChange={(e) => changeOrder(it.id, parseInt(e.target.value) || 0)}
                   className="w-20 px-2 py-1 border rounded"
                 />
@@ -126,7 +128,7 @@ export default function SiteFeatureClient({
       </table>
       <button
         onClick={save}
-        disabled={saving}
+        disabled={saving || !canManageSettings}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
         {saving ? '儲存中...' : '儲存'}

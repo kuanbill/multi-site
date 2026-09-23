@@ -70,6 +70,10 @@ export function canPerformContentAction(role: SiteRole, action: ContentAction): 
   return role === 'admin';
 }
 
+export function canManageSiteSettings(role: SiteRole): boolean {
+  return role === 'global-admin' || role === 'admin';
+}
+
 function isSiteRole(value: string): value is Exclude<SiteRole, 'global-admin'> {
   return value === 'admin' || value === 'editor' || value === 'viewer';
 }
