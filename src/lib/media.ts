@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import type { SiteContext } from './contentAccess';
 import { prisma } from './prisma';
 import { validateAsset } from './contentValidation';
 
-export async function saveMedia(siteId: number, file: File, altText?: string | null) {
+export async function saveMedia(context: SiteContext, file: File, altText?: string | null) {
   const { extension, mimeType } = validateAsset(file);
   const uploadDir = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'data', 'uploads');
   const filename = `${randomUUID()}.${extension}`;
@@ -17,7 +18,7 @@ export async function saveMedia(siteId: number, file: File, altText?: string | n
   try {
     return await prisma.media.create({
       data: {
-        siteId,
+        siteId: context.site.id,
         filename,
         url: `/uploads/${filename}`,
         type: mimeType === 'application/pdf' ? 'pdf' : 'image',

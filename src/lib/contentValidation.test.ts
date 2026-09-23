@@ -16,7 +16,7 @@ describe('content validation', () => {
   });
 
   it('rejects unsafe slugs', () => {
-    expect(() => validateSlug('../private')).toThrow('slug');
+    expect(() => validateSlug('../private')).toThrow('識別碼');
   });
 
   it('accepts only http and https external URLs', () => {
@@ -58,10 +58,4 @@ describe('content validation', () => {
     expect(() => validateAsset(new File(['script'], 'script.js', { type: 'text/javascript' }))).toThrow('檔案');
   });
 
-  it('derives an image extension from its MIME type rather than its filename', () => {
-    expect(validateAsset(new File(['image'], 'client.js', { type: 'image/custom' }))).toEqual({
-      extension: 'custom',
-      mimeType: 'image/custom',
-    });
-  });
 });

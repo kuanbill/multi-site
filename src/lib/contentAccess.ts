@@ -8,6 +8,14 @@ import { getSiteBySlug, getSiteFeature } from './site';
 export type SiteRole = 'admin' | 'editor' | 'viewer' | 'global-admin';
 export type ContentAction = 'read' | 'write' | 'publish' | 'delete';
 export type SiteContext = { site: Site; session: Session; siteRole: SiteRole };
+export const PUBLISHED_CONTENT_WHERE = { status: 'published' } as const;
+
+/** Merge `publishedWhere` into public content queries so drafts never leak. */
+export type PublicFeatureContext = {
+  site: Site;
+  feature: SiteFeature & { feature: FeatureDefinition };
+  publishedWhere: typeof PUBLISHED_CONTENT_WHERE;
+};
 
 export async function requireSiteContext(siteSlug: string): Promise<SiteContext> {
   const site = await getSiteBySlug(siteSlug);
@@ -37,7 +45,7 @@ export async function requireContentPermission(
 export async function requirePublicFeature(
   siteSlug: string,
   featureKey: string,
-): Promise<{ site: Site; feature: SiteFeature & { feature: FeatureDefinition } }> {
+): Promise<PublicFeatureContext> {
   const site = await getSiteBySlug(siteSlug);
   if (!site || site.status === 'archived') notFound();
 
@@ -52,7 +60,7 @@ export async function requirePublicFeature(
     if (!isGlobalAdmin && !isSiteMember) redirect('/403');
   }
 
-  return { site, feature };
+  return { site, feature, publishedWhere: PUBLISHED_CONTENT_WHERE };
 }
 
 export function canPerformContentAction(role: SiteRole, action: ContentAction): boolean {

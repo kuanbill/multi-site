@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { SiteContext } from './contentAccess';
 
 const mkdir = vi.hoisted(() => vi.fn());
 const writeFile = vi.hoisted(() => vi.fn());
@@ -11,6 +12,8 @@ vi.mock('node:crypto', () => ({ randomUUID }));
 vi.mock('./prisma', () => ({ prisma: { media: { create } } }));
 
 import { saveMedia } from './media';
+
+const siteContext = { site: { id: 7 } } as SiteContext;
 
 describe('media storage', () => {
   beforeEach(() => {
@@ -26,7 +29,7 @@ describe('media storage', () => {
   it('stores media with a generated filename and metadata', async () => {
     const file = new File(['pdf bytes'], '../../client-name.pdf', { type: 'application/pdf' });
 
-    await expect(saveMedia(7, file, '會議紀錄')).resolves.toEqual({ id: 11 });
+    await expect(saveMedia(siteContext, file, '會議紀錄')).resolves.toEqual({ id: 11 });
     expect(mkdir).toHaveBeenCalledWith('test-uploads', { recursive: true });
     expect(writeFile).toHaveBeenCalledWith(
       expect.stringContaining('stored-media-id.pdf'),
@@ -50,7 +53,7 @@ describe('media storage', () => {
   it('removes the written file when media persistence fails', async () => {
     create.mockRejectedValue(new Error('database failure'));
 
-    await expect(saveMedia(7, new File(['image'], 'hero.png', { type: 'image/png' }))).rejects.toThrow(
+    await expect(saveMedia(siteContext, new File(['image'], 'hero.png', { type: 'image/png' }))).rejects.toThrow(
       'database failure',
     );
     expect(unlink).toHaveBeenCalledWith(expect.stringContaining('stored-media-id.png'));

@@ -18,6 +18,16 @@ const ASSET_EXTENSIONS: Record<string, string> = {
   'image/webp': 'webp',
 };
 
+const ASSET_FILE_EXTENSIONS: Record<string, readonly string[]> = {
+  'application/pdf': ['pdf'],
+  'image/avif': ['avif'],
+  'image/gif': ['gif'],
+  'image/jpeg': ['jpg', 'jpeg'],
+  'image/png': ['png'],
+  'image/svg+xml': ['svg'],
+  'image/webp': ['webp'],
+};
+
 const FIELD_LABELS: Record<string, string> = {
   name: '名稱',
   title: '標題',
@@ -31,11 +41,11 @@ export function parseContentStatus(value: unknown): ContentStatus {
 }
 
 export function validateSlug(value: unknown): string {
-  if (typeof value !== 'string') throw new Error('slug 不得為空');
+  if (typeof value !== 'string') throw new Error('識別碼不得為空');
   const slug = value.trim();
-  if (!slug) throw new Error('slug 不得為空');
+  if (!slug) throw new Error('識別碼不得為空');
   if (!/^[a-z0-9-]+$/.test(slug)) {
-    throw new Error('slug 僅允許小寫英文、數字與連字號');
+    throw new Error('識別碼僅允許小寫英文、數字與連字號');
   }
   return slug;
 }
@@ -90,12 +100,15 @@ export function validateDateRange(
 
 export function validateAsset(file: File): { extension: string; mimeType: string } {
   const mimeType = typeof file?.type === 'string' ? file.type.toLowerCase() : '';
-  if (!mimeType.startsWith('image/') && mimeType !== 'application/pdf') {
+  const extension = ASSET_EXTENSIONS[mimeType];
+  const filenameExtension = extensionFromFilename(file?.name);
+  if (!extension) {
     throw new Error('檔案僅允許圖片或 PDF');
   }
+  if (!ASSET_FILE_EXTENSIONS[mimeType].includes(filenameExtension)) {
+    throw new Error('檔案副檔名與類型不符');
+  }
 
-  const extension = ASSET_EXTENSIONS[mimeType] ?? mimeType.slice('image/'.length).replace(/[^a-z0-9]/g, '');
-  if (!extension) throw new Error('檔案缺少有效副檔名');
   return { extension, mimeType };
 }
 
@@ -104,4 +117,9 @@ function parseOptionalDate(value: unknown, label: string): Date | null {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
   if (Number.isNaN(date.getTime())) throw new Error(`${label}格式無效`);
   return date;
+}
+
+function extensionFromFilename(filename: string | undefined): string {
+  const match = filename ? /\.([a-z0-9]+)$/i.exec(filename) : null;
+  return match?.[1].toLowerCase() ?? '';
 }
