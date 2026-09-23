@@ -94,7 +94,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   }
 
   let memberAuthorized = false;
-  if (!hasPublicPublishedReference && hasMemberPublishedReference) {
+  // A shared asset is protected if any published member-only feature references it.
+  if (hasMemberPublishedReference) {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.redirect(new URL(`/${media.site.slug}/login`, _request.url));
     memberAuthorized = session.user.role === 'admin' || Boolean(await prisma.siteUser.findFirst({

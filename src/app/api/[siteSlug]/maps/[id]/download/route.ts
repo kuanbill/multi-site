@@ -12,6 +12,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sit
   const media = item.downloadMedia; const uploadDir = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'data', 'uploads');
   try {
     const body = await readFile(path.join(uploadDir, path.basename(media.filename)));
-    return new NextResponse(body, { headers: { 'Content-Type': media.mimeType ?? 'application/octet-stream', 'Content-Disposition': `attachment; filename="${path.basename(media.filename)}"`, 'X-Content-Type-Options': 'nosniff' } });
+    return new NextResponse(body, { headers: { 'Content-Type': media.mimeType ?? 'application/octet-stream', 'Content-Disposition': `attachment; filename="${path.basename(media.filename)}"`, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store' } });
   } catch { return NextResponse.json({ error: '檔案不存在' }, { status: 404 }); }
 }
