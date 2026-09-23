@@ -16,11 +16,31 @@ export async function getEnabledFeatures(siteId: number) {
     include: { feature: true },
     orderBy: { sortOrder: 'asc' },
   });
-  return rows.map((r) => r.feature);
+  return rows.map((r) => ({
+    ...r.feature,
+    enabled: r.enabled,
+    sortOrder: r.sortOrder,
+    visibility: r.visibility,
+  }));
+}
+
+export function getPublicNavigationFeatures<T extends { enabled: boolean; sortOrder: number }>(features: T[]) {
+  return features.filter((feature) => feature.enabled).sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export async function getSiteFeatures(siteId: number) {
-  return getEnabledFeatures(siteId);
+  return prisma.siteFeature.findMany({
+    where: { siteId },
+    include: { feature: true },
+    orderBy: { sortOrder: 'asc' },
+  });
+}
+
+export async function getSiteFeature(siteId: number, featureKey: string) {
+  return prisma.siteFeature.findFirst({
+    where: { siteId, feature: { key: featureKey } },
+    include: { feature: true },
+  });
 }
 
 export async function isFeatureEnabled(siteId: number, featureKey: string) {

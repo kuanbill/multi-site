@@ -30,6 +30,15 @@ model Site {
   posts        Post[]
   media        Media[]
   siteFeatures SiteFeature[]
+  home         SiteHome?
+  announcements Announcement[]
+  progressItems ProgressItem[]
+  exhibitions Exhibition[]
+  meetings     MeetingRecord[]
+  vendors      Vendor[]
+  selection    SelectionInfo?
+  maps         MapAsset[]
+  attachments  ContentAttachment[]
 }
 
 model FeatureDefinition {
@@ -52,6 +61,7 @@ model SiteFeature {
   enabled     Boolean           @default(true)
   sortOrder   Int               @default(0)
   displayMode String            @default("list")
+  visibility  String            @default("public")
   site        Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
   feature     FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
@@ -103,6 +113,183 @@ model Media {
   filename  String
   url       String
   type      String
+  mimeType  String?
+  sizeBytes Int?
+  altText   String?
   createdAt DateTime @default(now())
   site      Site     @relation(fields: [siteId], references: [id])
+  attachments ContentAttachment[]
+  homeHero   SiteHome[] @relation("SiteHomeHeroMedia")
+  vendorLogos Vendor[] @relation("VendorLogoMedia")
+  mapImages MapAsset[] @relation("MapImageMedia")
+  mapDownloads MapAsset[] @relation("MapDownloadMedia")
+}
+
+model SiteHome {
+  id             Int      @id @default(autoincrement())
+  siteId         Int      @unique
+  tagline        String?
+  intro          String?
+  heroMediaId    Int?
+  currentStage   String?
+  contactName    String?
+  contactPhone   String?
+  contactEmail   String?
+  contactAddress String?
+  updatedAt      DateTime @updatedAt
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  heroMedia      Media?   @relation("SiteHomeHeroMedia", fields: [heroMediaId], references: [id], onDelete: SetNull)
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  siteId      Int
+  title       String
+  slug        String
+  summary     String?
+  content     String?
+  category    String?
+  pinned      Boolean  @default(false)
+  status      String   @default("draft")
+  publishedAt DateTime?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, slug])
+  @@index([siteId])
+}
+
+model ProgressItem {
+  id             Int      @id @default(autoincrement())
+  siteId         Int
+  stageDate      DateTime
+  stageLabel     String
+  title          String
+  summary        String?
+  content        String?
+  progressStatus String
+  status         String   @default("draft")
+  sortOrder      Int      @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+}
+
+model Exhibition {
+  id              Int      @id @default(autoincrement())
+  siteId          Int
+  title           String
+  slug            String
+  startDate       DateTime?
+  endDate         DateTime?
+  location        String?
+  description     String?
+  feedbackSummary String?
+  status          String   @default("draft")
+  sortOrder       Int      @default(0)
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  site            Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, slug])
+  @@index([siteId])
+}
+
+model MeetingRecord {
+  id          Int      @id @default(autoincrement())
+  siteId      Int
+  meetingType String
+  meetingNo   String?
+  title       String
+  meetingDate DateTime
+  summary     String?
+  status      String   @default("draft")
+  sortOrder   Int      @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  site        Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+}
+
+model Vendor {
+  id           Int      @id @default(autoincrement())
+  siteId       Int
+  name         String
+  category     String
+  summary      String?
+  description  String?
+  services     String?
+  contactName  String?
+  contactPhone String?
+  contactEmail String?
+  logoMediaId  Int?
+  status       String   @default("draft")
+  sortOrder    Int      @default(0)
+  publishedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  site         Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  logoMedia    Media?   @relation("VendorLogoMedia", fields: [logoMediaId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+}
+
+model SelectionInfo {
+  id             Int      @id @default(autoincrement())
+  siteId         Int      @unique
+  title          String
+  description    String?
+  applicableStage String?
+  rules          String?
+  notice         String?
+  deadline       DateTime?
+  externalUrl    String?
+  status         String   @default("draft")
+  publishedAt    DateTime?
+  updatedAt      DateTime @updatedAt
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+}
+
+model MapAsset {
+  id             Int      @id @default(autoincrement())
+  siteId         Int
+  title          String
+  category       String?
+  description    String?
+  imageMediaId   Int?
+  downloadMediaId Int?
+  status         String   @default("draft")
+  sortOrder      Int      @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  imageMedia     Media?   @relation("MapImageMedia", fields: [imageMediaId], references: [id], onDelete: SetNull)
+  downloadMedia  Media?   @relation("MapDownloadMedia", fields: [downloadMediaId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+}
+
+model ContentAttachment {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  mediaId   Int
+  ownerType String
+  ownerId   Int
+  label     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+  @@index([ownerType, ownerId])
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { buildNewSiteFeatureSettings } from '@/lib/seedDefaults'
 
 export async function GET() {
   const sites = await prisma.site.findMany({
@@ -40,11 +41,10 @@ export async function POST(req: Request) {
 
     // 自動為新站建立功能啟用
     const defs = await prisma.featureDefinition.findMany()
-    for (let i = 0; i < defs.length; i++) {
-      const def = defs[i]
-      const enabled = ['pages', 'posts', 'media'].includes(def.key)
+    const settings = buildNewSiteFeatureSettings(defs)
+    for (const setting of settings) {
       await prisma.siteFeature.create({
-        data: { siteId: site.id, featureId: def.id, enabled, sortOrder: i }
+        data: { siteId: site.id, ...setting }
       })
     }
 

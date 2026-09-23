@@ -12,9 +12,18 @@ interface Item {
   enabled: boolean;
   sortOrder: number;
   displayMode: string;
+  visibility: 'public' | 'members';
 }
 
-export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: string; initial: Item[] }) {
+export default function SiteFeatureClient({
+  siteSlug,
+  initial,
+  canManageSettings,
+}: {
+  siteSlug: string;
+  initial: Item[];
+  canManageSettings: boolean;
+}) {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>(() => [...initial].sort((a, b) => a.sortOrder - b.sortOrder));
   const [saving, setSaving] = useState(false);
@@ -32,6 +41,10 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
     setItems(items.map((it) => (it.id === id ? { ...it, displayMode: mode } : it)));
   }
 
+  function changeVisibility(id: number, visibility: Item['visibility']) {
+    setItems(items.map((it) => (it.id === id ? { ...it, visibility } : it)));
+  }
+
   async function save() {
     setSaving(true);
     setMsg('');
@@ -39,7 +52,13 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        features: items.map((it) => ({ featureId: it.id, enabled: it.enabled, sortOrder: it.sortOrder, displayMode: it.displayMode })),
+        features: items.map((it) => ({
+          featureId: it.id,
+          enabled: it.enabled,
+          sortOrder: it.sortOrder,
+          displayMode: it.displayMode,
+          visibility: it.visibility,
+        })),
       }),
     });
     if (res.ok) {
@@ -54,6 +73,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
+      {!canManageSettings && <p className="mb-4 text-sm text-amber-700">您只有檢視權限，請聯絡站點管理員修改功能設定。</p>}
       <table className="w-full mb-4">
         <thead className="bg-gray-50">
           <tr>
@@ -61,6 +81,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
             <th className="px-4 py-2 text-left text-sm">名稱</th>
             <th className="px-4 py-2 text-left text-sm">路徑</th>
             <th className="px-4 py-2 text-left text-sm">顯示</th>
+            <th className="px-4 py-2 text-left text-sm">前台可見性</th>
             <th className="px-4 py-2 text-left text-sm">排序</th>
           </tr>
         </thead>
@@ -68,23 +89,35 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
           {items.map((it) => (
             <tr key={it.id}>
               <td className="px-4 py-2">
-                <input type="checkbox" checked={it.enabled} onChange={() => toggle(it.id)} />
+                <input type="checkbox" checked={it.enabled} disabled={!canManageSettings} onChange={() => toggle(it.id)} />
               </td>
               <td className="px-4 py-2">
                 {it.icon} {it.label} <span className="text-gray-400 text-xs">({it.key})</span>
               </td>
               <td className="px-4 py-2 text-gray-500">{it.path}</td>
-              <td className="px-4 py-2">
-                <select value={it.displayMode} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm">
+               <td className="px-4 py-2">
+                  <select value={it.displayMode} disabled={!canManageSettings} onChange={(e) => changeDisplayMode(it.id, e.target.value)} className="px-2 py-1 border rounded text-sm disabled:bg-gray-100">
                   <option value="list">條列</option>
                   <option value="card">卡片</option>
                   <option value="grid">網格</option>
+                 </select>
+               </td>
+              <td className="px-4 py-2">
+                <select
+                  value={it.visibility}
+                   disabled={!canManageSettings}
+                  onChange={(e) => changeVisibility(it.id, e.target.value as Item['visibility'])}
+                  className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
+                >
+                  <option value="public">公開</option>
+                  <option value="members">僅限成員</option>
                 </select>
               </td>
               <td className="px-4 py-2">
                 <input
                   type="number"
                   value={it.sortOrder}
+                  disabled={!canManageSettings}
                   onChange={(e) => changeOrder(it.id, parseInt(e.target.value) || 0)}
                   className="w-20 px-2 py-1 border rounded"
                 />
@@ -95,7 +128,7 @@ export default function SiteFeatureClient({ siteSlug, initial }: { siteSlug: str
       </table>
       <button
         onClick={save}
-        disabled={saving}
+        disabled={saving || !canManageSettings}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
       >
         {saving ? '儲存中...' : '儲存'}
