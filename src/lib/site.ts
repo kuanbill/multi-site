@@ -16,11 +16,15 @@ export async function getEnabledFeatures(siteId: number) {
     include: { feature: true },
     orderBy: { sortOrder: 'asc' },
   });
-  return rows.map((r) => r.feature);
+  return rows.map((r) => ({ ...r.feature, visibility: r.visibility }));
 }
 
 export async function getSiteFeatures(siteId: number) {
-  return getEnabledFeatures(siteId);
+  return prisma.siteFeature.findMany({
+    where: { siteId },
+    include: { feature: true },
+    orderBy: { sortOrder: 'asc' },
+  });
 }
 
 export async function isFeatureEnabled(siteId: number, featureKey: string) {
