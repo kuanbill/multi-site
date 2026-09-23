@@ -43,6 +43,7 @@ export default async function PublicSitePage({
         {home?.tagline && <p className="text-lg text-blue-600 mt-2">{home.tagline}</p>}
         {home?.intro && <p className="text-gray-700 mt-4 whitespace-pre-wrap">{home.intro}</p>}
         {home?.heroMedia?.url && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={home.heroMedia.url} alt={site.name} className="mt-4 max-h-64 object-cover rounded" />
         )}
         {home?.currentStage && (

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { requireContentPermission } from '@/lib/contentAccess';
+import { canPerformContentAction, requireContentPermission } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
 import ProgressForm from './ProgressForm';
 import DeleteProgressButton from './DeleteButton';
@@ -51,7 +51,7 @@ export default async function ProgressListPage({ params }: { params: Promise<{ s
     orderBy: [{ stageDate: 'asc' }, { sortOrder: 'asc' }],
   });
 
-  const canWrite = context.siteRole === 'admin' || context.siteRole === 'editor' || context.siteRole === 'global-admin';
+  const canWrite = canPerformContentAction(context.siteRole, 'write');
 
   return (
     <div>

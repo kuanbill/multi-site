@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateRequiredText, validateSlug } from '@/lib/contentValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
@@ -13,7 +13,7 @@ function parseId(value: string): number | null {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug, id } = await params;
-  const context = await requireSiteContext(siteSlug);
+  const context = await requireContentPermission(siteSlug, 'read');
   const announcementId = parseId(id);
   if (announcementId === null) {
     return NextResponse.json({ error: '參數錯誤' }, { status: 400 });

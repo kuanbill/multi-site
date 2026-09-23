@@ -1,19 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateRequiredText, validateSlug } from '@/lib/contentValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
-  const context = await requireSiteContext(siteSlug);
-  // read permission check via site context; any site member can read
-  if (context.siteRole === 'viewer' || context.siteRole === 'editor' || context.siteRole === 'admin' || context.siteRole === 'global-admin') {
-    // allowed
-  } else {
-    // requireSiteContext already ensures membership
-  }
+  const context = await requireContentPermission(siteSlug, 'read');
 
   const items = await prisma.announcement.findMany({
     where: { siteId: context.site.id },

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateProgressStatus, validateRequiredText } from '@/lib/contentValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
@@ -14,7 +14,7 @@ function parseStageDate(value: unknown): Date {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
-  const context = await requireSiteContext(siteSlug);
+  const context = await requireContentPermission(siteSlug, 'read');
   const items = await prisma.progressItem.findMany({
     where: { siteId: context.site.id },
     orderBy: [{ stageDate: 'asc' }, { sortOrder: 'asc' }, { updatedAt: 'desc' }],
