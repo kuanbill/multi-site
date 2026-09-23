@@ -138,6 +138,7 @@ export function validateDateRange(
 }
 
 export function validateAsset(file: File): { extension: string; mimeType: string } {
+  if (file.size > 10 * 1024 * 1024) throw new Error('檔案大小不可超過 10 MB');
   const mimeType = typeof file?.type === 'string' ? file.type.toLowerCase() : '';
   const extension = ASSET_EXTENSIONS[mimeType];
   if (!extension) {

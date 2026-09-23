@@ -71,6 +71,11 @@ describe('content validation', () => {
     });
   });
 
+  it('rejects assets larger than the upload limit', () => {
+    const tooLarge = new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'large.png', { type: 'image/png' });
+    expect(() => validateAsset(tooLarge)).toThrow('大小');
+  });
+
   it('validates editable homepage fields without accepting site ownership fields', () => {
     expect(
       validateSiteHomeInput({
