@@ -7,9 +7,12 @@
 - 使用電子郵件與密碼註冊、登入，並保護後台頁面。
 - 儀表板顯示子網站、使用者及文章數量。
 - 子網站管理：建立、編輯、刪除子網站，並管理名稱、網址代稱與描述。
-- 使用者管理：查看使用者及切換 `admin` / `editor` 角色。
+- **子路徑多租戶**：每個專案獨立子路徑 `ur.landagent.com.tw/{專案名}/`，前台公開、後台在 `/{專案名}/admin`，資料與權限依站隔離。
+- **站點獨立帳號**：帳號歸屬單一專案（一人一站，管理員除外），站點登入位於 `/{專案名}/login`，全域 `admin` 可跨站管理。
+- **可插拔功能選單**：全域在 `/admin/features` 增訂功能，站點在 `/{專案名}/admin/settings/features` 勾選啟用並排序；前台導覽與後台 Sidebar 按啟用動態渲染。
+- **公開前台**：`/{專案名}/` 首頁、`/{專案名}/pages/{pageSlug}`、`/{專案名}/posts/{postSlug}` 免登入瀏覽，草稿僅預覽可見，未啟用功能回 404。
+- 使用者管理：查看使用者及切換 `admin` / `editor` 角色（全域），站點成員在 `/{專案名}/admin/users` 邀請/移除。
 - 已建立頁面、文章與媒體的資料模型，以及頁面與文章的列表/API 基礎。
-- 頁面與文章的編輯路由、媒體上傳目前尚未完成，請勿視為已交付功能。
 
 ## 環境需求
 
@@ -57,6 +60,13 @@ npx tsc --noEmit
 npm run lint
 npm run build
 ```
+
+## 子路徑與功能選單
+
+- 前台：`http://localhost:3000/{slug}/`、`/{slug}/pages/{pageSlug}`、`/{slug}/posts/{postSlug}`，訪客免登入；`?preview=1` 需站成員。
+- 後台：`/{slug}/admin` 需該站成員或全域 `admin`；`/{slug}/admin/users` 邀請站成員，`/{slug}/admin/settings/features` 設定啟用功能。
+- 全域功能目錄：`/admin/features`（僅 `admin`）新增 `名稱/圖示/路徑`，站點啟用後即在前台導覽與後台側欄出現。
+- 新增專案後自動建立預設功能（pages/posts/media 啟用，faq/timeline/contact 待啟用）。
 
 ## Docker 部署
 

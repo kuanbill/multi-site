@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
+import type { Site } from '@prisma/client';
 
-const siteCache = new Map<string, any>();
+const siteCache = new Map<string, Site>();
 
 export async function getSiteBySlug(slug: string) {
   if (siteCache.has(slug)) return siteCache.get(slug);
