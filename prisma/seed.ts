@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { hash } from 'bcryptjs'
 import { CONTENT_FEATURES } from '../src/lib/features'
+import { buildFeatureDefinitionUpsert, mergeSeedSites } from '../src/lib/seedDefaults'
 
 const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
@@ -57,24 +58,9 @@ async function main() {
 
   // 建立子網站內容功能定義；舊功能定義保留在資料庫中供相容路由使用。
   for (const def of CONTENT_FEATURES) {
-    await prisma.featureDefinition.upsert({
-      where: { key: def.key },
-      update: {
-        label: def.label,
-        icon: def.icon,
-        path: def.path,
-        isSystem: def.isSystem,
-      },
-      create: {
-        key: def.key,
-        label: def.label,
-        icon: def.icon,
-        path: def.path,
-        isSystem: def.isSystem,
-      },
-    });
+    await prisma.featureDefinition.upsert(buildFeatureDefinitionUpsert(def));
   }
-  const sites = [site1, site2];
+  const sites = mergeSeedSites([site1, site2], await prisma.site.findMany());
   for (const site of sites) {
     await prisma.siteHome.upsert({
       where: { siteId: site.id },
