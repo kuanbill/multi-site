@@ -1,14 +1,8 @@
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import { authOptions } from './auth';
+import { requireSiteContext } from './contentAccess';
 import { prisma } from './prisma';
 
 export async function requireSiteAccess(siteSlug: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect(`/${siteSlug}/login`);
-  if (session.user.role === 'admin') return session;
-  const has = session.user.siteRoles?.some((r) => r.slug === siteSlug);
-  if (!has) redirect('/403');
+  const { session } = await requireSiteContext(siteSlug);
   return session;
 }
 

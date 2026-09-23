@@ -27,6 +27,13 @@ export async function getSiteFeatures(siteId: number) {
   });
 }
 
+export async function getSiteFeature(siteId: number, featureKey: string) {
+  return prisma.siteFeature.findFirst({
+    where: { siteId, feature: { key: featureKey } },
+    include: { feature: true },
+  });
+}
+
 export async function isFeatureEnabled(siteId: number, featureKey: string) {
   const row = await prisma.siteFeature.findFirst({
     where: { siteId, feature: { key: featureKey } },
