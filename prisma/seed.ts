@@ -54,6 +54,36 @@ async function main() {
     }
   })
 
+  // 建立功能定義
+  const featureDefs = [
+    { key: 'pages', label: '頁面管理', icon: '📄', path: 'pages', description: '靜態頁面', isSystem: true },
+    { key: 'posts', label: '文章/公告', icon: '📝', path: 'posts', description: '新聞與公告', isSystem: true },
+    { key: 'media', label: '媒體庫', icon: '🖼️', path: 'media', description: '圖片與檔案', isSystem: true },
+    { key: 'faq', label: '常見問題', icon: '❓', path: 'faq', description: '常見問題', isSystem: false },
+    { key: 'timeline', label: '時程進度', icon: '📅', path: 'timeline', description: '專案時程', isSystem: false },
+    { key: 'contact', label: '聯絡表單', icon: '✉️', path: 'contact', description: '聯絡我們', isSystem: false },
+  ];
+  for (const def of featureDefs) {
+    await prisma.featureDefinition.upsert({
+      where: { key: def.key },
+      update: {},
+      create: def,
+    });
+  }
+  const allDefs = await prisma.featureDefinition.findMany();
+  const sites = [site1, site2];
+  for (const site of sites) {
+    for (let i = 0; i < allDefs.length; i++) {
+      const def = allDefs[i];
+      const enabled = ['pages', 'posts', 'media'].includes(def.key);
+      await prisma.siteFeature.upsert({
+        where: { siteId_featureId: { siteId: site.id, featureId: def.id } },
+        update: {},
+        create: { siteId: site.id, featureId: def.id, enabled, sortOrder: i },
+      });
+    }
+  }
+
   // 清除並重建關聯資料
   await prisma.siteUser.deleteMany()
   await prisma.siteUser.createMany({

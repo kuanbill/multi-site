@@ -18,16 +18,42 @@ model User {
 }
 
 model Site {
-  id          Int      @id @default(autoincrement())
-  name        String
-  slug        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  users       SiteUser[]
-  pages       Page[]
-  posts       Post[]
-  media       Media[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  slug         String        @unique
+  description  String?
+  status       String        @default("active")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        SiteUser[]
+  pages        Page[]
+  posts        Post[]
+  media        Media[]
+  siteFeatures SiteFeature[]
+}
+
+model FeatureDefinition {
+  id           Int           @id @default(autoincrement())
+  key          String        @unique
+  label        String
+  icon         String?
+  path         String
+  description  String?
+  isSystem     Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  siteFeatures SiteFeature[]
+}
+
+model SiteFeature {
+  id        Int               @id @default(autoincrement())
+  siteId    Int
+  featureId Int
+  enabled   Boolean           @default(true)
+  sortOrder Int               @default(0)
+  site      Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  feature   FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, featureId])
 }
 
 model SiteUser {
