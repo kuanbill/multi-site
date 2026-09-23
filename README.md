@@ -78,7 +78,7 @@ npm run build
 
 新增的站點內容（公告、進度、展覽、會議、廠商、選配資訊及圖資）狀態為「草稿」、「已發布」或「已封存」；公開頁面只會顯示已發布內容。正式選配目前僅提供資訊公告，不包含線上選屋、志願填報或抽籤流程，請勿將其視為正式選配作業系統。
 
-媒體上傳上限為 10 MB，僅允許 PDF（`application/pdf`）及 AVIF、GIF、JPEG、PNG、SVG、WebP 圖片（`image/avif`、`image/gif`、`image/jpeg`、`image/png`、`image/svg+xml`、`image/webp`）。檔案預設儲存於專案的 `data/uploads/`，可用 `UPLOAD_DIR` 指定其他目錄；上傳記錄與所屬站點、內容的關聯保存在資料庫。
+媒體上傳上限為 10 MB，僅允許 PDF（`application/pdf`）及 AVIF、GIF、JPEG、PNG、WebP 圖片（`image/avif`、`image/gif`、`image/jpeg`、`image/png`、`image/webp`）。不接受 SVG，以避免同源可執行內容。檔案預設儲存於專案的 `data/uploads/`，可用 `UPLOAD_DIR` 指定其他目錄；上傳記錄與所屬站點、內容的關聯保存在資料庫。
 
 ## 子路徑與功能選單
 

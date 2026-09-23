@@ -58,6 +58,7 @@ describe('content validation', () => {
       mimeType: 'application/pdf',
     });
     expect(() => validateAsset(new File(['script'], 'script.js', { type: 'text/javascript' }))).toThrow('檔案');
+    expect(() => validateAsset(new File(['svg'], 'image.svg', { type: 'image/svg+xml' }))).toThrow('檔案');
   });
 
   it('derives safe extensions from MIME types regardless of client filename', () => {
