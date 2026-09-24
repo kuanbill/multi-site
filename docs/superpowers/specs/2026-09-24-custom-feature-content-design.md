@@ -16,7 +16,9 @@
 - 專案已有站點媒體上傳及媒體可見性檢查；尚未支援 YouTube 連結嵌入。
 - 採用獨立 `FeatureEntry` 模型，不將媒體欄位加入一般 `Page` 模型。
 - 內容類型屬於每筆資料，不屬於功能定義；同一自訂功能可混合文字、YouTube 與圖片資料。
-- 資料無草稿狀態；建立或修改後立即依功能可見性呈現。
+- FeatureEntry 資料無草稿狀態；建立或修改後立即依功能可見性呈現。舊 Post 保留既有 `published` 狀態與前台過濾行為。
+- 若舊資料庫仍有 `pages`／`posts` 功能定義，管理頁繼續使用既有 `Page`／`Post` 模型與前台 route；自訂的其他功能使用 `FeatureEntry`。不搬遷舊資料。
+- 舊 `pages`／`posts` 功能的路徑是靜態 route 保留值，不允許在功能設定中更改路徑；可修改顯示名稱、圖示與說明。
 
 ## 3. 資料模型
 
@@ -63,6 +65,9 @@ updatedAt   DateTime
 - 圖片資料使用現有站點上傳 API，選擇圖片後建立媒體關聯；替代文字沿用 Media metadata。
 - 刪除單筆資料前顯示確認。
 - 內容查詢與寫入必須同時限定 siteId 與 featureId。
+- `feature.key=pages` 時使用既有 `Page` CRUD；`feature.key=posts` 時使用既有 `Post` CRUD，確保舊資料仍可編輯並沿用既有前台列表／詳細頁。
+
+Pages/Posts 的欄位與前台行為維持原有模型：Page 使用 title/slug/content 並立即顯示；Post 使用 title/slug/content/published，只有 `published=true` 顯示於前台。兩者都必須依本站權限進行 create/read/update/delete，且所有查詢均限定本站 `siteId`。
 
 建議頁面路徑：
 
@@ -78,6 +83,7 @@ updatedAt   DateTime
 
 - 全域刪除確認訊息需明確告知：將刪除功能及所有子網站該功能的資料。
 - 後端刪除 FeatureDefinition；FeatureEntry 透過資料庫關聯 cascade 一併刪除。
+- 若刪除舊 `pages`／`posts` 功能，透過 feature key 判斷並一併刪除所有子網站對應的 Page/Post records；確認訊息明確提及舊資料也會清除。
 - 停用功能不刪除內容；重新啟用後仍可管理既有資料。
 
 ## 5. 前台與媒體呈現
@@ -117,6 +123,7 @@ updatedAt   DateTime
 - Viewer 可瀏覽後台資料清單，但不可新增、修改或刪除。
 - 每個管理頁與 API 以現有 `requireContentPermission` 驗證站點與角色，並另外確認功能存在且已啟用。
 - 前台依 `requirePublicFeature` 驗證站點、功能啟用及公開／成員可見性。
+- 舊 Page/Post API 需使用相同站點／角色檢查；編輯與刪除必須同時以 siteId、record id 限定。
 
 ### 6.2 API
 
@@ -128,7 +135,13 @@ POST   /api/{siteSlug}/admin/feature-entries/{featurePath}
 GET    /api/{siteSlug}/admin/feature-entries/{featurePath}/{entryId}
 PATCH  /api/{siteSlug}/admin/feature-entries/{featurePath}/{entryId}
 DELETE /api/{siteSlug}/admin/feature-entries/{featurePath}/{entryId}
+PATCH  /api/{siteSlug}/admin/pages/{id}
+DELETE /api/{siteSlug}/admin/pages/{id}
+PATCH  /api/{siteSlug}/admin/posts/{id}
+DELETE /api/{siteSlug}/admin/posts/{id}
 ```
+
+既有 `GET/POST /api/{siteSlug}/admin/pages` 與 `GET/POST /api/{siteSlug}/admin/posts` 也須統一使用站點角色權限檢查；新增的 item routes 提供 update/delete。
 
 ### 6.3 驗證與錯誤
 
@@ -145,6 +158,8 @@ DELETE /api/{siteSlug}/admin/feature-entries/{featurePath}/{entryId}
 
 - 側欄顯示所有已啟用功能並遵守排序；停用功能不顯示。
 - 系統功能仍進入既有專屬管理頁，自訂功能可進入通用 CRUD 頁。
+- 舊 `pages`／`posts` 功能若存在，管理頁使用原 Page/Post records；既有公開 Page/Post 路由與資料不變，編輯與刪除只能操作本站 records。
+- `pages`／`posts` 功能路徑不允許修改；刪除功能時一併清除對應的所有子網站 Page/Post records。
 - 可建立、列表、修改與刪除文字、YouTube 與圖片資料。
 - 前台列表與詳情呈現正確，並遵守 list/card/grid 設定。
 - YouTube 網址驗證拒絕偽造網域及非法影片 ID。
