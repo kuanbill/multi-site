@@ -23,13 +23,14 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
       if (!media) throw new Error('NOT_FOUND');
       filePath = path.join(uploadDir, path.basename(media.filename));
 
-      const [attachment, home, vendor, map] = await Promise.all([
+      const [attachment, home, vendor, map, featureEntry] = await Promise.all([
         tx.contentAttachment.findFirst({ where: { mediaId, siteId: context.site.id }, select: { id: true } }),
         tx.siteHome.findFirst({ where: { heroMediaId: mediaId, siteId: context.site.id }, select: { id: true } }),
         tx.vendor.findFirst({ where: { logoMediaId: mediaId, siteId: context.site.id }, select: { id: true } }),
         tx.mapAsset.findFirst({ where: { OR: [{ imageMediaId: mediaId }, { downloadMediaId: mediaId }], siteId: context.site.id }, select: { id: true } }),
+        tx.featureEntry.findFirst({ where: { siteId: context.site.id, mediaId }, select: { id: true } }),
       ]);
-      if (attachment || home || vendor || map) throw new Error('REFERENCED');
+      if (attachment || home || vendor || map || featureEntry) throw new Error('REFERENCED');
       await tx.media.delete({ where: { id: mediaId } });
     });
   } catch (error) {

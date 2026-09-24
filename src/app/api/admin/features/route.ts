@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
+import { isReservedFeaturePath } from '@/lib/featureEntryValidation';
 
 export async function GET() {
   if (!(await getAdminSession())) {
@@ -28,6 +29,9 @@ export async function POST(req: Request) {
     }
     if (!/^[a-z0-9_-]+$/.test(path)) {
       return NextResponse.json({ error: '路徑僅允許小寫英文、數字、底線與連字號' }, { status: 400 });
+    }
+    if (isReservedFeaturePath(path)) {
+      return NextResponse.json({ error: '此路徑為系統保留，請更換其他路徑' }, { status: 409 });
     }
 
     const existing = await prisma.featureDefinition.findFirst({

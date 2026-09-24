@@ -55,11 +55,11 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
     router.refresh();
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm('確定刪除？')) return;
-    const res = await fetch(`/api/admin/features/${id}`, { method: 'DELETE' });
+  async function handleDelete(feature: Feature) {
+    if (!confirm(`確定刪除「${feature.label}」？此功能在所有子網站的資料也會一併刪除。`)) return;
+    const res = await fetch(`/api/admin/features/${feature.id}`, { method: 'DELETE' });
     if (res.ok) {
-      setFeatures(features.filter((f) => f.id !== id));
+      setFeatures(features.filter((f) => f.id !== feature.id));
       router.refresh();
     } else {
       const d = await res.json();
@@ -123,7 +123,7 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
                   <button onClick={() => startEdit(f)} className="text-blue-600 hover:underline">
                     修改
                   </button>
-                  <button onClick={() => handleDelete(f.id)} className="text-red-600 hover:underline">
+                  <button onClick={() => handleDelete(f)} className="text-red-600 hover:underline">
                     刪除
                   </button>
                 </td>
@@ -150,8 +150,8 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">路徑 {editing.isSystem && <span className="text-xs text-gray-400">(系統不可改)</span>}</label>
-              <input value={editPath} onChange={(e) => setEditPath(e.target.value)} required disabled={editing.isSystem} className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100" />
+              <label className="block text-sm font-medium mb-1">路徑 {(editing.isSystem || ['pages', 'posts'].includes(editing.key)) && <span className="text-xs text-gray-400">(保留路徑不可改)</span>}</label>
+              <input value={editPath} onChange={(e) => setEditPath(e.target.value)} required disabled={editing.isSystem || ['pages', 'posts'].includes(editing.key)} className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">顯示方式</label>

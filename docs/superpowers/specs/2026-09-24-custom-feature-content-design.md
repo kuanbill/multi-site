@@ -64,7 +64,7 @@ updatedAt   DateTime
 - YouTube 資料呈現標題、可選說明與網址。
 - 圖片資料使用現有站點上傳 API，選擇圖片後建立媒體關聯；替代文字沿用 Media metadata。
 - 刪除單筆資料前顯示確認。
-- 內容查詢與寫入必須同時限定 siteId 與 featureId。
+- FeatureEntry 查詢與寫入必須同時限定 siteId 與 featureId；舊 Page/Post CRUD 使用 siteId 範圍並確認對應 pages/posts 功能已啟用。
 - `feature.key=pages` 時使用既有 `Page` CRUD；`feature.key=posts` 時使用既有 `Post` CRUD，確保舊資料仍可編輯並沿用既有前台列表／詳細頁。
 
 Pages/Posts 的欄位與前台行為維持原有模型：Page 使用 title/slug/content 並立即顯示；Post 使用 title/slug/content/published，只有 `published=true` 顯示於前台。兩者都必須依本站權限進行 create/read/update/delete，且所有查詢均限定本站 `siteId`。

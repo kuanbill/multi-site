@@ -27,7 +27,7 @@ export async function resolveMediaVisibility(siteId: number, mediaId: number): P
     if (visibility === 'members') result.memberReference = true;
   };
 
-  const [home, vendorLogo, mapAsset, attachments] = await Promise.all([
+  const [home, vendorLogo, mapAsset, attachments, featureEntries] = await Promise.all([
     prisma.siteHome.findFirst({ where: { siteId, heroMediaId: mediaId }, select: { id: true } }),
     visibilityByFeature.has('vendors')
       ? prisma.vendor.findFirst({ where: { siteId, logoMediaId: mediaId, status: 'published' }, select: { id: true } })
@@ -42,11 +42,16 @@ export async function resolveMediaVisibility(siteId: number, mediaId: number): P
       where: { siteId, mediaId, ownerType: { in: Object.keys(ATTACHMENT_FEATURES) } },
       select: { ownerType: true, ownerId: true },
     }),
+    prisma.featureEntry.findMany({
+      where: { siteId, mediaId },
+      include: { feature: { select: { key: true } } },
+    }),
   ]);
 
   if (home) result.publicReference = true;
   if (vendorLogo) markFeature('vendors');
   if (mapAsset) markFeature('maps');
+  for (const entry of featureEntries) markFeature(entry.feature.key);
 
   const ownerIds = new Map<AttachmentOwner, number[]>();
   for (const attachment of attachments) {

@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getImplementedAdminFeatures, mergeSiteFeatures } from './features';
+import { getSiteAdminFeatureLinks, mergeSiteFeatures } from './features';
 
 describe('site feature settings', () => {
-  it('only exposes feature links backed by implemented admin pages', () => {
-    expect(getImplementedAdminFeatures([
-      { key: 'announcements', path: 'announcement' },
-      { key: 'posts', path: 'posts' },
-      { key: 'maps', path: 'maps' },
-      { key: 'custom', path: 'custom' },
+  it('creates ordered admin menu links for every enabled system and custom feature', () => {
+    expect(getSiteAdminFeatureLinks('site-a', [
+      { key: 'announcements', path: 'announcement', label: '公告欄', icon: '📢' },
+      { key: 'custom', path: 'faq-center', label: '常見問題', icon: '❓' },
     ])).toEqual([
-      { key: 'announcements', path: 'announcement' },
-      { key: 'maps', path: 'maps' },
+      { href: '/site-a/admin/announcement', label: '公告欄', icon: '📢' },
+      { href: '/site-a/admin/faq-center', label: '常見問題', icon: '❓' },
     ]);
   });
 

@@ -30,6 +30,7 @@ model Site {
   posts        Post[]
   media        Media[]
   siteFeatures SiteFeature[]
+  featureEntries FeatureEntry[]
   home         SiteHome?
   announcements Announcement[]
   progressItems ProgressItem[]
@@ -52,6 +53,7 @@ model FeatureDefinition {
   displayMode  String        @default("list")
   createdAt    DateTime      @default(now())
   siteFeatures SiteFeature[]
+  entries      FeatureEntry[]
 }
 
 model SiteFeature {
@@ -66,6 +68,25 @@ model SiteFeature {
   feature     FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
 
   @@unique([siteId, featureId])
+}
+
+model FeatureEntry {
+  id          Int               @id @default(autoincrement())
+  siteId      Int
+  featureId   Int
+  title       String
+  content     String?
+  contentType String            @default("text")
+  youtubeUrl  String?
+  mediaId     Int?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  site        Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  feature     FeatureDefinition @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  media       Media?            @relation("FeatureEntryMedia", fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@index([siteId, featureId])
+  @@index([mediaId])
 }
 
 model SiteUser {
@@ -123,6 +144,7 @@ model Media {
   vendorLogos Vendor[] @relation("VendorLogoMedia")
   mapImages MapAsset[] @relation("MapImageMedia")
   mapDownloads MapAsset[] @relation("MapDownloadMedia")
+  featureEntryImages FeatureEntry[] @relation("FeatureEntryMedia")
 }
 
 model SiteHome {

@@ -61,4 +61,13 @@ describe('admin feature creation', () => {
     expect(findFirst).not.toHaveBeenCalled();
     expect(create).not.toHaveBeenCalled();
   });
+
+  it('rejects paths reserved by static system routes', async () => {
+    const response = await POST(createRequest({ label: '另一個公告', path: 'announcement' }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: '此路徑為系統保留，請更換其他路徑' });
+    expect(findFirst).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
+  });
 });

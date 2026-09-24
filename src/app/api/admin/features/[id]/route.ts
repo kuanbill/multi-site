@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
+import { isReservedFeaturePath, validateCustomFeaturePath } from '@/lib/featureEntryValidation';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!(await getAdminSession())) return NextResponse.json({ error: '只有管理員可以管理功能' }, { status: 403 });
@@ -21,6 +22,26 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     // 系統功能不允許修改 key/path，僅允許 label/icon/displayMode
     const data: Record<string, unknown> = { label, icon: icon || null, description: description || null, displayMode };
     if (!existing.isSystem) {
+      const isLegacyPageFeature = existing.key === 'pages' || existing.key === 'posts';
+      if (isLegacyPageFeature && path !== existing.path) {
+        return NextResponse.json({ error: 'pages/posts 功能路徑固定不可修改' }, { status: 400 });
+      }
+      if (!isLegacyPageFeature) {
+        try {
+          validateCustomFeaturePath(path);
+        } catch {
+          if (isReservedFeaturePath(path)) {
+            return NextResponse.json({ error: '此路徑為系統保留，請更換其他路徑' }, { status: 409 });
+          }
+          return NextResponse.json({ error: '路徑僅允許小寫英文、數字、底線與連字號' }, { status: 400 });
+        }
+      }
+      const duplicate = await prisma.featureDefinition.findFirst({
+        where: { id: { not: featureId }, OR: [{ key: path }, { path }] },
+        select: { id: true },
+      });
+      if (duplicate) return NextResponse.json({ error: '此路徑已存在，請使用其他路徑' }, { status: 409 });
+      data.key = path;
       data.path = path;
     }
     const updated = await prisma.featureDefinition.update({
@@ -41,8 +62,12 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const existing = await prisma.featureDefinition.findUnique({ where: { id: featureId } });
   if (!existing) return NextResponse.json({ error: '找不到功能' }, { status: 404 });
   try {
-    await prisma.siteFeature.deleteMany({ where: { featureId } });
-    await prisma.featureDefinition.delete({ where: { id: featureId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.siteFeature.deleteMany({ where: { featureId } });
+      if (existing.key === 'pages') await tx.page.deleteMany({ where: {} });
+      if (existing.key === 'posts') await tx.post.deleteMany({ where: {} });
+      await tx.featureDefinition.delete({ where: { id: featureId } });
+    });
     return NextResponse.json({ message: '已刪除' });
   } catch {
     return NextResponse.json({ error: '刪除失敗' }, { status: 500 });
