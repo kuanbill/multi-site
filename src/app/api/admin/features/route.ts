@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
+import { generateFeatureKey } from '@/lib/featureKey';
 
 export async function GET() {
   if (!(await getAdminSession())) {
@@ -27,8 +28,7 @@ export async function POST(req: Request) {
     if (!label || !path) {
       return NextResponse.json({ error: '名稱與路徑為必填' }, { status: 400 });
     }
-    const key = keyRaw || label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-    if (!key) return NextResponse.json({ error: '無法產生 key' }, { status: 400 });
+    const key = keyRaw || generateFeatureKey(label);
     if (!/^[a-z0-9_]+$/.test(key)) return NextResponse.json({ error: 'key 僅允許小寫英文、數字與底線' }, { status: 400 });
 
     const existing = await prisma.featureDefinition.findUnique({ where: { key } });
