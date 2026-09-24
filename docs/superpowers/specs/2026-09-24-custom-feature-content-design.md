@@ -90,7 +90,7 @@ updatedAt   DateTime
 ```
 
 - 清單頁顯示功能名稱、功能說明及該站該功能的資料。
-- 清單顯示遵循 SiteFeature 的 list/card/grid 顯示模式與排序設定。
+- 清單版面遵循 SiteFeature 的 list/card/grid 顯示模式；功能導覽順序遵循 SiteFeature.sortOrder，功能內資料依 createdAt 遞減排序。
 - 點選資料後顯示標題、內文或媒體內容。
 - 只有已啟用功能的資料可由前台直接讀取。
 - 若功能 visibility 為 members，訪客導向站點登入，非站點成員拒絕存取。
