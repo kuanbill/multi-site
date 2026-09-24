@@ -113,7 +113,7 @@ updatedAt   DateTime
 
 ### 6.1 權限
 
-- 全域管理員、該站站點管理員與編輯者可讀寫功能資料。
+- 全域管理員、該站站點管理員與編輯者可讀寫 FeatureEntry，包含建立、修改與刪除單筆資料；FeatureEntry DELETE 沿用 write 權限，使站點編輯者可管理自己建立的資料。
 - Viewer 可瀏覽後台資料清單，但不可新增、修改或刪除。
 - 每個管理頁與 API 以現有 `requireContentPermission` 驗證站點與角色，並另外確認功能存在且已啟用。
 - 前台依 `requirePublicFeature` 驗證站點、功能啟用及公開／成員可見性。
