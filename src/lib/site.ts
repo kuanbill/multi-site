@@ -36,6 +36,13 @@ export async function getSiteFeatures(siteId: number) {
   });
 }
 
+export async function getEnabledFeatureByPath(siteId: number, path: string) {
+  return prisma.siteFeature.findFirst({
+    where: { siteId, enabled: true, feature: { path } },
+    include: { feature: true },
+  })
+}
+
 export async function getSiteFeature(siteId: number, featureKey: string) {
   return prisma.siteFeature.findFirst({
     where: { siteId, feature: { key: featureKey } },

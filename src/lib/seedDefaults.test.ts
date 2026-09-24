@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildFeatureDefinitionUpsert, buildNewSiteFeatureSettings, mergeSeedSites } from './seedDefaults'
+import { buildFeatureDefinitionUpsert, buildNewSiteFeatureSettings, mergeSeedSites, shouldSeedDefaultFeatures } from './seedDefaults'
 
 describe('seed defaults', () => {
   it('enables all default content features and preserves legacy enablement', () => {
@@ -37,6 +37,12 @@ describe('seed defaults', () => {
         isSystem: true,
       },
     })
+  })
+
+  it('only seeds built-in definitions for a fresh database', () => {
+    expect(shouldSeedDefaultFeatures(0, 0)).toBe(true)
+    expect(shouldSeedDefaultFeatures(1, 0)).toBe(false)
+    expect(shouldSeedDefaultFeatures(0, 1)).toBe(false)
   })
 
   it('merges known sample sites with every existing site once', () => {

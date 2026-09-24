@@ -37,9 +37,9 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!(await getAdminSession())) return NextResponse.json({ error: '只有管理員可以管理功能' }, { status: 403 });
   const { id } = await params;
   const featureId = parseInt(id);
+  if (isNaN(featureId)) return NextResponse.json({ error: '無效 id' }, { status: 400 });
   const existing = await prisma.featureDefinition.findUnique({ where: { id: featureId } });
   if (!existing) return NextResponse.json({ error: '找不到功能' }, { status: 404 });
-  if (existing.isSystem) return NextResponse.json({ error: '系統功能不可刪除' }, { status: 403 });
   try {
     await prisma.siteFeature.deleteMany({ where: { featureId } });
     await prisma.featureDefinition.delete({ where: { id: featureId } });

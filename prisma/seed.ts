@@ -3,12 +3,17 @@ import { PrismaClient } from '@prisma/client'
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 import { hash } from 'bcryptjs'
 import { CONTENT_FEATURES } from '../src/lib/features'
-import { buildFeatureDefinitionUpsert, mergeSeedSites } from '../src/lib/seedDefaults'
+import { buildFeatureDefinitionUpsert, mergeSeedSites, shouldSeedDefaultFeatures } from '../src/lib/seedDefaults'
 
 const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! })
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
+  const [existingFeatureCount, existingSiteCount] = await Promise.all([
+    prisma.featureDefinition.count(),
+    prisma.site.count(),
+  ])
+
   // 建立管理員帳號
   const adminPassword = await hash('admin123', 12)
   const admin = await prisma.user.upsert({
@@ -56,9 +61,11 @@ async function main() {
     }
   })
 
-  // 建立子網站內容功能定義；舊功能定義保留在資料庫中供相容路由使用。
-  for (const def of CONTENT_FEATURES) {
-    await prisma.featureDefinition.upsert(buildFeatureDefinitionUpsert(def));
+  // 只在全新資料庫建立預設功能，避免重新 seed 復原已刪除的功能。
+  if (shouldSeedDefaultFeatures(existingFeatureCount, existingSiteCount)) {
+    for (const def of CONTENT_FEATURES) {
+      await prisma.featureDefinition.upsert(buildFeatureDefinitionUpsert(def));
+    }
   }
   const sites = mergeSeedSites([site1, site2], await prisma.site.findMany());
   for (const site of sites) {
@@ -70,7 +77,8 @@ async function main() {
 
     for (let i = 0; i < CONTENT_FEATURES.length; i++) {
       const def = CONTENT_FEATURES[i];
-      const feature = await prisma.featureDefinition.findUniqueOrThrow({ where: { key: def.key } });
+      const feature = await prisma.featureDefinition.findUnique({ where: { key: def.key } });
+      if (!feature) continue;
       await prisma.siteFeature.upsert({
         where: { siteId_featureId: { siteId: site.id, featureId: feature.id } },
         update: {},

@@ -23,6 +23,10 @@ export function buildFeatureDefinitionUpsert(definition: FeatureDefinitionSeed) 
   }
 }
 
+export function shouldSeedDefaultFeatures(existingFeatureCount: number, existingSiteCount: number) {
+  return existingFeatureCount === 0 && existingSiteCount === 0
+}
+
 export function mergeSeedSites<T extends { id: number }>(knownSites: readonly T[], existingSites: readonly T[]) {
   const sites = new Map<number, T>()
   for (const site of [...knownSites, ...existingSites]) {

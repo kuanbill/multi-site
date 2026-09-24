@@ -21,12 +21,14 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
   const [icon, setIcon] = useState('');
   const [path, setPath] = useState('');
   const [displayMode, setDisplayMode] = useState('list');
+  const [description, setDescription] = useState('');
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<Feature | null>(null);
   const [editLabel, setEditLabel] = useState('');
   const [editIcon, setEditIcon] = useState('');
   const [editPath, setEditPath] = useState('');
   const [editDisplayMode, setEditDisplayMode] = useState('list');
+  const [editDescription, setEditDescription] = useState('');
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
     const res = await fetch('/api/admin/features', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label, icon, path, displayMode }),
+      body: JSON.stringify({ label, icon, path, displayMode, description }),
     });
     if (!res.ok) {
       const d = await res.json();
@@ -47,6 +49,7 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
     setIcon('');
     setPath('');
     setDisplayMode('list');
+    setDescription('');
     router.refresh();
   }
 
@@ -68,6 +71,7 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
     setEditIcon(f.icon || '');
     setEditPath(f.path);
     setEditDisplayMode(f.displayMode || 'list');
+    setEditDescription(f.description || '');
   }
 
   async function handleEdit(e: React.FormEvent) {
@@ -76,7 +80,7 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
     const res = await fetch(`/api/admin/features/${editing.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label: editLabel, icon: editIcon, path: editPath, displayMode: editDisplayMode }),
+      body: JSON.stringify({ label: editLabel, icon: editIcon, path: editPath, displayMode: editDisplayMode, description: editDescription }),
     });
     if (!res.ok) {
       const d = await res.json();
@@ -117,11 +121,9 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
                   <button onClick={() => startEdit(f)} className="text-blue-600 hover:underline">
                     修改
                   </button>
-                  {!f.isSystem && (
-                    <button onClick={() => handleDelete(f.id)} className="text-red-600 hover:underline">
-                      刪除
-                    </button>
-                  )}
+                  <button onClick={() => handleDelete(f.id)} className="text-red-600 hover:underline">
+                    刪除
+                  </button>
                 </td>
               </tr>
             ))}
@@ -152,6 +154,10 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
                 <option value="card">卡片</option>
                 <option value="grid">網格</option>
               </select>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium mb-1">功能說明</label>
+              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="w-full px-3 py-2 border rounded-lg" rows={3} />
             </div>
           </div>
           <div className="flex gap-2">
@@ -188,6 +194,10 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
               <option value="card">卡片</option>
               <option value="grid">網格</option>
             </select>
+          </div>
+          <div className="col-span-4">
+            <label className="block text-sm font-medium mb-1">功能說明</label>
+            <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-3 py-2 border rounded-lg" rows={3} placeholder="介紹此功能的內容" />
           </div>
         </div>
         <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">

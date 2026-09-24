@@ -11,7 +11,7 @@ export default async function AdminFeaturesPage() {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">功能選單管理</h2>
-      <p className="text-gray-500 mb-4">系統功能不可刪除，僅可新增自訂功能供各專案選用。</p>
+      <p className="text-gray-500 mb-4">功能項目可由各子網站分別啟用；刪除功能會同時移除各子網站的相關設定。</p>
       <FeatureClient initial={features} />
     </div>
   );
