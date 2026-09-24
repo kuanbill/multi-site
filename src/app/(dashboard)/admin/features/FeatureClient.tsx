@@ -14,6 +14,8 @@ interface Feature {
   description?: string | null;
 }
 
+const COMMON_ICONS = ['📢', '📈', '🖼️', '📝', '🏢', '🏠', '🗺️', '📄', '📷', '📅', '❓', '🔔', '📋', '💬', '⭐', '📍', '🔗', '📊', '🧭', '📁'];
+
 export default function FeatureClient({ initial }: { initial: Feature[] }) {
   const router = useRouter();
   const [features, setFeatures] = useState(initial);
@@ -141,7 +143,11 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">圖示</label>
-              <input value={editIcon} onChange={(e) => setEditIcon(e.target.value)} className="w-full px-3 py-2 border rounded-lg" />
+              <select value={editIcon} onChange={(e) => setEditIcon(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                <option value="">無圖示</option>
+                {editIcon && !COMMON_ICONS.includes(editIcon) && <option value={editIcon}>{editIcon}（目前圖示）</option>}
+                {COMMON_ICONS.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">路徑 {editing.isSystem && <span className="text-xs text-gray-400">(系統不可改)</span>}</label>
@@ -181,7 +187,10 @@ export default function FeatureClient({ initial }: { initial: Feature[] }) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">圖示</label>
-            <input value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="❓" />
+            <select value={icon} onChange={(e) => setIcon(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">無圖示</option>
+              {COMMON_ICONS.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">路徑</label>

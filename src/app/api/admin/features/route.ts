@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminSession } from '@/lib/auth';
-import { generateFeatureKey } from '@/lib/featureKey';
 
 export async function GET() {
   if (!(await getAdminSession())) {
@@ -17,7 +16,6 @@ export async function POST(req: Request) {
   }
   try {
     const body = await req.json();
-    const keyRaw = typeof body.key === 'string' ? body.key.trim().toLowerCase() : '';
     const label = typeof body.label === 'string' ? body.label.trim() : '';
     const icon = typeof body.icon === 'string' ? body.icon.trim() : null;
     const path = typeof body.path === 'string' ? body.path.trim() : '';
@@ -28,14 +26,18 @@ export async function POST(req: Request) {
     if (!label || !path) {
       return NextResponse.json({ error: '名稱與路徑為必填' }, { status: 400 });
     }
-    const key = keyRaw || generateFeatureKey(label);
-    if (!/^[a-z0-9_]+$/.test(key)) return NextResponse.json({ error: 'key 僅允許小寫英文、數字與底線' }, { status: 400 });
+    if (!/^[a-z0-9_-]+$/.test(path)) {
+      return NextResponse.json({ error: '路徑僅允許小寫英文、數字、底線與連字號' }, { status: 400 });
+    }
 
-    const existing = await prisma.featureDefinition.findUnique({ where: { key } });
-    if (existing) return NextResponse.json({ error: '此 key 已存在' }, { status: 409 });
+    const existing = await prisma.featureDefinition.findFirst({
+      where: { OR: [{ key: path }, { path }] },
+      select: { id: true },
+    });
+    if (existing) return NextResponse.json({ error: '此路徑已存在，請使用其他路徑' }, { status: 409 });
 
     const feature = await prisma.featureDefinition.create({
-      data: { key, label, icon, path, description, isSystem: false, displayMode },
+      data: { key: path, label, icon, path, description, isSystem: false, displayMode },
     });
     return NextResponse.json(feature, { status: 201 });
   } catch {
