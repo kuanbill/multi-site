@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
-import { parseContentStatus, validateProgressStatus, validateRequiredText } from '@/lib/contentValidation';
+import { readJsonBody, readDate, readSortOrder, readContentStatus } from '@/lib/adminValidation';
+import { validateRequiredText, validateProgressStatus } from '@/lib/contentValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
 function parseStageDate(value: unknown): Date {
-  if (value === null || value === undefined || value === '') throw new Error('階段日期不得為空');
-  const date = value instanceof Date ? new Date(value.getTime()) : new Date(String(value));
-  if (Number.isNaN(date.getTime())) throw new Error('階段日期格式無效');
+  const date = readDate(value);
+  if (!date) throw new Error('階段日期不得為空');
   return date;
 }
 
@@ -26,14 +26,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'write');
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const record = await readJsonBody(request);
+  if (!record) {
     return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
   }
-
-  const record = body as Record<string, unknown>;
 
   let title: string;
   let stageLabel: string;
@@ -47,18 +43,14 @@ export async function POST(request: Request, { params }: RouteContext) {
     stageLabel = rawStageLabel;
     stageDate = parseStageDate(record.stageDate);
     progressStatus = validateProgressStatus(record.progressStatus);
-    status = record.status === undefined || record.status === null || record.status === ''
-      ? 'draft'
-      : parseContentStatus(record.status);
+    status = readContentStatus(record);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
 
   const summary = typeof record.summary === 'string' ? record.summary.trim() || null : null;
   const content = typeof record.content === 'string' ? record.content.trim() || null : null;
-  const sortOrder = record.sortOrder === undefined || record.sortOrder === null || record.sortOrder === ''
-    ? 0
-    : Number(record.sortOrder);
+  const sortOrder = readSortOrder(record);
   if (!Number.isInteger(sortOrder)) {
     return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
   }

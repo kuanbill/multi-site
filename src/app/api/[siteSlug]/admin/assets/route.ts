@@ -1,9 +1,37 @@
 import { NextResponse } from 'next/server';
 import { requireContentPermission } from '@/lib/contentAccess';
+import { prisma } from '@/lib/prisma';
 import { saveMedia } from '@/lib/media';
 
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ siteSlug: string }> };
+
+export async function GET(request: Request, { params }: RouteContext) {
+  const { siteSlug } = await params;
+  const context = await requireContentPermission(siteSlug, 'read');
+
+  const { searchParams } = new URL(request.url);
+  const type = searchParams.get('type'); // 'image' | 'pdf' | undefined
+
+  const where: Record<string, unknown> = { siteId: context.site.id };
+  if (type === 'image') where.type = 'image';
+  if (type === 'pdf') where.type = 'pdf';
+
+  const medias = await prisma.media.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      url: true,
+      type: true,
+      mimeType: true,
+      altText: true,
+      filename: true,
+    },
+  });
+
+  return NextResponse.json(medias);
+}
 
 export async function POST(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
-import { parseContentStatus, validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { readJsonBody, readSortOrder, readContentStatus } from '@/lib/adminValidation';
+import { validateRequiredText, validateSlug } from '@/lib/contentValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
@@ -20,14 +21,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'write');
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const record = await readJsonBody(request);
+  if (!record) {
     return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
   }
-
-  const record = body as Record<string, unknown>;
 
   let title: string;
   let slug: string;
@@ -35,9 +32,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   try {
     title = validateRequiredText(record.title, 'title');
     slug = validateSlug(record.slug);
-    status = record.status === undefined || record.status === null || record.status === ''
-      ? 'draft'
-      : parseContentStatus(record.status);
+    status = readContentStatus(record);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
@@ -46,9 +41,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   const content = typeof record.content === 'string' ? record.content.trim() || null : null;
   const category = typeof record.category === 'string' ? record.category.trim() || null : null;
   const pinned = Boolean(record.pinned);
-  const sortOrder = record.sortOrder === undefined || record.sortOrder === null || record.sortOrder === ''
-    ? 0
-    : Number(record.sortOrder);
+  const sortOrder = readSortOrder(record);
   if (!Number.isInteger(sortOrder)) {
     return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
   }

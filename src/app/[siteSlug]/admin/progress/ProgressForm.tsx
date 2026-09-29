@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProgressItem } from '@prisma/client';
+import { Input, Select, TextArea } from '@/components/admin';
 
 type ProgressFormValues = {
   stageDate: string;
@@ -10,15 +11,28 @@ type ProgressFormValues = {
   title: string;
   summary: string;
   content: string;
-  progressStatus: string;
-  status: string;
-  sortOrder: string;
+  progressStatus: 'completed' | 'current' | 'upcoming';
+  status: 'draft' | 'published' | 'archived';
+  sortOrder: number;
 };
 
 type Props = {
   siteSlug: string;
   initial: ProgressItem | null;
+  onSuccess?: () => void;
 };
+
+const PROGRESS_STATUS_OPTIONS = [
+  { value: 'completed', label: '已完成' },
+  { value: 'current', label: '進行中' },
+  { value: 'upcoming', label: '待辦' },
+];
+
+const CONTENT_STATUS_OPTIONS = [
+  { value: 'draft', label: '草稿' },
+  { value: 'published', label: '已發布' },
+  { value: 'archived', label: '封存' },
+];
 
 function toDateInput(value: Date | null | undefined): string {
   if (!value) return '';
@@ -26,7 +40,7 @@ function toDateInput(value: Date | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function ProgressForm({ siteSlug, initial }: Props) {
+export default function ProgressForm({ siteSlug, initial, onSuccess }: Props) {
   const router = useRouter();
   const [values, setValues] = useState<ProgressFormValues>(() => ({
     stageDate: initial ? toDateInput(initial.stageDate) : '',
@@ -34,14 +48,14 @@ export default function ProgressForm({ siteSlug, initial }: Props) {
     title: initial?.title ?? '',
     summary: initial?.summary ?? '',
     content: initial?.content ?? '',
-    progressStatus: initial?.progressStatus ?? 'upcoming',
-    status: initial?.status ?? 'draft',
-    sortOrder: initial ? String(initial.sortOrder) : '0',
+    progressStatus: (initial?.progressStatus as ProgressFormValues['progressStatus']) ?? 'upcoming',
+    status: (initial?.status as ProgressFormValues['status']) ?? 'draft',
+    sortOrder: initial ? Number(initial.sortOrder) : 0,
   }));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  function update(field: keyof ProgressFormValues, value: string) {
+  function update(field: keyof ProgressFormValues, value: string | number | 'completed' | 'current' | 'upcoming' | 'draft' | 'published' | 'archived') {
     setValues((current) => ({ ...current, [field]: value }));
   }
 
@@ -64,7 +78,6 @@ export default function ProgressForm({ siteSlug, initial }: Props) {
         ? `/api/${siteSlug}/admin/progress/${initial.id}`
         : `/api/${siteSlug}/admin/progress`;
       const method = initial ? 'PATCH' : 'POST';
-      // For edit, if stageDate unchanged we still send it; API allows partial but requires validation if present
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -76,8 +89,20 @@ export default function ProgressForm({ siteSlug, initial }: Props) {
         return;
       }
       setMessage('已儲存');
-      router.push(`/${siteSlug}/admin/progress`);
+      if (onSuccess) onSuccess();
       router.refresh();
+      if (!initial) {
+        setValues({
+          stageDate: '',
+          stageLabel: '',
+          title: '',
+          summary: '',
+          content: '',
+          progressStatus: 'upcoming',
+          status: 'draft',
+          sortOrder: 0,
+        });
+      }
     } catch {
       setMessage('無法連線至伺服器');
     } finally {
@@ -88,92 +113,79 @@ export default function ProgressForm({ siteSlug, initial }: Props) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="block text-sm font-medium">
-          階段日期
-          <input
-            type="date"
-            value={values.stageDate}
-            onChange={(event) => update('stageDate', event.target.value)}
-            required
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
-          />
-        </label>
-        <label className="block text-sm font-medium">
-          階段名稱
-          <input
-            value={values.stageLabel}
-            onChange={(event) => update('stageLabel', event.target.value)}
-            required
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
-          />
-        </label>
+        <Input
+          label="階段日期"
+          type="date"
+          value={values.stageDate}
+          onChange={(e) => update('stageDate', e.target.value)}
+          required
+          placeholder="選擇日期"
+        />
+        <Input
+          label="階段名稱"
+          value={values.stageLabel}
+          onChange={(e) => update('stageLabel', e.target.value)}
+          required
+          placeholder="例如：規劃階段"
+        />
       </div>
 
-      <label className="block text-sm font-medium">
-        標題
-        <input
-          value={values.title}
-          onChange={(event) => update('title', event.target.value)}
-          required
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
-        />
-      </label>
+      <Input
+        label="標題"
+        value={values.title}
+        onChange={(e) => update('title', e.target.value)}
+        required
+        placeholder="進度標題"
+      />
 
-      <label className="block text-sm font-medium">
-        摘要
-        <textarea
-          value={values.summary}
-          onChange={(event) => update('summary', event.target.value)}
-          rows={2}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
-        />
-      </label>
+      <TextArea
+        label="摘要"
+        value={values.summary}
+        onChange={(e) => update('summary', e.target.value)}
+        rows={2}
+        placeholder="簡短摘要（可選）"
+      />
 
-      <label className="block text-sm font-medium">
-        內容
-        <textarea
-          value={values.content}
-          onChange={(event) => update('content', event.target.value)}
-          rows={4}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
-        />
-      </label>
+      <TextArea
+        label="內容"
+        value={values.content}
+        onChange={(e) => update('content', e.target.value)}
+        rows={4}
+        placeholder="進度詳細內容（可選）"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <label className="block text-sm font-medium">
-          進度狀態
-          <select
-            value={values.progressStatus}
-            onChange={(event) => update('progressStatus', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
-          >
-            <option value="completed">已完成</option>
-            <option value="current">進行中</option>
-            <option value="upcoming">待辦</option>
-          </select>
-        </label>
-        <label className="block text-sm font-medium">
-          發布狀態
-          <select
-            value={values.status}
-            onChange={(event) => update('status', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
-          >
-            <option value="draft">草稿</option>
-            <option value="published">已發布</option>
-            <option value="archived">封存</option>
-          </select>
-        </label>
-        <label className="block text-sm font-medium">
-          排序
-          <input
-            type="number"
-            value={values.sortOrder}
-            onChange={(event) => update('sortOrder', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
-          />
-        </label>
+        <Select
+          label="進度狀態（progressStatus）"
+          value={values.progressStatus}
+          onChange={(e) => update('progressStatus', e.target.value as ProgressFormValues['progressStatus'])}
+          options={PROGRESS_STATUS_OPTIONS}
+        />
+        <Select
+          label="發布狀態"
+          value={values.status}
+          onChange={(e) => update('status', e.target.value as ProgressFormValues['status'])}
+          options={CONTENT_STATUS_OPTIONS}
+        />
+        <Input
+          label="排序"
+          type="number"
+          value={String(values.sortOrder)}
+          onChange={(e) => update('sortOrder', parseInt(e.target.value, 10) || 0)}
+          min={0}
+          placeholder="0"
+        />
       </div>
+
+      {message && (
+        <p className="text-sm">
+          {message === '已儲存' ? (
+            <span className="text-green-600">{message}</span>
+          ) : (
+            <span className="text-red-600">{message}</span>
+          )}
+        </p>
+      )}
 
       <div className="flex items-center gap-4">
         <button
@@ -190,7 +202,6 @@ export default function ProgressForm({ siteSlug, initial }: Props) {
         >
           返回列表
         </button>
-        {message && <span className="text-sm text-gray-600">{message}</span>}
       </div>
     </form>
   );

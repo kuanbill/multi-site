@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { readJsonBody, parseId, readSortOrder, readContentStatus } from '@/lib/adminValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
 
@@ -43,14 +44,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: '找不到資料' }, { status: 404 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const record = await readJsonBody(request);
+  if (!record) {
     return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
   }
-
-  const record = body as Record<string, unknown>;
 
   let title: string | undefined;
   let slug: string | undefined;
@@ -58,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     if (record.title !== undefined) title = validateRequiredText(record.title, 'title');
     if (record.slug !== undefined) slug = validateSlug(record.slug);
-    if (record.status !== undefined) status = parseContentStatus(record.status);
+    if (record.status !== undefined) status = readContentStatus(record);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
@@ -82,24 +79,13 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     ? (typeof record.category === 'string' ? record.category.trim() || null : null)
     : undefined;
   const pinned = record.pinned !== undefined ? Boolean(record.pinned) : undefined;
-  let sortOrder: number | undefined;
-  if (record.sortOrder !== undefined) {
-    const value = record.sortOrder === null || record.sortOrder === '' ? 0 : Number(record.sortOrder);
-    if (!Number.isInteger(value)) {
-      return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
-    }
-    sortOrder = value;
+  const sortOrder = record.sortOrder !== undefined ? readSortOrder(record) : undefined;
+  if (sortOrder !== undefined && !Number.isInteger(sortOrder)) {
+    return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
   }
 
   const nextStatus = status ?? existing.status;
-  let publishedAt: Date | null | undefined;
-  if (status !== undefined) {
-    if (nextStatus === 'published') {
-      publishedAt = existing.publishedAt ?? new Date();
-    } else {
-      publishedAt = null;
-    }
-  }
+  const publishedAt = status !== undefined ? (nextStatus === 'published' ? (existing.publishedAt ?? new Date()) : null) : undefined;
 
   try {
     const updated = await prisma.announcement.update({
