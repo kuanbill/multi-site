@@ -15,7 +15,7 @@ export default async function PublicExhibitionListPage({ params }: { params: Pro
 
   return (
     <div>
-      <div className="bg-white p-8 rounded-lg shadow mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow mb-6">
         <h1 className="text-2xl font-bold mb-2">公開展覽</h1>
         <p className="text-gray-500">{site.name} 的展覽資訊、日期與地點</p>
       </div>

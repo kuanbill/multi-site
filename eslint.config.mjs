@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // One-off seed script:
+    "seed-feat.js",
   ]),
 ]);
 

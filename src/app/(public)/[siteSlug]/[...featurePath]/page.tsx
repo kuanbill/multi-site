@@ -38,7 +38,7 @@ export default async function CustomFeaturePage({
 
     return (
       <section>
-        <header className="bg-white p-8 rounded-lg shadow mb-6">
+        <header className="bg-white p-6 sm:p-8 rounded-lg shadow mb-6">
           <h1 className="text-2xl font-bold mb-2">{feature.feature.label}</h1>
           {feature.feature.description && <p className="text-gray-600 whitespace-pre-wrap">{feature.feature.description}</p>}
         </header>
@@ -79,7 +79,7 @@ export default async function CustomFeaturePage({
   }
 
   return (
-    <article className="bg-white p-8 rounded-lg shadow">
+    <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
       <Link href={`/${siteSlug}/${route.featurePath}`} className="text-sm text-blue-600 hover:underline">← 返回{feature.feature.label}</Link>
       <h1 className="mt-4 text-2xl font-bold">{entry.title}</h1>
       {entry.contentType === 'youtube' && youtubeEmbedUrl && (
@@ -97,7 +97,7 @@ export default async function CustomFeaturePage({
       {entry.contentType === 'image' && entry.media?.url && (
         <Image src={entry.media.url} alt={entry.media.altText ?? entry.title} width={1200} height={800} unoptimized className="mt-6 w-full max-h-[70vh] object-contain rounded" />
       )}
-      {entry.content && <p className="mt-6 whitespace-pre-wrap text-gray-700">{entry.content}</p>}
+      {entry.content && <p className="mt-6 whitespace-pre-wrap break-words text-gray-700">{entry.content}</p>}
     </article>
   );
 }

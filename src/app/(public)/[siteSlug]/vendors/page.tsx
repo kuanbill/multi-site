@@ -16,7 +16,7 @@ export default async function PublicVendorsPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="bg-white p-8 rounded-lg shadow mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow mb-6">
         <h1 className="text-2xl font-bold mb-2">協力廠商</h1>
         <p className="text-gray-500">{site.name} 的協力廠商與服務資訊</p>
       </div>

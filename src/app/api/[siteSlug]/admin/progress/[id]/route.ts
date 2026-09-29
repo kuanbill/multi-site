@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
-import { parseContentStatus, validateProgressStatus, validateRequiredText } from '@/lib/contentValidation';
+import { validateProgressStatus, validateRequiredText } from '@/lib/contentValidation';
+import { readJsonBody, readContentStatus, readSortOrder } from '@/lib/adminValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
 

@@ -137,14 +137,16 @@ export default function MediaPicker({
       >
         {selectedIds.length > 0 ? (
           <div className="flex items-center gap-2">
-            <Image
-              src={filteredMedia.find((m) => m.id === selectedIds[0])?.url}
-              alt=""
-              width={24}
-              height={24}
-              className="rounded object-cover"
-              unoptimized
-            />
+            {filteredMedia.find((m) => m.id === selectedIds[0])?.url && (
+              <Image
+                src={filteredMedia.find((m) => m.id === selectedIds[0])!.url}
+                alt=""
+                width={24}
+                height={24}
+                className="rounded object-cover"
+                unoptimized
+              />
+            )}
             <span className="truncate">已選擇 {selectedIds.length} 個檔案</span>
           </div>
         ) : (

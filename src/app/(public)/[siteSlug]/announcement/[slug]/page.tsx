@@ -26,7 +26,7 @@ export default async function PublicAnnouncementDetailPage({
         </Link>
       </div>
 
-      <article className="bg-white p-8 rounded-lg shadow">
+      <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
         <div className="flex items-center gap-2 mb-2">
           {item.pinned && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">置頂</span>}
           {item.category && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.category}</span>}
@@ -37,7 +37,7 @@ export default async function PublicAnnouncementDetailPage({
         <h1 className="text-3xl font-bold mb-4">{item.title}</h1>
         {item.summary && <p className="text-gray-600 mb-6">{item.summary}</p>}
         {item.content ? (
-          <div className="prose max-w-none whitespace-pre-wrap">{item.content}</div>
+          <div className="prose max-w-none whitespace-pre-wrap break-words">{item.content}</div>
         ) : (
           <p className="text-gray-500">無詳細內容</p>
         )}

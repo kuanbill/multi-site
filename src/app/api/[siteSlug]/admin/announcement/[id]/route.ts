@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
-import { parseContentStatus, validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { validateRequiredText, validateSlug } from '@/lib/contentValidation';
 import { readJsonBody, parseId, readSortOrder, readContentStatus } from '@/lib/adminValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
-
-function parseId(value: string): number | null {
-  const number = Number(value);
-  if (!Number.isInteger(number) || number < 1) return null;
-  return number;
-}
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug, id } = await params;

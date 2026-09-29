@@ -36,7 +36,7 @@ export default async function PublicVendorDetailPage({
         </Link>
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow">
         {item.logoMedia?.url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.logoMedia.url} alt={item.name} className="w-32 h-32 object-contain bg-gray-50 rounded mb-4 border" />

@@ -33,7 +33,7 @@ export default async function PublicPostsPage({
           ))}
         </div>
       ) : displayMode === 'grid' ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((p) => (
             <Link key={p.id} href={`/${siteSlug}/posts/${p.slug}`} className="border rounded-lg p-3 text-center hover:shadow">
               <p className="font-medium text-blue-600">{p.title}</p>

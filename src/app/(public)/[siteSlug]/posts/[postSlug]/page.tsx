@@ -15,12 +15,12 @@ export default async function PublicPostDetail({
   if (!post) notFound();
 
   return (
-    <article className="bg-white p-8 rounded-lg shadow">
+    <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
       <h1 className="text-2xl font-bold mb-2">{post.title}</h1>
       <p className="text-sm text-gray-500 mb-4">
         {new Date(post.createdAt).toLocaleDateString('zh-TW')}
       </p>
-      <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+      <div className="prose max-w-none break-words [&_img]:max-w-full [&_a]:break-words" dangerouslySetInnerHTML={{ __html: post.content || '' }} />
     </article>
   );
 }

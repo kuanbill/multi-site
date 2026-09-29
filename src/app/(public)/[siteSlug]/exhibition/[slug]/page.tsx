@@ -32,7 +32,7 @@ export default async function PublicExhibitionDetailPage({
         </Link>
       </div>
 
-      <article className="bg-white p-8 rounded-lg shadow">
+      <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
         <div className="text-sm text-gray-500 mb-2">
           {item.startDate ? new Date(item.startDate).toLocaleDateString('zh-TW') : ''}
           {item.endDate ? ` - ${new Date(item.endDate).toLocaleDateString('zh-TW')}` : ''}

@@ -49,14 +49,14 @@ export default async function PublicSitePage({
 
   return (
     <div>
-      <div className="bg-white p-8 rounded-lg shadow mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow mb-6">
         <h1 className="text-3xl font-bold mb-2">{site.name}</h1>
         <p className="text-gray-600">{site.description}</p>
         {home?.tagline && <p className="text-lg text-blue-600 mt-2">{home.tagline}</p>}
         {home?.intro && <p className="text-gray-700 mt-4 whitespace-pre-wrap">{home.intro}</p>}
         {home?.heroMedia?.url && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={home.heroMedia.url} alt={site.name} className="mt-4 max-h-64 object-cover rounded" />
+          <img src={home.heroMedia.url} alt={site.name} className="mt-4 w-full max-h-64 object-cover rounded" />
         )}
         {home?.currentStage && (
           <div className="mt-4 p-3 bg-blue-50 rounded">

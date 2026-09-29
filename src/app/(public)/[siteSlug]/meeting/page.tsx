@@ -48,7 +48,7 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
 
   return (
     <div>
-      <div className="bg-white p-8 rounded-lg shadow mb-6">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow mb-6">
         <h1 className="text-2xl font-bold mb-2">會議記錄</h1>
         <p className="text-gray-500">{site.name} 依會議類型分組，組內依日期遞減排序</p>
       </div>
@@ -69,14 +69,14 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
                   {group.map((item) => {
                     const atts = attachmentMap.get(item.id) ?? [];
                     return (
-                      <div key={item.id} className="py-4 flex items-start justify-between gap-4">
-                        <div className="flex-1">
+                      <div key={item.id} className="py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                        <div className="sm:flex-1 min-w-0">
                           <p className="text-sm text-gray-500">{new Date(item.meetingDate).toLocaleDateString('zh-TW')}</p>
                           <h3 className="font-medium">{item.title}</h3>
                           {item.meetingNo && <p className="text-xs text-gray-500">編號：{item.meetingNo}</p>}
                           {item.summary && <p className="text-sm text-gray-600 mt-1">{item.summary}</p>}
                         </div>
-                        <div className="shrink-0 flex flex-col gap-1 text-sm">
+                        <div className="shrink-0 flex flex-col gap-1 text-sm min-w-0 break-all">
                           {atts.length === 0 ? (
                             <span className="text-gray-400">無附件</span>
                           ) : (
