@@ -37,6 +37,9 @@ yarn-error.log*
 # database
 dev.db
 
+# runtime data (databases, backups, uploads)
+/data/
+
 # vercel
 .vercel
 
