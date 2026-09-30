@@ -38,7 +38,7 @@ export default async function PublicExhibitionListPage({ params }: { params: Pro
                   {item.location ? ` | ${item.location}` : ''}
                 </p>
                 {item.description && <p className="text-sm text-gray-600 mt-2 line-clamp-3">{item.description}</p>}
-                <span className="inline-block mt-3 text-sm text-blue-600">查看詳情 →</span>
+                <span className="inline-block mt-3 text-sm text-primary">查看詳情 →</span>
               </Link>
             ))}
           </div>

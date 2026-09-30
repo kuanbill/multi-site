@@ -37,6 +37,7 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
       ...featureItems,
       { href: `/${siteSlug}/admin/users`, label: '成員管理', icon: '👥' },
       { href: `/${siteSlug}/admin/settings/features`, label: '功能設定', icon: '⚙️' },
+      { href: `/${siteSlug}/admin/settings/appearance`, label: '外觀設定', icon: '🎨' },
     ]
 
     return (

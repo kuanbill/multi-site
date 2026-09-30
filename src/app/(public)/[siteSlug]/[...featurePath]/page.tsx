@@ -52,7 +52,7 @@ export default async function CustomFeaturePage({
                 {entry.contentType === 'image' && entry.media?.url && (
                   <Image src={entry.media.url} alt={entry.media.altText ?? entry.title} width={1200} height={800} unoptimized className="w-full max-h-72 object-contain rounded mb-3" />
                 )}
-                <h2 className="text-lg font-semibold text-blue-700">{entry.title}</h2>
+                <h2 className="text-lg font-semibold text-accent">{entry.title}</h2>
                 {entry.content && <p className="mt-2 text-gray-600 whitespace-pre-wrap line-clamp-3">{entry.content}</p>}
                 {entry.contentType === 'youtube' && <span className="mt-2 inline-block text-sm text-gray-500">YouTube 影片</span>}
               </Link>
@@ -80,7 +80,7 @@ export default async function CustomFeaturePage({
 
   return (
     <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
-      <Link href={`/${siteSlug}/${route.featurePath}`} className="text-sm text-blue-600 hover:underline">← 返回{feature.feature.label}</Link>
+      <Link href={`/${siteSlug}/${route.featurePath}`} className="text-sm text-primary hover:underline">← 返回{feature.feature.label}</Link>
       <h1 className="mt-4 text-2xl font-bold">{entry.title}</h1>
       {entry.contentType === 'youtube' && youtubeEmbedUrl && (
         <div className="mt-6 aspect-video">

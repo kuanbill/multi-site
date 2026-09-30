@@ -27,7 +27,7 @@ export default async function PublicExhibitionDetailPage({
   return (
     <div>
       <div className="mb-4">
-        <Link href={`/${siteSlug}/exhibition`} className="text-sm text-blue-600 hover:underline">
+        <Link href={`/${siteSlug}/exhibition`} className="text-sm text-primary hover:underline">
           ← 返回展覽列表
         </Link>
       </div>
@@ -41,7 +41,7 @@ export default async function PublicExhibitionDetailPage({
         <h1 className="text-3xl font-bold mb-4">{item.title}</h1>
         {item.description && <p className="text-gray-700 whitespace-pre-wrap mb-6">{item.description}</p>}
         {item.feedbackSummary && (
-          <div className="bg-blue-50 p-4 rounded mb-6">
+          <div className="bg-primary/5 p-4 rounded mb-6">
             <h3 className="font-medium mb-1">意見回饋摘要</h3>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{item.feedbackSummary}</p>
           </div>
@@ -57,7 +57,7 @@ export default async function PublicExhibitionDetailPage({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={att.media.url} alt={att.media.altText || item.title} className="w-full h-48 object-cover" />
                   ) : (
-                    <a href={att.media.url} target="_blank" rel="noopener noreferrer" className="block p-4 text-sm text-blue-600 hover:underline">
+                    <a href={att.media.url} target="_blank" rel="noopener noreferrer" className="block p-4 text-sm text-primary hover:underline">
                       {att.media.filename}（{att.media.mimeType}）
                     </a>
                   )}

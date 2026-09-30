@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { CSSProperties } from 'react';
 import { getSiteBySlug, getEnabledFeatures } from '@/lib/site';
 import SiteHeader from '@/components/public/SiteHeader';
 
@@ -22,7 +23,15 @@ export default async function PublicLayout({
   if (site.status === 'archived') notFound();
   const features = await getEnabledFeatures(site.id);
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen bg-gray-50"
+      style={
+        {
+          '--site-primary': site.primaryColor,
+          '--site-accent': site.accentColor,
+        } as CSSProperties
+      }
+    >
       <SiteHeader siteSlug={siteSlug} siteName={site.name} features={features} />
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>

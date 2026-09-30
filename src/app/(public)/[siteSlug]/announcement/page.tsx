@@ -28,13 +28,13 @@ export default async function PublicAnnouncementListPage({ params }: { params: P
             {items.map((item) => (
               <li key={item.id} className="border-b pb-4 last:border-0">
                 <div className="flex items-center gap-2 mb-1">
-                  {item.pinned && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">置頂</span>}
+                  {item.pinned && <span className="text-xs bg-primary/10 text-accent px-2 py-0.5 rounded">置頂</span>}
                   {item.category && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.category}</span>}
                   <span className="text-xs text-gray-400">
                     {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('zh-TW') : ''}
                   </span>
                 </div>
-                <Link href={`/${siteSlug}/announcement/${item.slug}`} className="font-medium text-blue-600 hover:underline">
+                <Link href={`/${siteSlug}/announcement/${item.slug}`} className="font-medium text-primary hover:underline">
                   {item.title}
                 </Link>
                 {item.summary && <p className="text-sm text-gray-600 mt-1">{item.summary}</p>}

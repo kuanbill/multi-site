@@ -23,6 +23,8 @@ model Site {
   slug         String        @unique
   description  String?
   status       String        @default("active")
+  primaryColor String        @default("#2563eb")
+  accentColor  String        @default("#1d4ed8")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   users        SiteUser[]

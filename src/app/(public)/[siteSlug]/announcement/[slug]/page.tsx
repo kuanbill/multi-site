@@ -21,14 +21,14 @@ export default async function PublicAnnouncementDetailPage({
   return (
     <div>
       <div className="mb-4">
-        <Link href={`/${siteSlug}/announcement`} className="text-sm text-blue-600 hover:underline">
+        <Link href={`/${siteSlug}/announcement`} className="text-sm text-primary hover:underline">
           ← 返回公告列表
         </Link>
       </div>
 
       <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
         <div className="flex items-center gap-2 mb-2">
-          {item.pinned && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">置頂</span>}
+          {item.pinned && <span className="text-xs bg-primary/10 text-accent px-2 py-0.5 rounded">置頂</span>}
           {item.category && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.category}</span>}
           <span className="text-sm text-gray-500">
             {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('zh-TW') : ''}

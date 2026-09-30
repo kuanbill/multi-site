@@ -21,7 +21,7 @@ export default async function PublicPagesIndex({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {pages.map((p) => (
             <Link key={p.id} href={`/${siteSlug}/pages/${p.slug}`} className="block border rounded-lg p-4 hover:shadow">
-              <h3 className="font-medium text-blue-600">{p.title}</h3>
+              <h3 className="font-medium text-primary">{p.title}</h3>
               <p className="text-sm text-gray-500 mt-1">/{p.slug}</p>
             </Link>
           ))}
@@ -30,7 +30,7 @@ export default async function PublicPagesIndex({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pages.map((p) => (
             <Link key={p.id} href={`/${siteSlug}/pages/${p.slug}`} className="border rounded-lg p-3 text-center hover:shadow">
-              <p className="font-medium text-blue-600">{p.title}</p>
+              <p className="font-medium text-primary">{p.title}</p>
             </Link>
           ))}
         </div>
@@ -38,7 +38,7 @@ export default async function PublicPagesIndex({
         <ul className="space-y-2">
           {pages.map((p) => (
             <li key={p.id}>
-              <Link href={`/${siteSlug}/pages/${p.slug}`} className="text-blue-600 hover:underline">
+              <Link href={`/${siteSlug}/pages/${p.slug}`} className="text-primary hover:underline">
                 {p.title}
               </Link>
             </li>

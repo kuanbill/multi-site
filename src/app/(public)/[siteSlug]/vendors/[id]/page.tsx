@@ -31,7 +31,7 @@ export default async function PublicVendorDetailPage({
   return (
     <div>
       <div className="mb-4">
-        <Link href={`/${siteSlug}/vendors`} className="text-sm text-blue-600 hover:underline">
+        <Link href={`/${siteSlug}/vendors`} className="text-sm text-primary hover:underline">
           ← 返回廠商列表
         </Link>
       </div>
@@ -75,7 +75,7 @@ export default async function PublicVendorDetailPage({
             <ul className="space-y-2">
               {attachments.map((att) => (
                 <li key={att.id}>
-                  <a href={att.media.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                  <a href={att.media.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                     {att.media.filename}（{att.media.mimeType}）
                   </a>
                 </li>

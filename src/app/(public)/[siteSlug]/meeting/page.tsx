@@ -86,7 +86,7 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
                                 href={att.media.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
+                                className="text-primary hover:underline"
                               >
                                 {att.label === 'image' ? '圖片' : 'PDF'}：{att.media.filename}
                               </a>

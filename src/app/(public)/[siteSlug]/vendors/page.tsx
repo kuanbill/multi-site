@@ -42,7 +42,7 @@ export default async function PublicVendorsPage({ params }: { params: Promise<{ 
                 </div>
                 {item.summary && <p className="text-sm text-gray-600 line-clamp-2">{item.summary}</p>}
                 {item.services && <p className="text-xs text-gray-500 mt-2 line-clamp-1">服務：{item.services}</p>}
-                <span className="inline-block mt-3 text-sm text-blue-600">查看詳情 →</span>
+                <span className="inline-block mt-3 text-sm text-primary">查看詳情 →</span>
               </Link>
             ))}
           </div>

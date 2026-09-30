@@ -88,6 +88,13 @@ export function validateSlug(value: unknown): string {
   return slug;
 }
 
+export function validateHexColor(value: unknown, field: '主色' | '輔色'): string {
+  if (typeof value !== 'string') throw new Error(`${field}色碼格式錯誤`);
+  const color = value.trim().toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error(`${field}色碼格式錯誤，需使用 #rrggbb 格式`);
+  return color;
+}
+
 export function validateExternalUrl(value: unknown): string | null {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'string') throw new Error('網址必須使用 http 或 https');

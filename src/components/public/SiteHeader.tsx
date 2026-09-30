@@ -18,9 +18,9 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
   const closeMenu = () => setOpen(false);
 
   return (
-    <header className="bg-white border-b">
+    <header className="sticky top-0 z-50 bg-primary text-white shadow-sm">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href={`/${siteSlug}`} className="font-bold text-lg">
+        <Link href={`/${siteSlug}`} className="font-bold text-lg text-white">
           {siteName}
         </Link>
         <nav className="hidden md:flex gap-4">
@@ -28,7 +28,7 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
             <Link
               key={f.key}
               href={`/${siteSlug}/${f.path}`}
-              className="text-sm text-gray-600 hover:text-blue-600"
+              className="text-sm text-white/90 hover:text-white"
             >
               {f.label}
             </Link>
@@ -36,7 +36,7 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
         </nav>
         <button
           type="button"
-          className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100"
+          className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10"
           aria-expanded={open}
           aria-label={open ? '關閉選單' : '開啟選單'}
           onClick={() => setOpen((v) => !v)}
@@ -51,13 +51,13 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
         </button>
       </div>
       {open && (
-        <nav className="md:hidden border-t bg-white">
+        <nav className="md:hidden border-t border-white/20 bg-primary">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2 flex flex-col">
             {navigationFeatures.map((f) => (
               <Link
                 key={f.key}
                 href={`/${siteSlug}/${f.path}`}
-                className="py-2 text-sm text-gray-600 hover:text-blue-600"
+                className="py-2 text-sm text-white/90 hover:text-white hover:bg-white/10 rounded px-2"
                 onClick={closeMenu}
               >
                 {f.label}
