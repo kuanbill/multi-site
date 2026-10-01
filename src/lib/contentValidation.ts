@@ -91,7 +91,10 @@ export function validateSlug(value: unknown): string {
 export function validateHexColor(value: unknown, field: '主色' | '輔色'): string {
   if (typeof value !== 'string') throw new Error(`${field}色碼格式錯誤`);
   const color = value.trim().toLowerCase();
-  if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error(`${field}色碼格式錯誤，需使用 #rrggbb 格式`);
+  if (/^#[0-9a-f]{3}$/.test(color)) {
+    return `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`;
+  }
+  if (!/^#[0-9a-f]{6}$/.test(color)) throw new Error(`${field}色碼格式錯誤，需使用 #rrggbb 或 #abc 格式`);
   return color;
 }
 

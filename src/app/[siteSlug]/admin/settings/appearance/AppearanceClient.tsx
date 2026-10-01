@@ -15,6 +15,9 @@ const PRESETS = [
 
 function normalizeHex(value: string): string | null {
   const normalized = value.trim().toLowerCase();
+  if (/^#[0-9a-f]{3}$/.test(normalized)) {
+    return `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`;
+  }
   return /^#[0-9a-f]{6}$/.test(normalized) ? normalized : null;
 }
 
@@ -79,7 +82,7 @@ export default function AppearanceClient({
     const primary = normalizeHex(primaryColor);
     const accent = normalizeHex(accentColor);
     if (!primary || !accent) {
-      setMsg('色碼格式錯誤，需使用 #rrggbb 格式');
+      setMsg('色碼格式錯誤，需使用 #rrggbb 或 #abc 格式');
       return;
     }
     setSaving(true);

@@ -16,7 +16,7 @@ function progressStatusStyle(status: string) {
   const map: Record<string, string> = {
     completed: 'bg-gray-100 text-gray-600 border-gray-300',
     current: 'bg-primary text-white border-primary',
-    upcoming: 'bg-white text-orange-600 border-orange-300',
+    upcoming: 'bg-white text-accent border-accent',
   };
   return map[status] ?? 'bg-white text-gray-600 border-gray-300';
 }

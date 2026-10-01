@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { clearSiteCache } from '@/lib/site'
 
 export async function GET(
   req: Request,
@@ -29,6 +30,14 @@ export async function PUT(
     const id = parseInt(idStr)
     const { name, slug, description } = await req.json()
 
+    const currentSite = await prisma.site.findUnique({ where: { id } })
+    if (!currentSite) {
+      return NextResponse.json(
+        { error: '找不到此子網站' },
+        { status: 404 }
+      )
+    }
+
     const existingSite = await prisma.site.findFirst({
       where: {
         slug,
@@ -47,6 +56,8 @@ export async function PUT(
       where: { id },
       data: { name, slug, description }
     })
+    clearSiteCache(currentSite.slug)
+    if (site.slug !== currentSite.slug) clearSiteCache(site.slug)
 
     return NextResponse.json(site)
   } catch (error) {
@@ -63,9 +74,12 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
+    const siteId = parseInt(id)
+    const site = await prisma.site.findUnique({ where: { id: siteId } })
     await prisma.site.delete({
-      where: { id: parseInt(id) }
+      where: { id: siteId }
     })
+    if (site) clearSiteCache(site.slug)
 
     return NextResponse.json({ message: '已刪除' })
   } catch (error) {

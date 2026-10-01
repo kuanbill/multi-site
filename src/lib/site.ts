@@ -1,7 +1,15 @@
 import { prisma } from './prisma';
 import type { Site } from '@prisma/client';
 
-const siteCache = new Map<string, Site>();
+const globalForSite = globalThis as unknown as {
+  siteCache: Map<string, Site> | undefined;
+};
+
+// 比照 prisma.ts 的 globalForPrisma：Turbopack 會把 route handler 與 SSR 切成
+// 不同的 module graph，各自實例化本模組；掛在 globalThis 上才能讓 clearSiteCache
+// 與前台讀取共用同一個 Map。
+const siteCache = globalForSite.siteCache ?? new Map<string, Site>();
+globalForSite.siteCache = siteCache;
 
 export async function getSiteBySlug(slug: string) {
   if (siteCache.has(slug)) return siteCache.get(slug);

@@ -5,6 +5,7 @@ import {
   validateAsset,
   validateDateRange,
   validateExternalUrl,
+  validateHexColor,
   validateSiteHomeInput,
   validateMeetingType,
   validateProgressStatus,
@@ -113,6 +114,21 @@ describe('content validation', () => {
     expect(parseFeatureVisibility('public')).toBe('public');
     expect(parseFeatureVisibility('members')).toBe('members');
     expect(() => parseFeatureVisibility('private')).toThrow('可見性');
+  });
+
+  it('normalizes 6-digit hex colors and expands 3-digit shorthand', () => {
+    expect(validateHexColor('#ABCDEF', '主色')).toBe('#abcdef');
+    expect(validateHexColor(' #047857 ', '輔色')).toBe('#047857');
+    expect(validateHexColor('#abc', '主色')).toBe('#aabbcc');
+    expect(validateHexColor('#AbC', '輔色')).toBe('#aabbcc');
+  });
+
+  it('rejects malformed color codes', () => {
+    expect(() => validateHexColor('red', '主色')).toThrow('色碼');
+    expect(() => validateHexColor('#12345', '主色')).toThrow('色碼');
+    expect(() => validateHexColor('#1234567', '輔色')).toThrow('色碼');
+    expect(() => validateHexColor('#gggggg', '主色')).toThrow('色碼');
+    expect(() => validateHexColor(0xff0000, '主色')).toThrow('色碼');
   });
 
 });

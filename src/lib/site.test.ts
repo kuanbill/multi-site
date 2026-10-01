@@ -1,19 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { findMany, findFirst } = vi.hoisted(() => ({ findMany: vi.fn(), findFirst: vi.fn() }))
+const { findMany, findFirst, findUnique } = vi.hoisted(() => ({
+  findMany: vi.fn(),
+  findFirst: vi.fn(),
+  findUnique: vi.fn(),
+}))
 
 vi.mock('./prisma', () => ({
   prisma: {
     siteFeature: { findMany, findFirst },
+    site: { findUnique },
   },
 }))
 
-import { getEnabledFeatureByPath, getEnabledFeatures, getPublicNavigationFeatures } from './site'
+import {
+  clearSiteCache,
+  getEnabledFeatureByPath,
+  getEnabledFeatures,
+  getPublicNavigationFeatures,
+  getSiteBySlug,
+} from './site'
 
 describe('site feature helpers', () => {
   beforeEach(() => {
     findMany.mockReset()
     findFirst.mockReset()
+    findUnique.mockReset()
+    clearSiteCache()
   })
 
   it('looks up an enabled feature by its sub-site route path', async () => {
@@ -59,5 +72,39 @@ describe('site feature helpers', () => {
       { key: 'first', label: '最前', path: 'first', enabled: true, sortOrder: 2 },
       { key: 'later', label: '較後', path: 'later', enabled: true, sortOrder: 8 },
     ])
+  })
+
+  it('caches site lookups and serves them without hitting the database', async () => {
+    findUnique.mockResolvedValue({ id: 7, slug: 'site-a', primaryColor: '#2563eb' })
+
+    await expect(getSiteBySlug('site-a')).resolves.toMatchObject({ primaryColor: '#2563eb' })
+    await expect(getSiteBySlug('site-a')).resolves.toMatchObject({ primaryColor: '#2563eb' })
+    expect(findUnique).toHaveBeenCalledTimes(1)
+  })
+
+  it('re-reads from the database after clearSiteCache for that slug', async () => {
+    findUnique.mockResolvedValue({ id: 7, slug: 'site-a', primaryColor: '#2563eb' })
+    await getSiteBySlug('site-a')
+
+    findUnique.mockResolvedValue({ id: 7, slug: 'site-a', primaryColor: '#0f766e' })
+    clearSiteCache('site-a')
+
+    await expect(getSiteBySlug('site-a')).resolves.toMatchObject({ primaryColor: '#0f766e' })
+    expect(findUnique).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps cached entries for other slugs when clearing a single slug', async () => {
+    findUnique.mockImplementation(({ where }: { where: { slug: string } }) =>
+      Promise.resolve({ id: 1, slug: where.slug, primaryColor: '#000000' }),
+    )
+    await getSiteBySlug('site-a')
+    await getSiteBySlug('site-b')
+
+    clearSiteCache('site-a')
+    await getSiteBySlug('site-a')
+    await getSiteBySlug('site-b')
+
+    expect(findUnique).toHaveBeenCalledTimes(3)
+    expect(findUnique).toHaveBeenLastCalledWith({ where: { slug: 'site-a' } })
   })
 })

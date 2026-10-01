@@ -52,7 +52,7 @@ export default function SiteLoginPage() {
               name="email"
               type="email"
               required
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
@@ -62,21 +62,21 @@ export default function SiteLoginPage() {
               name="password"
               type="password"
               required
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-2 bg-primary text-white rounded-lg hover:bg-accent disabled:opacity-50"
           >
             {loading ? '登入中...' : '登入'}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <Link href="/login" className="text-primary hover:underline">
             全域管理員登入
           </Link>
         </p>

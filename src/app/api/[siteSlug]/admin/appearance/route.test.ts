@@ -69,4 +69,17 @@ describe('site appearance update', () => {
     });
     expect(clearSiteCache).toHaveBeenCalledWith('site-a');
   });
+
+  it('expands shorthand hex codes', async () => {
+    const response = await PUT(
+      putRequest({ primaryColor: '#abc', accentColor: '#dEf' }),
+      routeContext,
+    );
+
+    expect(response.status).toBe(200);
+    expect(siteUpdate).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { primaryColor: '#aabbcc', accentColor: '#ddeeff' },
+    });
+  });
 });
