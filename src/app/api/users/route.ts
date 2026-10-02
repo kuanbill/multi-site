@@ -14,7 +14,11 @@ export async function GET() {
       name: true,
       email: true,
       role: true,
-      createdAt: true
+      createdAt: true,
+      sites: {
+        select: { role: true, site: { select: { name: true, slug: true } } },
+        orderBy: { siteId: 'asc' }
+      }
     },
     orderBy: { createdAt: 'desc' }
   })

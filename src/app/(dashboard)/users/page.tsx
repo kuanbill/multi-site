@@ -16,7 +16,11 @@ export default async function UsersPage() {
       name: true,
       email: true,
       role: true,
-      createdAt: true
+      createdAt: true,
+      sites: {
+        select: { role: true, site: { select: { name: true, slug: true } } },
+        orderBy: { siteId: 'asc' }
+      }
     },
     orderBy: { createdAt: 'desc' }
   })
@@ -37,6 +41,7 @@ export default async function UsersPage() {
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">姓名</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">電子郵件</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">角色</th>
+              <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">所屬專案</th>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">註冊時間</th>
               <th className="px-6 py-3 text-right text-sm font-medium text-gray-500">操作</th>
             </tr>
@@ -54,6 +59,23 @@ export default async function UsersPage() {
                   }`}>
                     {user.role === 'admin' ? '管理員' : '編輯者'}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  {user.sites.length === 0 ? (
+                    <span className="text-gray-400 text-sm">無</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {user.sites.map((membership) => (
+                        <span
+                          key={membership.site.slug}
+                          className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700"
+                        >
+                          {membership.site.name}
+                          <span className="text-blue-400">（{membership.role}）</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-gray-500">
                   {new Date(user.createdAt).toLocaleDateString('zh-TW')}

@@ -20,6 +20,13 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState('editor');
+  const [editPassword, setEditPassword] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -63,8 +70,54 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
     }
   }
 
+  function startEdit(m: Member) {
+    setEditingId(m.userId);
+    setEditName(m.name);
+    setEditEmail(m.email);
+    setEditRole(m.siteRole);
+    setEditPassword('');
+    setEditError('');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError('');
+  }
+
+  async function handleEdit(userId: number) {
+    setEditSaving(true);
+    setEditError('');
+    const res = await fetch(`/api/${siteSlug}/admin/users`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        name: editName,
+        email: editEmail,
+        role: editRole,
+        password: editPassword || undefined,
+      }),
+    });
+    const data = await res.json();
+    setEditSaving(false);
+    if (!res.ok) {
+      setEditError(data.error || '更新失敗');
+      return;
+    }
+    setMembers(
+      members.map((m) =>
+        m.userId === userId
+          ? { ...m, name: data.user.name, email: data.user.email, siteRole: data.siteRole }
+          : m,
+      ),
+    );
+    setEditingId(null);
+    router.refresh();
+  }
+
   return (
     <div>
+      {editError && <div className="mb-4 p-2 bg-red-100 text-red-700 rounded text-sm">{editError}</div>}
       <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -76,18 +129,57 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
             </tr>
           </thead>
           <tbody className="divide-y">
-            {members.map((m) => (
-              <tr key={m.userId}>
-                <td className="px-4 py-2">{m.name}</td>
-                <td className="px-4 py-2 text-gray-500">{m.email}</td>
-                <td className="px-4 py-2">{m.siteRole}</td>
-                <td className="px-4 py-2 text-right">
-                  <button onClick={() => handleRemove(m.userId)} className="text-red-600 hover:underline text-sm">
-                    移除
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {members.map((m) =>
+              editingId === m.userId ? (
+                <tr key={m.userId} className="bg-blue-50">
+                  <td className="px-4 py-2">
+                    <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-2 py-1 border rounded" />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full px-2 py-1 border rounded" />
+                  </td>
+                  <td className="px-4 py-2">
+                    <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
+                      <option value="viewer">viewer</option>
+                      <option value="editor">editor</option>
+                      <option value="admin">admin</option>
+                    </select>
+                    <input
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      placeholder="新密碼（留空不變更）"
+                      className="mt-1 w-full px-2 py-1 border rounded text-sm"
+                    />
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <button
+                      onClick={() => handleEdit(m.userId)}
+                      disabled={editSaving}
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {editSaving ? '儲存中...' : '儲存'}
+                    </button>
+                    <button onClick={cancelEdit} className="ml-2 text-gray-600 hover:underline text-sm">
+                      取消
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={m.userId}>
+                  <td className="px-4 py-2">{m.name}</td>
+                  <td className="px-4 py-2 text-gray-500">{m.email}</td>
+                  <td className="px-4 py-2">{m.siteRole}</td>
+                  <td className="px-4 py-2 text-right">
+                    <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline text-sm">
+                      修改
+                    </button>
+                    <button onClick={() => handleRemove(m.userId)} className="ml-3 text-red-600 hover:underline text-sm">
+                      移除
+                    </button>
+                  </td>
+                </tr>
+              ),
+            )}
           </tbody>
         </table>
         {members.length === 0 && <div className="p-4 text-center text-gray-500">尚無成員</div>}
