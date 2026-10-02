@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { isRoleValue } from '@/lib/roles'
 
 export async function GET() {
   if (!await getAdminSession()) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
     const password = typeof body.password === 'string' ? body.password : ''
-    const role = body.role === 'admin' ? 'admin' : body.role === 'editor' ? 'editor' : ''
+    const role = isRoleValue(body.role) ? body.role : ''
 
     if (!name || !email || !password || !role) {
       return NextResponse.json({ error: '請填寫所有欄位' }, { status: 400 })

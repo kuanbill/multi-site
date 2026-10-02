@@ -116,6 +116,11 @@ export function canManageSiteSettings(role: SiteRole): boolean {
   return role === 'global-admin' || role === 'admin';
 }
 
+/** 功能設定（啟用、排序、顯示模式、前台可見性）開放給站點管理員與編輯者。 */
+export function canManageFeatureSettings(role: SiteRole): boolean {
+  return role === 'global-admin' || role === 'admin' || role === 'editor';
+}
+
 function isSiteRole(value: string): value is Exclude<SiteRole, 'global-admin'> {
   return value === 'admin' || value === 'editor' || value === 'viewer';
 }

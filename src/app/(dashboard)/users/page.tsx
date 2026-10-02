@@ -2,13 +2,16 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
-import ToggleRoleButton from './ToggleRoleButton'
+import { roleLabel } from '@/lib/roles'
+import RoleSelect from './RoleSelect'
 import DeleteUserButton from './DeleteUserButton'
 
 export const dynamic = 'force-dynamic'
 
 export default async function UsersPage() {
-  if (!await getAdminSession()) redirect('/')
+  const session = await getAdminSession()
+  if (!session) redirect('/')
+  const currentUserId = session.user.id
 
   const users = await prisma.user.findMany({
     select: {
@@ -52,16 +55,16 @@ export default async function UsersPage() {
                 <td className="px-6 py-4">{user.name}</td>
                 <td className="px-6 py-4 text-gray-500">{user.email}</td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.role === 'admin'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {user.role === 'admin' ? '管理員' : '編輯者'}
-                  </span>
+                  <RoleSelect
+                    id={user.id}
+                    currentRole={user.role}
+                    disabled={String(user.id) === currentUserId}
+                  />
                 </td>
                 <td className="px-6 py-4">
-                  {user.sites.length === 0 ? (
+                  {user.role === 'admin' ? (
+                    <span className="text-gray-400 text-sm">—</span>
+                  ) : user.sites.length === 0 ? (
                     <span className="text-gray-400 text-sm">無</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
@@ -71,7 +74,7 @@ export default async function UsersPage() {
                           className="px-2 py-0.5 text-xs rounded-full bg-blue-50 text-blue-700"
                         >
                           {membership.site.name}
-                          <span className="text-blue-400">（{membership.role}）</span>
+                          <span className="text-blue-400">（{roleLabel(membership.role)}）</span>
                         </span>
                       ))}
                     </div>
@@ -85,7 +88,6 @@ export default async function UsersPage() {
                     <Link href={`/users/${user.id}/edit`} className="text-blue-600 hover:underline">
                       編輯
                     </Link>
-                    <ToggleRoleButton id={user.id} currentRole={user.role} />
                     <DeleteUserButton id={user.id} />
                   </div>
                 </td>

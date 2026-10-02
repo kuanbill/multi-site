@@ -70,8 +70,9 @@ export default function UserForm({ user }: UserFormProps) {
         <div>
           <label className="block text-sm font-medium mb-1">角色</label>
           <select name="role" defaultValue={user?.role || 'editor'} className="w-full px-3 py-2 border rounded-lg">
-            <option value="editor">編輯者</option>
             <option value="admin">管理員</option>
+            <option value="editor">編輯者</option>
+            <option value="viewer">檢視者</option>
           </select>
         </div>
 

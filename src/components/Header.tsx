@@ -1,6 +1,7 @@
 'use client'
 
 import { signOut } from 'next-auth/react'
+import { roleLabel } from '@/lib/roles'
 
 interface HeaderProps {
   user: {
@@ -19,7 +20,7 @@ export default function Header({ user, siteName }: HeaderProps) {
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-sm font-medium">{user.name}</p>
-          <p className="text-xs text-gray-500">{user.role === 'admin' ? '管理員' : '編輯者'}</p>
+          <p className="text-xs text-gray-500">{user.role ? roleLabel(user.role) : ''}</p>
         </div>
 
         <button

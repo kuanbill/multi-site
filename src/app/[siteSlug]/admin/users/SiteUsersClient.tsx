@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { roleLabel, ROLE_VALUES } from '@/lib/roles';
 
 interface Member {
   userId: number;
@@ -140,9 +141,9 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
                   </td>
                   <td className="px-4 py-2">
                     <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
-                      <option value="viewer">viewer</option>
-                      <option value="editor">editor</option>
-                      <option value="admin">admin</option>
+                      {ROLE_VALUES.map((value) => (
+                        <option key={value} value={value}>{roleLabel(value)}</option>
+                      ))}
                     </select>
                     <input
                       value={editPassword}
@@ -168,7 +169,7 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
                 <tr key={m.userId}>
                   <td className="px-4 py-2">{m.name}</td>
                   <td className="px-4 py-2 text-gray-500">{m.email}</td>
-                  <td className="px-4 py-2">{m.siteRole}</td>
+                  <td className="px-4 py-2">{roleLabel(m.siteRole)}</td>
                   <td className="px-4 py-2 text-right">
                     <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline text-sm">
                       修改
@@ -201,9 +202,9 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
           <div>
             <label className="block text-sm font-medium mb-1">站內角色</label>
             <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-              <option value="viewer">viewer</option>
-              <option value="editor">editor</option>
-              <option value="admin">admin</option>
+              {ROLE_VALUES.map((value) => (
+                <option key={value} value={value}>{roleLabel(value)}</option>
+              ))}
             </select>
           </div>
           <div>

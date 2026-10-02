@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
+import { isRoleValue } from '@/lib/roles'
 
 function parseUserId(id: string) {
   const userId = Number.parseInt(id, 10)
@@ -69,11 +70,11 @@ export async function PATCH(
       return NextResponse.json({ error: '無法修改目前登入帳號的角色' }, { status: 400 })
     }
 
-    if (role === 'editor' && await isLastAdmin(userId)) {
+    if (role !== 'admin' && await isLastAdmin(userId)) {
       return NextResponse.json({ error: '無法降低最後一位管理員的權限' }, { status: 400 })
     }
 
-    if (!['admin', 'editor'].includes(role)) {
+    if (!isRoleValue(role)) {
       return NextResponse.json(
         { error: '無效的角色' },
         { status: 400 }
@@ -113,7 +114,7 @@ export async function PUT(
     const name = typeof body.name === 'string' ? body.name.trim() : ''
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
     const password = typeof body.password === 'string' ? body.password : ''
-    const role = body.role === 'admin' ? 'admin' : body.role === 'editor' ? 'editor' : ''
+    const role = isRoleValue(body.role) ? body.role : ''
 
     if (!name || !email || !role) {
       return NextResponse.json({ error: '姓名、電子郵件和角色為必填' }, { status: 400 })
@@ -134,7 +135,7 @@ export async function PUT(
       return NextResponse.json({ error: '無法降低目前登入帳號的權限' }, { status: 400 })
     }
 
-    if (role === 'editor' && await isLastAdmin(userId)) {
+    if (role !== 'admin' && await isLastAdmin(userId)) {
       return NextResponse.json({ error: '無法降低最後一位管理員的權限' }, { status: 400 })
     }
 

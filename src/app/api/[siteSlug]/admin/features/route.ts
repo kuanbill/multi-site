@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { canManageSiteSettings, requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
+import { canManageFeatureSettings, requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
 import { parseFeatureVisibility } from '@/lib/contentValidation';
 import { mergeSiteFeatures } from '@/lib/features';
 
@@ -28,9 +28,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
 async function saveFeatures(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'write');
-  const canChangeVisibility = canManageSiteSettings(context.siteRole);
+  const canChangeVisibility = canManageFeatureSettings(context.siteRole);
   if (!canChangeVisibility) {
-    return NextResponse.json({ error: '只有站點管理員可修改功能設定' }, { status: 403 });
+    return NextResponse.json({ error: '只有站點管理員與編輯者可修改功能設定' }, { status: 403 });
   }
 
   let body: unknown;
@@ -58,10 +58,10 @@ async function saveFeatures(request: Request, { params }: RouteContext) {
         ? parseFeatureVisibility(current?.visibility ?? 'public')
         : parseFeatureVisibility(feature.visibility);
       if (!canChangeVisibility && current && visibility !== current.visibility) {
-        throw new Error('只有站點管理員可設定功能可見性');
+        throw new Error('只有站點管理員與編輯者可設定功能可見性');
       }
       if (!canChangeVisibility && !current && visibility !== 'public') {
-        throw new Error('只有站點管理員可設定功能可見性');
+        throw new Error('只有站點管理員與編輯者可設定功能可見性');
       }
       return { ...feature, sortOrder, displayMode, visibility };
     });
@@ -93,7 +93,7 @@ async function saveFeatures(request: Request, { params }: RouteContext) {
       '排序參數錯誤',
       '顯示方式無效',
       '功能可見性無效',
-      '只有站點管理員可設定功能可見性',
+      '只有站點管理員與編輯者可設定功能可見性',
     ].includes(error.message)) {
       return NextResponse.json({ error: error.message }, { status: error.message.includes('只有') ? 403 : 400 });
     }
