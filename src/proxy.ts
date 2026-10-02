@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 const RESERVED = new Set(['login', 'register', 'api', 'sites', 'admin', 'users', '_next', 'favicon.ico']);
 
@@ -21,17 +22,20 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export default withAuth(
-  function middleware(req) {
+  function middleware(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
     const parts = pathname.split('/').filter(Boolean);
+    const requestHeaders = new Headers(req.headers);
     if (parts.length > 0) {
       const first = parts[0];
       if (!RESERVED.has(first)) {
         // inject header for downstream use
-        req.headers.set('x-site-slug', first);
+        requestHeaders.set('x-site-slug', first);
       }
     }
-    return NextResponse.next();
+    // 前台守衛用來產生登入回導 callbackUrl 的目前路徑（含 query）
+    requestHeaders.set('x-pathname', pathname + req.nextUrl.search);
+    return NextResponse.next({ request: { headers: requestHeaders } });
   },
   {
     callbacks: {

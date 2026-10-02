@@ -1,8 +1,10 @@
 import type { FeatureDefinition, Site, SiteFeature } from '@prisma/client';
 import type { Session } from 'next-auth';
 import { getServerSession } from 'next-auth';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { authOptions } from './auth';
+import { resolveSafeCallbackUrl } from './callbackUrl';
 import { getSiteBySlug, getSiteFeature } from './site';
 
 export type SiteRole = 'admin' | 'editor' | 'viewer' | 'global-admin';
@@ -54,13 +56,53 @@ export async function requirePublicFeature(
 
   if (feature.visibility !== 'public') {
     const session = await getServerSession(authOptions);
-    if (!session) redirect(`/${siteSlug}/login`);
-    const isGlobalAdmin = session.user.role === 'admin';
-    const isSiteMember = session.user.siteRoles?.some((role) => role.slug === siteSlug);
-    if (!isGlobalAdmin && !isSiteMember) redirect('/403');
+    const isGlobalAdmin = session?.user.role === 'admin';
+    const isSiteMember = Boolean(
+      session?.user.siteRoles?.some((role) => role.slug === siteSlug),
+    );
+    if (!session || (!isGlobalAdmin && !isSiteMember)) {
+      // 未登入與已登入非成員一律導向站點登入頁；
+      // 非成員（mode=not-member）會在登入頁被自動登出，站點登入驗證也拒絕非成員。
+      redirect(
+        await buildSiteLoginRedirect(
+          siteSlug,
+          feature.feature.path || featureKey,
+          session ? 'not-member' : 'members-only',
+        ),
+      );
+    }
   }
 
   return { site, feature, publishedWhere: PUBLISHED_CONTENT_WHERE };
+}
+
+async function buildSiteLoginRedirect(
+  siteSlug: string,
+  featurePath: string,
+  mode: 'members-only' | 'not-member',
+): Promise<string> {
+  const params = new URLSearchParams();
+  if (mode === 'members-only') {
+    params.set('reason', 'members-only');
+  } else {
+    params.set('error', 'not-member');
+  }
+  params.set('callbackUrl', await resolveCallbackPath(siteSlug, featurePath));
+  return `/${siteSlug}/login?${params.toString()}`;
+}
+
+/** 取得目前請求路徑（由 proxy 注入 x-pathname），不安全時退回功能首頁。 */
+async function resolveCallbackPath(siteSlug: string, featurePath: string): Promise<string> {
+  const fallback = `/${siteSlug}/${featurePath}`;
+  let raw: string | null = null;
+  try {
+    raw = (await headers()).get('x-pathname');
+  } catch {
+    raw = null;
+  }
+  if (!raw) return fallback;
+  const safe = resolveSafeCallbackUrl(raw, siteSlug);
+  return safe === `/${siteSlug}` ? fallback : safe;
 }
 
 export function canPerformContentAction(role: SiteRole, action: ContentAction): boolean {

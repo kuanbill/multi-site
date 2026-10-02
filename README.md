@@ -83,6 +83,7 @@ npm run build
 ## 子路徑與功能選單
 
 - 前台：`http://localhost:3000/{slug}/`、`/{slug}/pages/{pageSlug}`、`/{slug}/posts/{postSlug}`；公開功能可匿名瀏覽，會員功能需登入站點帳號，舊文章只公開已發布項目。
+- 僅限成員的前台功能：未登入訪客會被導向 `/{slug}/login`（附 `reason=members-only` 與 `callbackUrl`），以本站成員身分登入後回到原頁面；已登入但不屬於該站的帳號會在登入頁被自動登出並提示改用成員帳號，站點登入驗證本身也拒絕非本站帳號。回導網址只接受本站相對路徑，避免開放重新導向。
 - 後台：`/{slug}/admin` 需該站成員或全域 `admin`；`/{slug}/admin/users` 邀請站成員，`/{slug}/admin/settings/features` 設定啟用功能。
 - 全域功能目錄：`/admin/features`（僅 `admin`）可管理功能定義；目前已實作的七項系統功能可在站點設定中啟用後顯示於前台導覽及後台側欄。新增自訂功能定義不會自動產生內容管理頁。
 - 前台導覽只顯示已啟用功能，並依站點設定的排序顯示；站點首頁連結獨立於功能選單。
