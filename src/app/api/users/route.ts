@@ -46,19 +46,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '密碼至少需要 6 個字元' }, { status: 400 })
     }
 
+    const siteRole = isRoleValue(body.siteRole) ? body.siteRole : 'editor'
+    let siteId: number | null = null
+    if (body.siteId !== null && body.siteId !== undefined && body.siteId !== '') {
+      const parsed = Number(body.siteId)
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return NextResponse.json({ error: '無效的子網站' }, { status: 400 })
+      }
+      siteId = parsed
+    }
+
+    if (role !== 'admin' && siteId) {
+      const site = await prisma.site.findUnique({ where: { id: siteId } })
+      if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       return NextResponse.json({ error: '此電子郵件已被註冊' }, { status: 409 })
     }
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: await hash(password, 12),
-        role
-      },
-      select: { id: true, name: true, email: true, role: true, createdAt: true }
+    const passwordHash = await hash(password, 12)
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: { name, email, password: passwordHash, role },
+        select: { id: true, name: true, email: true, role: true, createdAt: true }
+      })
+      if (role !== 'admin' && siteId) {
+        await tx.siteUser.create({ data: { userId: created.id, siteId, role: siteRole } })
+      }
+      return created
     })
 
     return NextResponse.json(user, { status: 201 })

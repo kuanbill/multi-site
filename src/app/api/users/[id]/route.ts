@@ -139,6 +139,21 @@ export async function PUT(
       return NextResponse.json({ error: '無法降低最後一位管理員的權限' }, { status: 400 })
     }
 
+    const siteRole = isRoleValue(body.siteRole) ? body.siteRole : 'editor'
+    let siteId: number | null = null
+    if (body.siteId !== null && body.siteId !== undefined && body.siteId !== '') {
+      const parsed = Number(body.siteId)
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return NextResponse.json({ error: '無效的子網站' }, { status: 400 })
+      }
+      siteId = parsed
+    }
+
+    if (role !== 'admin' && siteId) {
+      const site = await prisma.site.findUnique({ where: { id: siteId } })
+      if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
+    }
+
     const data: { name: string; email: string; role: string; password?: string } = {
       name,
       email,
@@ -146,10 +161,21 @@ export async function PUT(
     }
     if (password) data.password = await hash(password, 12)
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data,
-      select: { id: true, name: true, email: true, role: true, createdAt: true }
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data,
+        select: { id: true, name: true, email: true, role: true, createdAt: true }
+      })
+
+      if (role !== 'admin') {
+        await tx.siteUser.deleteMany({ where: { userId } })
+        if (siteId) {
+          await tx.siteUser.create({ data: { userId, siteId, role: siteRole } })
+        }
+      }
+
+      return updated
     })
 
     return NextResponse.json(user)

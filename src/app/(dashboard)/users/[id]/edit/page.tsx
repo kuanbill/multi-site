@@ -14,11 +14,37 @@ export default async function EditUserPage({
   const userId = Number.parseInt(id, 10)
   if (!Number.isInteger(userId)) notFound()
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, role: true }
-  })
+  const [user, sites] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        sites: {
+          select: { siteId: true, role: true },
+          orderBy: { siteId: 'asc' }
+        }
+      }
+    }),
+    prisma.site.findMany({
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' }
+    })
+  ])
   if (!user) notFound()
 
-  return <UserForm user={user} />
+  const membership = user.sites[0] ?? null
+
+  return (
+    <UserForm
+      user={{ id: user.id, name: user.name, email: user.email, role: user.role }}
+      sites={sites}
+      initialSite={{
+        siteId: membership?.siteId ?? null,
+        siteRole: membership?.role ?? 'editor'
+      }}
+    />
+  )
 }
