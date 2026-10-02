@@ -7,12 +7,13 @@ import Link from 'next/link';
 
 interface Props {
   siteSlug: string;
+  siteName: string;
   notice: string | null;
   autoSignOut: boolean;
   targetUrl: string;
 }
 
-export default function SiteLoginForm({ siteSlug, notice, autoSignOut, targetUrl }: Props) {
+export default function SiteLoginForm({ siteSlug, siteName, notice, autoSignOut, targetUrl }: Props) {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -54,7 +55,7 @@ export default function SiteLoginForm({ siteSlug, notice, autoSignOut, targetUrl
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
         <h1 className="text-2xl font-bold text-center mb-2">專案登入</h1>
-        <p className="text-center text-sm text-gray-500 mb-6">{siteSlug}</p>
+        <p className="text-center text-sm text-gray-500 mb-6">{siteName}</p>
 
         {notice && (
           <div className="mb-4 p-3 bg-amber-100 text-amber-800 rounded text-sm">{notice}</div>
