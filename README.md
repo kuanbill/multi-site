@@ -53,6 +53,16 @@ NEXTAUTH_URL="http://localhost:3000"
 
 上述帳號與密碼只供本機開發及測試，**絕對不要在正式環境使用**。正式環境應建立新的帳號並使用安全、唯一的密碼與秘密金鑰。
 
+## 網站圖示
+
+全站共用同一組網站圖示（favicon 與 iOS 主畫面圖示），來源圖為 `assets/icon-source.png`：
+
+```bash
+npm run icons
+```
+
+腳本會自動偵測來源圖的非白範圍、套用圓角遮罩（保留白底），並產出 `src/app/icon.png`（512×512）與 `src/app/apple-icon.png`（180×180，不含透明）。更換圖示時替換 `assets/icon-source.png` 後重新執行即可，不需手動調整尺寸。
+
 ## 驗證
 
 ```bash
