@@ -19,7 +19,6 @@ export type SiteHomeInput = {
   contactEmail: string | null;
   contactAddress: string | null;
   heroMediaId: number | null;
-  heroMediaUrl: string | null;
 };
 
 const ASSET_EXTENSIONS: Record<string, string> = {
@@ -63,7 +62,6 @@ export function validateSiteHomeInput(value: unknown): SiteHomeInput {
   const heroMediaId = body.heroMediaId === undefined || body.heroMediaId === null || body.heroMediaId === ''
     ? null
     : parsePositiveInteger(body.heroMediaId, '首頁主圖');
-  const heroMediaUrl = optionalText(body.heroMediaUrl);
 
   return {
     tagline,
@@ -74,7 +72,6 @@ export function validateSiteHomeInput(value: unknown): SiteHomeInput {
     contactEmail,
     contactAddress: optionalText(body.contactAddress),
     heroMediaId,
-    heroMediaUrl,
   };
 }
 

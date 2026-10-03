@@ -43,6 +43,7 @@ model Site {
   selection    SelectionInfo?
   maps         MapAsset[]
   attachments  ContentAttachment[]
+  homeSections SiteHomeSection[]
 }
 
 model FeatureDefinition {
@@ -57,6 +58,7 @@ model FeatureDefinition {
   createdAt    DateTime      @default(now())
   siteFeatures SiteFeature[]
   entries      FeatureEntry[]
+  homeSections SiteHomeSection[]
 }
 
 model SiteFeature {
@@ -148,6 +150,24 @@ model Media {
   mapImages MapAsset[] @relation("MapImageMedia")
   mapDownloads MapAsset[] @relation("MapDownloadMedia")
   featureEntryImages FeatureEntry[] @relation("FeatureEntryMedia")
+}
+
+model SiteHomeSection {
+  id         Int       @id @default(autoincrement())
+  siteId     Int
+  sourceType String // feature, announcement, progress, page
+  featureId  Int? // 僅 sourceType = feature 時使用
+  filter     String    @default("all") // 僅 progress：current, all
+  title      String?
+  limit      Int       @default(3)
+  showAll    Boolean   @default(true)
+  sortOrder  Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  site       Site              @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  feature    FeatureDefinition? @relation(fields: [featureId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, sortOrder])
 }
 
 model SiteHome {

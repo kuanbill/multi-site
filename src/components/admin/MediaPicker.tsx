@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface MediaItem {
@@ -34,10 +33,9 @@ export default function MediaPicker({
   maxItems,
   hint,
 }: MediaPickerProps) {
-  const router = useRouter();
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reloadToken, setReloadToken] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newFile, setNewFile] = useState<File | null>(null);
@@ -50,21 +48,30 @@ export default function MediaPicker({
     all: '*/*',
   }[accept];
 
-  // 加載媒體列表
-  useState(() => {
-    async function loadMedia() {
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function load() {
       try {
-        const res = await fetch(`/api/${siteSlug}/admin/assets`);
-        if (res.ok) {
-          const data = await res.json();
-          setMediaList(Array.isArray(data) ? data : []);
-        }
+        const res = await fetch(`/api/${siteSlug}/admin/assets`, { signal: controller.signal });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setMediaList(Array.isArray(data) ? data : []);
       } catch {
-        // 靜默失敗
+        // 載入失敗或已卸載時保留空列表，由使用者重新開啟面板再試
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
-    loadMedia();
-  });
+
+    void load();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [siteSlug, reloadToken]);
 
   async function handleUpload() {
     if (!newFile) return;
@@ -84,9 +91,7 @@ export default function MediaPicker({
         return;
       }
       // 重新加載媒體列表
-      const loadRes = await fetch(`/api/${siteSlug}/admin/assets`);
-      const loadData = await loadRes.json();
-      setMediaList(Array.isArray(loadData) ? loadData : []);
+      setReloadToken((token) => token + 1);
       // 自動選取新上傳的
       const newId = data.id as number;
       if (multiple) {
@@ -96,7 +101,7 @@ export default function MediaPicker({
       }
       setShowModal(false);
       setNewFile(null);
-    } catch (e) {
+    } catch {
       setError('上傳發生錯誤');
     } finally {
       setUploadingFile(false);
@@ -116,6 +121,8 @@ export default function MediaPicker({
     if (accept === 'pdf' && m.type !== 'pdf') return false;
     return true;
   });
+
+  const selectedPreview = filteredMedia.find((m) => m.id === selectedIds[0]);
 
   return (
     <div>
@@ -137,9 +144,9 @@ export default function MediaPicker({
       >
         {selectedIds.length > 0 ? (
           <div className="flex items-center gap-2">
-            {filteredMedia.find((m) => m.id === selectedIds[0])?.url && (
+            {selectedPreview?.url && (
               <Image
-                src={filteredMedia.find((m) => m.id === selectedIds[0])!.url}
+                src={selectedPreview.url}
                 alt=""
                 width={24}
                 height={24}
@@ -156,7 +163,7 @@ export default function MediaPicker({
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            選擇매체를 선택하거나 업로드
+            選擇媒體或上傳新檔
           </div>
         )}
       </button>

@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import type { SiteHome } from '@prisma/client';
 import { useRouter } from 'next/navigation';
+import { MediaPicker } from '@/components/admin';
 
-type HomeValues = Omit<SiteHome, 'id' | 'siteId' | 'updatedAt'> & { heroMediaUrl: string | null };
+type HomeValues = Omit<SiteHome, 'id' | 'siteId' | 'updatedAt'>;
 
 const emptyHome: HomeValues = {
   tagline: '',
   intro: '',
   heroMediaId: null,
-  heroMediaUrl: '',
   currentStage: '',
   contactName: '',
   contactPhone: '',
@@ -32,7 +32,6 @@ export default function HomeForm({
           tagline: initial.tagline ?? '',
           intro: initial.intro ?? '',
           heroMediaId: initial.heroMediaId,
-          heroMediaUrl: initial.heroMediaUrl ?? '',
           currentStage: initial.currentStage ?? '',
           contactName: initial.contactName ?? '',
           contactPhone: initial.contactPhone ?? '',
@@ -59,7 +58,6 @@ export default function HomeForm({
         body: JSON.stringify({
           ...values,
           heroMediaId: values.heroMediaId || null,
-          heroMediaUrl: values.heroMediaUrl || null,
         }),
       });
       const result = await response.json();
@@ -92,15 +90,26 @@ export default function HomeForm({
         專案簡介
         <textarea value={values.intro ?? ''} onChange={(event) => update('intro', event.target.value)} rows={5} className="mt-1 w-full px-3 py-2 border rounded-lg" />
       </label>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="block text-sm font-medium">
-          主圖 Media ID
-          <input type="number" min="1" value={values.heroMediaId ?? ''} onChange={(event) => setValues((current) => ({ ...current, heroMediaId: event.target.value ? Number(event.target.value) : null }))} className="mt-1 w-full px-3 py-2 border rounded-lg" />
-        </label>
-        <label className="block text-sm font-medium">
-          主圖 URL
-          <input value={values.heroMediaUrl ?? ''} onChange={(event) => update('heroMediaUrl', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
-        </label>
+      <div className="space-y-2">
+        <MediaPicker
+          siteSlug={siteSlug}
+          label="首頁主圖"
+          accept="image"
+          selectedIds={values.heroMediaId ? [values.heroMediaId] : []}
+          onSelectionChange={(ids) =>
+            setValues((current) => ({ ...current, heroMediaId: ids.length > 0 ? ids[0] : null }))
+          }
+          hint="建議使用寬幅橫向圖片，首頁會以滿版寬度顯示。"
+        />
+        {values.heroMediaId && (
+          <button
+            type="button"
+            onClick={() => setValues((current) => ({ ...current, heroMediaId: null }))}
+            className="text-sm text-gray-600 hover:underline"
+          >
+            清除主圖
+          </button>
+        )}
       </div>
       <div className="border-t pt-6">
         <h3 className="font-medium mb-4">聯絡資訊</h3>

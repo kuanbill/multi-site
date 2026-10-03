@@ -52,7 +52,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   try {
-    const heroMediaId = await resolveHeroMediaId(context.site.id, input.heroMediaId, input.heroMediaUrl);
+    const heroMediaId = await resolveHeroMediaId(context.site.id, input.heroMediaId);
     const saved = await prisma.siteHome.upsert({
       where: { siteId: context.site.id },
       create: {
@@ -86,14 +86,14 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 }
 
-async function resolveHeroMediaId(siteId: number, heroMediaId: number | null, heroMediaUrl: string | null) {
-  if (heroMediaId === null && !heroMediaUrl) return null;
+/** 主圖必須是本站台媒體池內的既有檔案；不接受站外網址。 */
+async function resolveHeroMediaId(siteId: number, heroMediaId: number | null) {
+  if (heroMediaId === null) return null;
 
-  const media = heroMediaId
-    ? await prisma.media.findFirst({ where: { id: heroMediaId, siteId }, select: { id: true, url: true } })
-    : await prisma.media.findFirst({ where: { siteId, url: heroMediaUrl ?? '' }, select: { id: true, url: true } });
-  if (!media || (heroMediaUrl && media.url !== heroMediaUrl)) {
-    throw new Error('首頁主圖不存在或不屬於此站點');
-  }
+  const media = await prisma.media.findFirst({
+    where: { id: heroMediaId, siteId },
+    select: { id: true },
+  });
+  if (!media) throw new Error('首頁主圖不存在或不屬於此站點');
   return media.id;
 }

@@ -89,7 +89,6 @@ describe('content validation', () => {
         contactEmail: 'hello@example.com',
         contactAddress: '台北市',
         heroMediaId: 7,
-        heroMediaUrl: 'https://cdn.example.com/hero.jpg',
         siteId: 999,
       }),
     ).toEqual({
@@ -101,7 +100,21 @@ describe('content validation', () => {
       contactEmail: 'hello@example.com',
       contactAddress: '台北市',
       heroMediaId: 7,
-      heroMediaUrl: 'https://cdn.example.com/hero.jpg',
+    });
+  });
+
+  it('ignores a hero image URL so the media picker is the only way to set it', () => {
+    expect(
+      validateSiteHomeInput({ heroMediaUrl: 'https://cdn.example.com/hero.jpg', siteId: 999 }),
+    ).toEqual({
+      tagline: null,
+      intro: null,
+      currentStage: null,
+      contactName: null,
+      contactPhone: null,
+      contactEmail: null,
+      contactAddress: null,
+      heroMediaId: null,
     });
   });
 

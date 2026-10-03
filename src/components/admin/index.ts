@@ -6,3 +6,5 @@ export { NumberInput, type NumberInputProps } from './NumberInput';
 export { DateInput, type DateInputProps } from './DateInput';
 export { StatusBadge, ProgressStatusBadge } from './StatusBadge';
 export { default as MediaPicker } from './MediaPicker';
+export { default as HomeSectionForm, type FeatureOption, type HomeSectionFormValue } from './HomeSectionForm';
+export { default as HomeSectionsManager, type HomeSectionRow } from './HomeSectionsManager';
