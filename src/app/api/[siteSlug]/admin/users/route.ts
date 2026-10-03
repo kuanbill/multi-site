@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import {
+  canAssignSiteAdmin,
+  canManageSiteMembers,
+  requireSiteContext,
+} from '@/lib/contentAccess';
 
 const SITE_ROLES = ['admin', 'editor', 'viewer'] as const;
 
@@ -12,15 +15,17 @@ function isSiteRole(value: unknown): value is SiteRole {
   return typeof value === 'string' && (SITE_ROLES as readonly string[]).includes(value);
 }
 
+function memberManageDenied() {
+  return NextResponse.json({ error: '只有站點管理員或編輯者可管理成員' }, { status: 403 });
+}
+
+function siteAdminChangeDenied() {
+  return NextResponse.json({ error: '只有站點管理員可變更站點管理員' }, { status: 403 });
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isAdmin = session.user.role === 'admin';
-  const has = isAdmin || session.user.siteRoles?.some((r) => r.slug === siteSlug);
-  if (!has) return NextResponse.json({ error: '無權限' }, { status: 403 });
+  const { site } = await requireSiteContext(siteSlug);
 
   const members = await prisma.siteUser.findMany({
     where: { siteId: site.id },
@@ -37,31 +42,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ siteSlu
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isGlobalAdmin = session.user.role === 'admin';
-  const membership = session.user.siteRoles?.find((r) => r.slug === siteSlug);
-  if (!isGlobalAdmin && membership?.role !== 'admin') return NextResponse.json({ error: '只有站點管理員可移除' }, { status: 403 });
+  const { site, siteRole } = await requireSiteContext(siteSlug);
+  if (!canManageSiteMembers(siteRole)) return memberManageDenied();
+
   const url = new URL(req.url);
   const userId = url.searchParams.get('userId');
   if (!userId) return NextResponse.json({ error: '缺少 userId' }, { status: 400 });
-  await prisma.siteUser.deleteMany({ where: { siteId: site.id, userId: parseInt(userId) } });
+  const parsedUserId = Number.parseInt(userId, 10);
+  if (!Number.isInteger(parsedUserId) || parsedUserId <= 0) {
+    return NextResponse.json({ error: '無效的 userId' }, { status: 400 });
+  }
+
+  const target = await prisma.siteUser.findFirst({ where: { siteId: site.id, userId: parsedUserId } });
+  if (target?.role === 'admin' && !canAssignSiteAdmin(siteRole)) return siteAdminChangeDenied();
+
+  await prisma.siteUser.deleteMany({ where: { siteId: site.id, userId: parsedUserId } });
   return NextResponse.json({ message: '已移除' });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isGlobalAdmin = session.user.role === 'admin';
-  const membership = session.user.siteRoles?.find((r) => r.slug === siteSlug);
-  if (!isGlobalAdmin && membership?.role !== 'admin') {
-    return NextResponse.json({ error: '只有站點管理員可修改成員' }, { status: 403 });
-  }
+  const { site, siteRole } = await requireSiteContext(siteSlug);
+  if (!canManageSiteMembers(siteRole)) return memberManageDenied();
 
   try {
     const body = await req.json();
@@ -78,9 +80,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug
     if (password && password.length < 6) {
       return NextResponse.json({ error: '密碼至少 6 字元' }, { status: 400 });
     }
+    if (body.role === 'admin' && !canAssignSiteAdmin(siteRole)) return siteAdminChangeDenied();
 
     const target = await prisma.siteUser.findFirst({ where: { siteId: site.id, userId } });
     if (!target) return NextResponse.json({ error: '找不到該成員' }, { status: 404 });
+    if (target.role === 'admin' && !canAssignSiteAdmin(siteRole)) return siteAdminChangeDenied();
 
     const duplicated = await prisma.user.findFirst({ where: { email, id: { not: userId } } });
     if (duplicated) return NextResponse.json({ error: '此電子郵件已被註冊' }, { status: 409 });

@@ -1,19 +1,18 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import {
+  canAssignSiteAdmin,
+  canManageSiteMembers,
+  requireSiteContext,
+} from '@/lib/contentAccess';
 
 export async function POST(req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: '未登入' }, { status: 401 });
-  const site = await prisma.site.findUnique({ where: { slug: siteSlug } });
-  if (!site) return NextResponse.json({ error: '找不到專案' }, { status: 404 });
-  const isGlobalAdmin = session.user.role === 'admin';
-  const membership = session.user.siteRoles?.find((r) => r.slug === siteSlug);
-  const canInvite = isGlobalAdmin || membership?.role === 'admin';
-  if (!canInvite) return NextResponse.json({ error: '只有站點管理員可邀請' }, { status: 403 });
+  const { site, siteRole } = await requireSiteContext(siteSlug);
+  if (!canManageSiteMembers(siteRole)) {
+    return NextResponse.json({ error: '只有站點管理員或編輯者可管理成員' }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -23,6 +22,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
     const passwordRaw = typeof body.password === 'string' ? body.password : '';
 
     if (!emailRaw || !name) return NextResponse.json({ error: 'email 與姓名為必填' }, { status: 400 });
+    if (role === 'admin' && !canAssignSiteAdmin(siteRole)) {
+      return NextResponse.json({ error: '只有站點管理員可指派站點管理員' }, { status: 403 });
+    }
 
     // 一人一站約束 (全域 admin 例外)
     let user = await prisma.user.findUnique({ where: { email: emailRaw } });

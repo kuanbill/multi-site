@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { canManageFeatureSettings, canManageSiteSettings, canPerformContentAction } from './contentAccess';
+import {
+  canAssignSiteAdmin,
+  canManageFeatureSettings,
+  canManageSiteMembers,
+  canManageSiteSettings,
+  canPerformContentAction,
+} from './contentAccess';
 
 describe('content permissions', () => {
   it('allows the documented action matrix', () => {
@@ -23,5 +29,21 @@ describe('content permissions', () => {
     expect(canManageFeatureSettings('admin')).toBe(true);
     expect(canManageFeatureSettings('editor')).toBe(true);
     expect(canManageFeatureSettings('viewer')).toBe(false);
+  });
+});
+
+describe('site member management permissions', () => {
+  it('lets admins and editors manage members but not viewers', () => {
+    expect(canManageSiteMembers('global-admin')).toBe(true);
+    expect(canManageSiteMembers('admin')).toBe(true);
+    expect(canManageSiteMembers('editor')).toBe(true);
+    expect(canManageSiteMembers('viewer')).toBe(false);
+  });
+
+  it('reserves site admin assignment for site and global admins', () => {
+    expect(canAssignSiteAdmin('global-admin')).toBe(true);
+    expect(canAssignSiteAdmin('admin')).toBe(true);
+    expect(canAssignSiteAdmin('editor')).toBe(false);
+    expect(canAssignSiteAdmin('viewer')).toBe(false);
   });
 });

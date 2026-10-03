@@ -120,6 +120,16 @@ export function canManageFeatureSettings(role: SiteRole): boolean {
   return role === 'global-admin' || role === 'admin' || role === 'editor';
 }
 
+/** 成員管理（新增、修改、移除）開放給站點管理員與編輯者，檢視者僅能查看名單。 */
+export function canManageSiteMembers(role: SiteRole): boolean {
+  return role === 'global-admin' || role === 'admin' || role === 'editor';
+}
+
+/** 指派、變更或移除「站點管理員」僅限站點管理員與全域管理員，避免編輯者提權。 */
+export function canAssignSiteAdmin(role: SiteRole): boolean {
+  return role === 'global-admin' || role === 'admin';
+}
+
 function isSiteRole(value: string): value is Exclude<SiteRole, 'global-admin'> {
   return value === 'admin' || value === 'editor' || value === 'viewer';
 }

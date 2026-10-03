@@ -12,8 +12,19 @@ interface Member {
   createdAt: string;
 }
 
-export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: string; initial: Member[] }) {
+export default function SiteUsersClient({
+  siteSlug,
+  initial,
+  canManage,
+  canManageAdmins,
+}: {
+  siteSlug: string;
+  initial: Member[];
+  canManage: boolean;
+  canManageAdmins: boolean;
+}) {
   const router = useRouter();
+  const assignableRoles = canManageAdmins ? ROLE_VALUES : ROLE_VALUES.filter((value) => value !== 'admin');
   const [members, setMembers] = useState(initial);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -126,7 +137,7 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
               <th className="px-4 py-2 text-left text-sm">姓名</th>
               <th className="px-4 py-2 text-left text-sm">Email</th>
               <th className="px-4 py-2 text-left text-sm">站內角色</th>
-              <th className="px-4 py-2 text-right text-sm">操作</th>
+              {canManage && <th className="px-4 py-2 text-right text-sm">操作</th>}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -141,7 +152,7 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
                   </td>
                   <td className="px-4 py-2">
                     <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
-                      {ROLE_VALUES.map((value) => (
+                      {assignableRoles.map((value) => (
                         <option key={value} value={value}>{roleLabel(value)}</option>
                       ))}
                     </select>
@@ -170,14 +181,22 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
                   <td className="px-4 py-2">{m.name}</td>
                   <td className="px-4 py-2 text-gray-500">{m.email}</td>
                   <td className="px-4 py-2">{roleLabel(m.siteRole)}</td>
-                  <td className="px-4 py-2 text-right">
-                    <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline text-sm">
-                      修改
-                    </button>
-                    <button onClick={() => handleRemove(m.userId)} className="ml-3 text-red-600 hover:underline text-sm">
-                      移除
-                    </button>
-                  </td>
+                  {canManage && (
+                    <td className="px-4 py-2 text-right">
+                      {m.siteRole === 'admin' && !canManageAdmins ? (
+                        <span className="text-gray-400 text-sm">僅站點管理員可變更</span>
+                      ) : (
+                        <>
+                          <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline text-sm">
+                            修改
+                          </button>
+                          <button onClick={() => handleRemove(m.userId)} className="ml-3 text-red-600 hover:underline text-sm">
+                            移除
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  )}
                 </tr>
               ),
             )}
@@ -186,36 +205,38 @@ export default function SiteUsersClient({ siteSlug, initial }: { siteSlug: strin
         {members.length === 0 && <div className="p-4 text-center text-gray-500">尚無成員</div>}
       </div>
 
-      <form onSubmit={handleInvite} className="bg-white p-6 rounded-lg shadow space-y-4">
-        <h3 className="font-medium">邀請成員</h3>
-        {error && <div className="p-2 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
-        {msg && <div className="p-2 bg-green-100 text-green-700 rounded text-sm">{msg}</div>}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">姓名</label>
-            <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+      {canManage && (
+        <form onSubmit={handleInvite} className="bg-white p-6 rounded-lg shadow space-y-4">
+          <h3 className="font-medium">邀請成員</h3>
+          {error && <div className="p-2 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
+          {msg && <div className="p-2 bg-green-100 text-green-700 rounded text-sm">{msg}</div>}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">姓名</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">站內角色</label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+                {assignableRoles.map((value) => (
+                  <option key={value} value={value}>{roleLabel(value)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">密碼 (選填，自動產生)</label>
+              <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="留空自動產生" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">站內角色</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
-              {ROLE_VALUES.map((value) => (
-                <option key={value} value={value}>{roleLabel(value)}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">密碼 (選填，自動產生)</label>
-            <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="留空自動產生" />
-          </div>
-        </div>
-        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          邀請
-        </button>
-      </form>
+          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            邀請
+          </button>
+        </form>
+      )}
     </div>
   );
 }
