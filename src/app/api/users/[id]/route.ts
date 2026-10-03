@@ -83,7 +83,7 @@ export async function PATCH(
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: role === 'editor' ? { role } : { role, allSites: false },
       select: { id: true, name: true, email: true, role: true }
     })
 
@@ -154,10 +154,19 @@ export async function PUT(
       if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
     }
 
-    const data: { name: string; email: string; role: string; password?: string } = {
+    const allSites = body.allSites === true
+    if (allSites && (role !== 'editor' || siteId)) {
+      return NextResponse.json(
+        { error: '只有編輯者可以設為不設限，且不設限時請勿指定單一子網站' },
+        { status: 400 }
+      )
+    }
+
+    const data: { name: string; email: string; role: string; allSites: boolean; password?: string } = {
       name,
       email,
-      role
+      role,
+      allSites
     }
     if (password) data.password = await hash(password, 12)
 
@@ -165,7 +174,7 @@ export async function PUT(
       const updated = await tx.user.update({
         where: { id: userId },
         data,
-        select: { id: true, name: true, email: true, role: true, createdAt: true }
+        select: { id: true, name: true, email: true, role: true, allSites: true, createdAt: true }
       })
 
       if (role !== 'admin') {

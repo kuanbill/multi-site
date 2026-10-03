@@ -5,7 +5,9 @@ import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { authOptions } from './auth';
 import { resolveSafeCallbackUrl } from './callbackUrl';
+import { isUnlimitedEditor } from './roles';
 import { getSiteBySlug, getSiteFeature } from './site';
+import { isSiteMember } from './siteLogin';
 
 export type SiteRole = 'admin' | 'editor' | 'viewer' | 'global-admin';
 export type ContentAction = 'read' | 'write' | 'publish' | 'delete';
@@ -31,8 +33,9 @@ export async function requireSiteContext(siteSlug: string): Promise<SiteContext>
   }
 
   const membership = session.user.siteRoles?.find((role) => role.slug === siteSlug);
-  if (!membership || !isSiteRole(membership.role)) redirect('/403');
-  return { site, session, siteRole: membership.role };
+  if (membership && isSiteRole(membership.role)) return { site, session, siteRole: membership.role };
+  if (isUnlimitedEditor(session.user)) return { site, session, siteRole: 'editor' };
+  redirect('/403');
 }
 
 export async function requireContentPermission(
@@ -56,11 +59,7 @@ export async function requirePublicFeature(
 
   if (feature.visibility !== 'public') {
     const session = await getServerSession(authOptions);
-    const isGlobalAdmin = session?.user.role === 'admin';
-    const isSiteMember = Boolean(
-      session?.user.siteRoles?.some((role) => role.slug === siteSlug),
-    );
-    if (!session || (!isGlobalAdmin && !isSiteMember)) {
+    if (!session || !isSiteMember(session, siteSlug)) {
       // 未登入與已登入非成員一律導向站點登入頁；
       // 非成員（mode=not-member）會在登入頁被自動登出，站點登入驗證也拒絕非成員。
       redirect(

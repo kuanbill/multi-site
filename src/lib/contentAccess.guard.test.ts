@@ -18,7 +18,7 @@ vi.mock('next/navigation', () => ({
   },
 }));
 
-import { requirePublicFeature } from './contentAccess';
+import { requirePublicFeature, requireSiteContext } from './contentAccess';
 
 const activeSite = { id: 7, slug: 'site-a', status: 'active' };
 const archivedSite = { id: 8, slug: 'site-a', status: 'archived' };
@@ -110,6 +110,28 @@ describe('public feature access', () => {
     });
   });
 
+  it('allows an unlimited editor into a members-only feature', async () => {
+    getSiteFeature.mockResolvedValue(membersFeature);
+    getServerSession.mockResolvedValue({
+      user: { role: 'editor', allSites: true, siteRoles: [] },
+    });
+
+    await expect(requirePublicFeature('site-a', 'meetings')).resolves.toMatchObject({
+      site: { slug: 'site-a' },
+    });
+  });
+
+  it('sends a viewer with the unlimited flag to the site login', async () => {
+    getSiteFeature.mockResolvedValue(membersFeature);
+    getServerSession.mockResolvedValue({
+      user: { role: 'viewer', allSites: true, siteRoles: [] },
+    });
+
+    await expect(requirePublicFeature('site-a', 'meetings')).rejects.toThrow(
+      'REDIRECT:/site-a/login?error=not-member&callbackUrl=%2Fsite-a%2Fmeeting',
+    );
+  });
+
   it('keeps the current path including the query string as callback', async () => {
     getSiteFeature.mockResolvedValue(membersFeature);
     getServerSession.mockResolvedValue(null);
@@ -138,5 +160,46 @@ describe('public feature access', () => {
     await expect(requirePublicFeature('site-a', 'meetings')).rejects.toThrow(
       'REDIRECT:/site-a/login?reason=members-only&callbackUrl=%2Fsite-a%2Fmeeting',
     );
+  });
+});
+
+describe('site context for unlimited editors', () => {
+  beforeEach(() => {
+    getSiteBySlug.mockReset().mockResolvedValue(activeSite);
+    getServerSession.mockReset();
+    headers.mockReset();
+    mockPathname('/site-a');
+  });
+
+  it('treats an unlimited editor as an editor on any site', async () => {
+    getServerSession.mockResolvedValue({
+      user: { role: 'editor', allSites: true, siteRoles: [] },
+    });
+
+    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'editor' });
+  });
+
+  it('keeps the explicit site membership role for an unlimited editor', async () => {
+    getServerSession.mockResolvedValue({
+      user: { role: 'editor', allSites: true, siteRoles: [{ slug: 'site-a', role: 'viewer' }] },
+    });
+
+    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'viewer' });
+  });
+
+  it('rejects an editor without any site membership', async () => {
+    getServerSession.mockResolvedValue({
+      user: { role: 'editor', allSites: false, siteRoles: [{ slug: 'site-b', role: 'editor' }] },
+    });
+
+    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
+  });
+
+  it('rejects a viewer even when the unlimited flag is set', async () => {
+    getServerSession.mockResolvedValue({
+      user: { role: 'viewer', allSites: true, siteRoles: [] },
+    });
+
+    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
   });
 });

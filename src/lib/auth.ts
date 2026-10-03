@@ -2,6 +2,7 @@ import { getServerSession, NextAuthOptions, DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
+import { isUnlimitedEditor } from './roles'
 
 export type SiteRole = { siteId: number; slug: string; role: string }
 
@@ -9,6 +10,7 @@ declare module 'next-auth' {
   interface User {
     id: string
     role: string
+    allSites?: boolean
     siteRoles?: SiteRole[]
   }
 
@@ -16,6 +18,7 @@ declare module 'next-auth' {
     user: {
       id: string
       role: string
+      allSites?: boolean
       siteRoles: SiteRole[]
     } & DefaultSession['user']
   }
@@ -25,6 +28,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: string
+    allSites?: boolean
     siteRoles: SiteRole[]
   }
 }
@@ -65,7 +69,8 @@ export const authOptions: NextAuthOptions = {
             where: { userId: user.id, siteId: site.id }
           })
           const isAdmin = user.role === 'admin'
-          if (!membership && !isAdmin) throw new Error('此帳號不屬於該專案')
+          const isUnlimited = isUnlimitedEditor(user)
+          if (!membership && !isAdmin && !isUnlimited) throw new Error('此帳號不屬於該專案')
         }
 
         const siteUsers = await prisma.siteUser.findMany({
@@ -83,6 +88,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          allSites: user.allSites === true,
           siteRoles,
         }
       }
@@ -96,6 +102,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as unknown as { role: string }).role
         token.id = (user as unknown as { id: string }).id
+        token.allSites = (user as unknown as { allSites?: boolean }).allSites === true
         token.siteRoles = ((user as unknown as { siteRoles: SiteRole[] }).siteRoles ?? []) as SiteRole[]
       }
       return token
@@ -104,6 +111,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.role = token.role as string
         session.user.id = token.id as string
+        session.user.allSites = token.allSites === true
         session.user.siteRoles = (token.siteRoles as SiteRole[]) ?? []
       }
       return session

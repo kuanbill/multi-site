@@ -22,6 +22,7 @@ export default async function EditUserPage({
         name: true,
         email: true,
         role: true,
+        allSites: true,
         sites: {
           select: { siteId: true, role: true },
           orderBy: { siteId: 'asc' }
@@ -45,6 +46,7 @@ export default async function EditUserPage({
         siteId: membership?.siteId ?? null,
         siteRole: membership?.role ?? 'editor'
       }}
+      initialAllSites={user.allSites}
     />
   )
 }

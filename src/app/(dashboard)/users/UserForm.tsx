@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ROLE_VALUES, roleLabel } from '@/lib/roles'
 
+const ALL_SITES_SCOPE = 'all'
+
 type SiteOption = {
   id: number
   name: string
@@ -21,15 +23,26 @@ type UserFormProps = {
     siteId: number | null
     siteRole: string
   }
+  initialAllSites?: boolean
 }
 
-export default function UserForm({ user, sites = [], initialSite }: UserFormProps) {
+export default function UserForm({ user, sites = [], initialSite, initialAllSites = false }: UserFormProps) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState(user?.role || 'editor')
-  const [siteId, setSiteId] = useState(initialSite?.siteId ? String(initialSite.siteId) : '')
+  const [siteScope, setSiteScope] = useState(
+    initialAllSites ? ALL_SITES_SCOPE : initialSite?.siteId ? String(initialSite.siteId) : ''
+  )
   const [siteRole, setSiteRole] = useState(initialSite?.siteRole || 'editor')
+
+  const isUnlimited = role === 'editor' && siteScope === ALL_SITES_SCOPE
+  const canBeUnlimited = role === 'editor'
+
+  function changeRole(nextRole: string) {
+    setRole(nextRole)
+    if (nextRole !== 'editor') setSiteScope((current) => (current === ALL_SITES_SCOPE ? '' : current))
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,8 +58,9 @@ export default function UserForm({ user, sites = [], initialSite }: UserFormProp
         email: formData.get('email'),
         password: formData.get('password'),
         role,
-        siteId: siteId ? Number(siteId) : null,
-        siteRole
+        siteId: siteScope && siteScope !== ALL_SITES_SCOPE ? Number(siteScope) : null,
+        siteRole,
+        allSites: isUnlimited
       })
     })
 
@@ -88,7 +102,7 @@ export default function UserForm({ user, sites = [], initialSite }: UserFormProp
           <select
             name="role"
             value={role}
-            onChange={(event) => setRole(event.target.value)}
+            onChange={(event) => changeRole(event.target.value)}
             className="w-full px-3 py-2 border rounded-lg"
           >
             {ROLE_VALUES.map((value) => (
@@ -104,11 +118,12 @@ export default function UserForm({ user, sites = [], initialSite }: UserFormProp
             <div>
               <label className="block text-sm font-medium mb-1">管理子網站</label>
               <select
-                value={siteId}
-                onChange={(event) => setSiteId(event.target.value)}
+                value={siteScope}
+                onChange={(event) => setSiteScope(event.target.value)}
                 className="w-full px-3 py-2 border rounded-lg"
               >
                 <option value="">不指定</option>
+                {canBeUnlimited && <option value={ALL_SITES_SCOPE}>不設限（所有子網站）</option>}
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>{site.name}</option>
                 ))}
@@ -119,7 +134,7 @@ export default function UserForm({ user, sites = [], initialSite }: UserFormProp
               <label className="block text-sm font-medium mb-1">子網站角色</label>
               <select
                 value={siteRole}
-                disabled={!siteId}
+                disabled={!siteScope || isUnlimited}
                 onChange={(event) => setSiteRole(event.target.value)}
                 className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100 disabled:text-gray-400"
               >
@@ -129,7 +144,13 @@ export default function UserForm({ user, sites = [], initialSite }: UserFormProp
               </select>
             </div>
 
-            <p className="col-span-2 text-xs text-gray-500">一位站點帳號僅能指定一個子網站（全域管理員除外）。</p>
+            <p className="col-span-2 text-xs text-gray-500">
+              {isUnlimited
+                ? '此帳號可在所有子網站編輯內容與調整功能設定，但仍無法使用外層後台的使用者管理。'
+                : canBeUnlimited
+                  ? '一位站點帳號僅能指定一個子網站；編輯者可設為不設限以管理所有子網站。'
+                  : '一位站點帳號僅能指定一個子網站（全域管理員除外）。'}
+            </p>
           </div>
         )}
 

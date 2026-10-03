@@ -1,5 +1,6 @@
 import type { Session } from 'next-auth';
 import { isSafeCallbackUrl } from './callbackUrl';
+import { isUnlimitedEditor } from './roles';
 
 export type SiteLoginMode = 'redirect-member' | 'needs-signout' | 'form';
 
@@ -15,6 +16,7 @@ export const NOT_MEMBER_NOTICE = '目前帳號不屬於本站，請以本站成�
 export function isSiteMember(session: Session | null, siteSlug: string): boolean {
   if (!session) return false;
   if (session.user.role === 'admin') return true;
+  if (isUnlimitedEditor(session.user)) return true;
   return Boolean(session.user.siteRoles?.some((role) => role.slug === siteSlug));
 }
 

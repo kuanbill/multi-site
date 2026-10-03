@@ -14,5 +14,12 @@ export function roleLabel(role: string): string {
 }
 
 export function isRoleValue(value: unknown): value is RoleValue {
-  return typeof value === 'string' && (ROLE_VALUES as readonly string[]).includes(value)
+  return typeof value === 'string' && (ROLE_VALUES as readonly string[]).includes(value);
+}
+
+/** 使用者帶有「管理子網站 = 不設限」旗標時，可編輯所有子網站。僅限編輯者。 */
+export function isUnlimitedEditor(
+  user: { role?: string; allSites?: boolean } | null | undefined
+): boolean {
+  return user?.role === 'editor' && user.allSites === true;
 }

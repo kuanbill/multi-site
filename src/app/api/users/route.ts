@@ -61,6 +61,13 @@ export async function POST(req: Request) {
       if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
     }
 
+    const invalidScope = NextResponse.json(
+      { error: '只有編輯者可以設為不設限，且不設限時請勿指定單一子網站' },
+      { status: 400 }
+    )
+    const allSites = body.allSites === true
+    if (allSites && (role !== 'editor' || siteId)) return invalidScope
+
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
       return NextResponse.json({ error: '此電子郵件已被註冊' }, { status: 409 })
@@ -69,8 +76,8 @@ export async function POST(req: Request) {
     const passwordHash = await hash(password, 12)
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
-        data: { name, email, password: passwordHash, role },
-        select: { id: true, name: true, email: true, role: true, createdAt: true }
+        data: { name, email, password: passwordHash, role, allSites },
+        select: { id: true, name: true, email: true, role: true, allSites: true, createdAt: true }
       })
       if (role !== 'admin' && siteId) {
         await tx.siteUser.create({ data: { userId: created.id, siteId, role: siteRole } })

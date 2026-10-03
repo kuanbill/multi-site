@@ -18,6 +18,13 @@ function sessionOf(role: string, slugs: string[]): Session {
   } as Session;
 }
 
+function unlimitedEditorSession(): Session {
+  return {
+    user: { id: '1', role: 'editor', allSites: true, siteRoles: [] },
+    expires: '2099-01-01T00:00:00.000Z',
+  } as Session;
+}
+
 const base = { siteSlug: 'site-a', callbackUrl: null, reason: null, error: null };
 
 describe('resolveSiteLoginState', () => {
@@ -74,6 +81,27 @@ describe('resolveSiteLoginState', () => {
 
     expect(state.mode).toBe('redirect-member');
     expect(state.safeCallbackUrl).toBe('/site-a');
+  });
+
+  it('redirects an unlimited editor without showing the form', () => {
+    const state = resolveSiteLoginState({
+      ...base,
+      session: unlimitedEditorSession(),
+      callbackUrl: '/site-a',
+    });
+
+    expect(state.mode).toBe('redirect-member');
+    expect(state.safeCallbackUrl).toBe('/site-a');
+  });
+
+  it('requires a sign-out for a viewer carrying the unlimited flag', () => {
+    const state = resolveSiteLoginState({
+      ...base,
+      session: { ...sessionOf('viewer', []), user: { ...sessionOf('viewer', []).user, allSites: true } },
+      callbackUrl: '/site-a',
+    });
+
+    expect(state.mode).toBe('needs-signout');
   });
 
   it('requires a sign-out for a logged-in non-member', () => {

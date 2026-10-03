@@ -12,6 +12,7 @@ model User {
   name      String
   password  String
   role      String   @default("editor") // admin, editor, viewer
+  allSites  Boolean  @default(false) // 編輯者不設限：可管理所有子網站
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sites     SiteUser[]
