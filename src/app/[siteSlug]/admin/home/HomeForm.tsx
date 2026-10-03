@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import type { SiteHome } from '@prisma/client';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MediaPicker } from '@/components/admin';
+import { buildHeroSaveHint, isHomeFormDirty, type HomeFormValues } from '@/lib/homeFormState';
 
-type HomeValues = Omit<SiteHome, 'id' | 'siteId' | 'updatedAt'>;
+type HomeValues = HomeFormValues;
 
 const emptyHome: HomeValues = {
   tagline: '',
@@ -26,22 +26,38 @@ export default function HomeForm({
   initial: (HomeValues & { id: number; siteId: number; updatedAt: Date }) | null;
 }) {
   const router = useRouter();
-  const [values, setValues] = useState<HomeValues>(() =>
-    initial
-      ? {
-          tagline: initial.tagline ?? '',
-          intro: initial.intro ?? '',
-          heroMediaId: initial.heroMediaId,
-          currentStage: initial.currentStage ?? '',
-          contactName: initial.contactName ?? '',
-          contactPhone: initial.contactPhone ?? '',
-          contactEmail: initial.contactEmail ?? '',
-          contactAddress: initial.contactAddress ?? '',
-        }
-      : emptyHome,
+  const initialValues = useMemo<HomeValues>(
+    () =>
+      initial
+        ? {
+            tagline: initial.tagline ?? '',
+            intro: initial.intro ?? '',
+            heroMediaId: initial.heroMediaId,
+            currentStage: initial.currentStage ?? '',
+            contactName: initial.contactName ?? '',
+            contactPhone: initial.contactPhone ?? '',
+            contactEmail: initial.contactEmail ?? '',
+            contactAddress: initial.contactAddress ?? '',
+          }
+        : emptyHome,
+    [initial],
   );
+  const [values, setValues] = useState<HomeValues>(initialValues);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+
+  const dirty = isHomeFormDirty(values, initialValues);
+  const heroHint = buildHeroSaveHint({ heroMediaId: values.heroMediaId, dirty });
+
+  // 上傳只寫入媒體池，未儲存就離開頁面會讓主圖看起來像上傳失敗。
+  useEffect(() => {
+    if (!dirty) return;
+    function warnBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+    }
+    window.addEventListener('beforeunload', warnBeforeUnload);
+    return () => window.removeEventListener('beforeunload', warnBeforeUnload);
+  }, [dirty]);
 
   function update(field: keyof HomeValues, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -101,6 +117,12 @@ export default function HomeForm({
           }
           hint="建議使用寬幅橫向圖片，首頁會以滿版寬度顯示。"
         />
+        <p
+          className={`text-xs ${values.heroMediaId && dirty ? 'text-amber-700' : 'text-gray-500'}`}
+          aria-live="polite"
+        >
+          {heroHint}
+        </p>
         {values.heroMediaId && (
           <button
             type="button"
@@ -132,10 +154,13 @@ export default function HomeForm({
           </label>
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+      <div className="flex flex-wrap items-center gap-4">
+        <button type="submit" disabled={saving || !dirty} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
           {saving ? '儲存中...' : '儲存首頁設定'}
         </button>
+        {dirty && !saving && (
+          <span className="text-sm text-amber-700">有尚未儲存的變更，儲存後才會顯示於前台。</span>
+        )}
         {message && <span className="text-sm text-gray-600">{message}</span>}
       </div>
     </form>
