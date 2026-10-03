@@ -53,4 +53,51 @@ describe('uploaded feature media route', () => {
     expect(resolveMediaVisibility).toHaveBeenCalledWith(7, 44);
     expect(await response.arrayBuffer()).toEqual(Uint8Array.from(Buffer.from('image-bytes')).buffer);
   });
+
+  // 邊緣節點曾把未指派媒體的 404 緩存下來，媒體轉為公開後仍持續回 404。
+  it('marks an unknown file as uncacheable so the edge cannot keep a stale 404', async () => {
+    mediaFindFirst.mockResolvedValue(null);
+
+    const response = await GET(new Request('https://example.test/uploads/missing.jpg'), {
+      params: Promise.resolve({ filename: 'missing.jpg' }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('marks an unreferenced file as uncacheable', async () => {
+    resolveMediaVisibility.mockResolvedValue({ publicReference: false, memberReference: false });
+
+    const response = await GET(new Request('https://example.test/uploads/image.jpg'), {
+      params: Promise.resolve({ filename: 'image.jpg' }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('marks a forbidden file as uncacheable', async () => {
+    getServerSession.mockResolvedValue({ user: { id: '12', role: 'editor' } });
+    siteUserFindFirst.mockResolvedValue(null);
+
+    const response = await GET(new Request('https://example.test/uploads/image.jpg'), {
+      params: Promise.resolve({ filename: 'image.jpg' }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('marks an unreadable file as uncacheable', async () => {
+    resolveMediaVisibility.mockResolvedValue({ publicReference: true, memberReference: false });
+    readFile.mockRejectedValue(new Error('ENOENT'));
+
+    const response = await GET(new Request('https://example.test/uploads/image.jpg'), {
+      params: Promise.resolve({ filename: 'image.jpg' }),
+    });
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
 });

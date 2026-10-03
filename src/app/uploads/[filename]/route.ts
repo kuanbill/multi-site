@@ -8,6 +8,13 @@ import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
+// 錯誤回應若沒有快取標頭，邊緣節點會把 404 留住，導致媒體轉為公開後仍持續回 404。
+const UNCACHEABLE = 'private, no-store';
+
+function notFoundResponse(message: string): NextResponse {
+  return new NextResponse(message, { status: 404, headers: { 'Cache-Control': UNCACHEABLE } });
+}
+
 export async function GET(_request: Request, { params }: { params: Promise<{ filename: string }> }) {
   const { filename: raw } = await params;
   const filename = path.basename(raw);
@@ -15,11 +22,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
     where: { filename },
     include: { site: { select: { slug: true, status: true } } },
   });
-  if (!media || media.site.status === 'archived') return new NextResponse('找不到檔案', { status: 404 });
+  if (!media || media.site.status === 'archived') return notFoundResponse('找不到檔案');
 
   const visibility = await resolveMediaVisibility(media.siteId, media.id);
   if (!visibility.publicReference && !visibility.memberReference) {
-    return new NextResponse('找不到檔案', { status: 404 });
+    return notFoundResponse('找不到檔案');
   }
 
   let memberAuthorized = false;
@@ -31,7 +38,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
       where: { userId: Number(session.user.id), siteId: media.siteId },
       select: { id: true },
     }));
-    if (!memberAuthorized) return new NextResponse('無權限', { status: 403 });
+    if (!memberAuthorized) {
+      return new NextResponse('無權限', { status: 403, headers: { 'Cache-Control': UNCACHEABLE } });
+    }
   }
 
   const uploadDir = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'data', 'uploads');
@@ -42,10 +51,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
         'Content-Type': media.mimeType ?? 'application/octet-stream',
         'Content-Length': String(body.byteLength),
         'X-Content-Type-Options': 'nosniff',
-        'Cache-Control': 'private, no-store',
+        'Cache-Control': UNCACHEABLE,
       },
     });
   } catch {
-    return new NextResponse('找不到檔案', { status: 404 });
+    return notFoundResponse('找不到檔案');
   }
 }
