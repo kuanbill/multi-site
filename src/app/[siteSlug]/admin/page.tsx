@@ -1,7 +1,7 @@
+import { canAssignSiteAdmin, canPerformContentAction, requireSiteContext } from '@/lib/contentAccess';
 import { getSiteDashboardStats } from '@/lib/dashboardStats';
-import { getSiteBySlug } from '@/lib/site';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import LogPanelActions from './LogPanelActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +11,9 @@ export default async function SiteDashboardPage({
   params: Promise<{ siteSlug: string }>;
 }) {
   const { siteSlug } = await params;
-  const site = await getSiteBySlug(siteSlug);
-  if (!site) notFound();
+  const { site, siteRole } = await requireSiteContext(siteSlug);
+  const canExport = canPerformContentAction(siteRole, 'write');
+  const canClear = canAssignSiteAdmin(siteRole);
 
   const stats = await getSiteDashboardStats(site.id);
 
@@ -61,7 +62,10 @@ export default async function SiteDashboardPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <h3 className="font-medium p-4 border-b">最近登入紀錄</h3>
+          <div className="flex items-center justify-between gap-2 p-4 border-b">
+            <h3 className="font-medium">最近登入紀錄</h3>
+            <LogPanelActions siteSlug={siteSlug} type="logins" canExport={canExport} canClear={canClear} />
+          </div>
           {stats.recentLogins.length === 0 ? (
             <p className="p-4 text-sm text-gray-500">尚無登入紀錄。</p>
           ) : (
@@ -88,7 +92,10 @@ export default async function SiteDashboardPage({
         </div>
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <h3 className="font-medium p-4 border-b">最近瀏覽記錄</h3>
+          <div className="flex items-center justify-between gap-2 p-4 border-b">
+            <h3 className="font-medium">最近瀏覽記錄</h3>
+            <LogPanelActions siteSlug={siteSlug} type="views" canExport={canExport} canClear={canClear} />
+          </div>
           {stats.recentBrowses.length === 0 ? (
             <p className="p-4 text-sm text-gray-500">尚無已登入使用者的瀏覽記錄。</p>
           ) : (
