@@ -54,6 +54,19 @@ describe('uploaded feature media route', () => {
     expect(await response.arrayBuffer()).toEqual(Uint8Array.from(Buffer.from('image-bytes')).buffer);
   });
 
+  // 不設限編輯者（allSites）沒有 siteUser 成員列，但所有站點權限判定都視為本站成員，
+  // 圖檔判定若只查成員列會把他們的預覽打成 403 破圖。
+  it('returns the image to an unlimited editor without a site membership row', async () => {
+    getServerSession.mockResolvedValue({ user: { id: '12', role: 'editor', allSites: true } });
+
+    const response = await GET(new Request('https://example.test/uploads/image.jpg'), {
+      params: Promise.resolve({ filename: 'image.jpg' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(siteUserFindFirst).not.toHaveBeenCalled();
+  });
+
   // 邊緣節點曾把未指派媒體的 404 緩存下來，媒體轉為公開後仍持續回 404。
   it('marks an unknown file as uncacheable so the edge cannot keep a stale 404', async () => {
     mediaFindFirst.mockResolvedValue(null);
