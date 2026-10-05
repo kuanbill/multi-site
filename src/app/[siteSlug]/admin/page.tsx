@@ -48,12 +48,6 @@ export default async function SiteDashboardPage({
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="font-medium mb-4">快速操作</h3>
         <div className="flex gap-4 flex-wrap">
-          <Link href={`/${siteSlug}/admin/pages`} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            管理頁面
-          </Link>
-          <Link href={`/${siteSlug}/admin/posts`} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            管理文章
-          </Link>
           <Link href={`/${siteSlug}/admin/users`} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
             成員管理
           </Link>
