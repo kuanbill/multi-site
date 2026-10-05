@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import InstallAppButton from '@/components/InstallAppButton';
 
 interface Props {
   siteSlug: string;
@@ -23,32 +24,35 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
         <Link href={`/${siteSlug}`} className="font-bold text-lg text-white">
           {siteName}
         </Link>
-        <nav className="hidden md:flex gap-4">
-          {navigationFeatures.map((f) => (
-            <Link
-              key={f.key}
-              href={`/${siteSlug}/${f.path}`}
-              className="text-sm text-white/90 hover:text-white"
-            >
-              {f.label}
-            </Link>
-          ))}
-        </nav>
-        <button
-          type="button"
-          className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10"
-          aria-expanded={open}
-          aria-label={open ? '關閉選單' : '開啟選單'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-            {open ? (
-              <path d="M6 6l12 12M6 18L18 6" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <nav className="hidden md:flex gap-4">
+            {navigationFeatures.map((f) => (
+              <Link
+                key={f.key}
+                href={`/${siteSlug}/${f.path}`}
+                className="text-sm text-white/90 hover:text-white"
+              >
+                {f.label}
+              </Link>
+            ))}
+          </nav>
+          <InstallAppButton tone="light" />
+          <button
+            type="button"
+            className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10"
+            aria-expanded={open}
+            aria-label={open ? '關閉選單' : '開啟選單'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              {open ? (
+                <path d="M6 6l12 12M6 18L18 6" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
       {open && (
         <nav className="md:hidden border-t border-white/20 bg-primary">

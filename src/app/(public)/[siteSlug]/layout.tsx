@@ -1,13 +1,26 @@
 import { notFound } from 'next/navigation';
+import type { Metadata, Viewport } from 'next';
 import type { CSSProperties } from 'react';
 import { getSiteBySlug, getEnabledFeatures } from '@/lib/site';
 import SiteHeader from '@/components/public/SiteHeader';
 
-export async function generateMetadata({ params }: { params: Promise<{ siteSlug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ siteSlug: string }> }): Promise<Metadata> {
   const { siteSlug } = await params;
   const site = await getSiteBySlug(siteSlug);
   if (!site) return {};
-  return { title: site.name + ' | 都更專案', description: site.description || '' };
+  return {
+    title: site.name + ' | 都更專案',
+    description: site.description || '',
+    // 站點專屬 manifest 覆蓋根 manifest，安裝後使用站名、站色並限定本站範圍。
+    manifest: `/${siteSlug}/manifest.webmanifest`,
+    appleWebApp: { capable: true, title: site.name, statusBarStyle: 'default' },
+  };
+}
+
+export async function generateViewport({ params }: { params: Promise<{ siteSlug: string }> }): Promise<Viewport> {
+  const { siteSlug } = await params;
+  const site = await getSiteBySlug(siteSlug);
+  return { themeColor: site?.primaryColor || '#ffffff' };
 }
 
 export default async function PublicLayout({

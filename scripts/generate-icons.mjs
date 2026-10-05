@@ -6,10 +6,15 @@ import sharp from 'sharp';
 const root = path.resolve(import.meta.dirname, '..');
 const sourcePath = path.join(root, 'assets', 'icon-source.png');
 const appDir = path.join(root, 'src', 'app');
+const pwaIconDir = path.join(root, 'public', 'icons');
 
 const ICON_SIZE = 512;
 const APPLE_ICON_SIZE = 180;
 const PREVIEW_SIZE = 32;
+const PWA_ICON_SIZES = [192, 512];
+const MASKABLE_SIZE = 512;
+// maskable 圖示的重要內容必須落在中央 80% 安全區內，留白比例依規範加大。
+const MASKABLE_CONTENT_RATIO = 0.75;
 const CORNER_RADIUS_RATIO = 0.22;
 const WHITE_THRESHOLD = 246;
 const WHITE_BACKGROUND = { r: 255, g: 255, b: 255 };
@@ -63,8 +68,22 @@ async function buildIcon(size, outputPath, { rounded }) {
   await pipeline.png({ compressionLevel: 9 }).toFile(outputPath);
 }
 
+async function buildMaskableIcon(size, outputPath) {
+  const contentSize = Math.round(size * MASKABLE_CONTENT_RATIO);
+  const content = await sharp(sourcePath)
+    .resize(contentSize, contentSize, { fit: 'contain', background: WHITE_BACKGROUND })
+    .png()
+    .toBuffer();
+
+  await sharp({ create: { width: size, height: size, channels: 4, background: { ...WHITE_BACKGROUND, alpha: 1 } } })
+    .composite([{ input: content, gravity: 'centre' }])
+    .png({ compressionLevel: 9 })
+    .toFile(outputPath);
+}
+
 async function main() {
   await mkdir(appDir, { recursive: true });
+  await mkdir(pwaIconDir, { recursive: true });
 
   const box = await detectContentBox();
   const contentWidth = box.maxX - box.minX + 1;
@@ -86,7 +105,16 @@ async function main() {
   await buildIcon(APPLE_ICON_SIZE, appleIconPath, { rounded: false });
   await buildIcon(PREVIEW_SIZE, previewPath, { rounded: true });
 
-  for (const file of [iconPath, appleIconPath, previewPath]) {
+  const pwaIconPaths = [];
+  for (const size of PWA_ICON_SIZES) {
+    const pwaIconPath = path.join(pwaIconDir, `icon-${size}.png`);
+    await buildIcon(size, pwaIconPath, { rounded: true });
+    pwaIconPaths.push(pwaIconPath);
+  }
+  const maskablePath = path.join(pwaIconDir, 'maskable-512.png');
+  await buildMaskableIcon(MASKABLE_SIZE, maskablePath);
+
+  for (const file of [iconPath, appleIconPath, previewPath, ...pwaIconPaths, maskablePath]) {
     const metadata = await sharp(file).metadata();
     console.log(`產出 ${file} (${metadata.width}x${metadata.height}, hasAlpha=${metadata.hasAlpha})`);
   }
