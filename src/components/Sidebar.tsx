@@ -35,6 +35,7 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
     const siteMenu = [
       { href: `/${siteSlug}/admin`, label: '站點儀表板', icon: '📊' },
       ...featureItems,
+      { href: `/${siteSlug}/admin/media`, label: '媒體庫', icon: '📁' },
       { href: `/${siteSlug}/admin/users`, label: '成員管理', icon: '👥' },
       { href: `/${siteSlug}/admin/settings/features`, label: '功能設定', icon: '⚙️' },
       { href: `/${siteSlug}/admin/settings/appearance`, label: '外觀設定', icon: '🎨' },

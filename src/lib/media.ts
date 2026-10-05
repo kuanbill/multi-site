@@ -32,3 +32,34 @@ export async function saveMedia(context: SiteContext, file: File, altText?: stri
     throw error;
   }
 }
+
+export async function findUsedMediaIds(siteId: number, mediaIds: number[]): Promise<Set<number>> {
+  const ids = [...new Set(mediaIds)].filter((id) => Number.isInteger(id) && id > 0);
+  if (ids.length === 0) return new Set();
+
+  const rows = await prisma.media.findMany({
+    where: { siteId, id: { in: ids } },
+    select: {
+      id: true,
+      attachments: { select: { id: true }, take: 1 },
+      homeHero: { select: { id: true }, take: 1 },
+      vendorLogos: { select: { id: true }, take: 1 },
+      mapImages: { select: { id: true }, take: 1 },
+      mapDownloads: { select: { id: true }, take: 1 },
+      featureEntryImages: { select: { id: true }, take: 1 },
+    },
+  });
+
+  const used = new Set<number>();
+  for (const row of rows) {
+    const referenced =
+      row.attachments.length > 0 ||
+      row.homeHero.length > 0 ||
+      row.vendorLogos.length > 0 ||
+      row.mapImages.length > 0 ||
+      row.mapDownloads.length > 0 ||
+      row.featureEntryImages.length > 0;
+    if (referenced) used.add(row.id);
+  }
+  return used;
+}

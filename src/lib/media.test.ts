@@ -6,12 +6,13 @@ const writeFile = vi.hoisted(() => vi.fn());
 const unlink = vi.hoisted(() => vi.fn());
 const randomUUID = vi.hoisted(() => vi.fn(() => 'stored-media-id'));
 const create = vi.hoisted(() => vi.fn());
+const findMany = vi.hoisted(() => vi.fn());
 
 vi.mock('node:fs/promises', () => ({ mkdir, writeFile, unlink }));
 vi.mock('node:crypto', () => ({ randomUUID }));
-vi.mock('./prisma', () => ({ prisma: { media: { create } } }));
+vi.mock('./prisma', () => ({ prisma: { media: { create, findMany } } }));
 
-import { saveMedia } from './media';
+import { findUsedMediaIds, saveMedia } from './media';
 
 const siteContext = { site: { id: 7 } } as SiteContext;
 
@@ -57,5 +58,53 @@ describe('media storage', () => {
       'database failure',
     );
     expect(unlink).toHaveBeenCalledWith(expect.stringContaining('stored-media-id.png'));
+  });
+});
+
+describe('media usage lookup', () => {
+  beforeEach(() => {
+    findMany.mockReset();
+  });
+
+  it('returns only media ids referenced by content', async () => {
+    findMany.mockResolvedValue([
+      {
+        id: 1,
+        attachments: [{ id: 9 }],
+        homeHero: [],
+        vendorLogos: [],
+        mapImages: [],
+        mapDownloads: [],
+        featureEntryImages: [],
+      },
+      {
+        id: 2,
+        attachments: [],
+        homeHero: [],
+        vendorLogos: [],
+        mapImages: [],
+        mapDownloads: [],
+        featureEntryImages: [{ id: 3 }],
+      },
+      {
+        id: 3,
+        attachments: [],
+        homeHero: [],
+        vendorLogos: [],
+        mapImages: [],
+        mapDownloads: [],
+        featureEntryImages: [],
+      },
+    ]);
+
+    await expect(findUsedMediaIds(7, [1, 2, 3])).resolves.toEqual(new Set([1, 2]));
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { siteId: 7, id: { in: [1, 2, 3] } } }),
+    );
+  });
+
+  it('skips the query when there are no ids', async () => {
+    await expect(findUsedMediaIds(7, [])).resolves.toEqual(new Set());
+    expect(findMany).not.toHaveBeenCalled();
   });
 });

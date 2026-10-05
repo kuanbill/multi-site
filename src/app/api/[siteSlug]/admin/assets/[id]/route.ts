@@ -7,6 +7,38 @@ import { prisma } from '@/lib/prisma';
 export const runtime = 'nodejs';
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
 
+export async function PATCH(request: Request, { params }: RouteContext) {
+  const { siteSlug, id } = await params;
+  const context = await requireContentPermission(siteSlug, 'write');
+  const mediaId = Number(id);
+  if (!Number.isInteger(mediaId) || mediaId < 1) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
+
+  let rawBody: unknown;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
+  }
+  const body = (typeof rawBody === 'object' && rawBody !== null ? rawBody : {}) as Record<string, unknown>;
+  const altText =
+    body.altText === null
+      ? null
+      : typeof body.altText === 'string'
+        ? body.altText.trim() || null
+        : undefined;
+  if (altText === undefined) return NextResponse.json({ error: '說明文字參數錯誤' }, { status: 400 });
+
+  const media = await prisma.media.findFirst({ where: { id: mediaId, siteId: context.site.id } });
+  if (!media) return NextResponse.json({ error: '找不到媒體' }, { status: 404 });
+
+  try {
+    const updated = await prisma.media.update({ where: { id: mediaId }, data: { altText } });
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: '更新失敗' }, { status: 500 });
+  }
+}
+
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { siteSlug, id } = await params;
   const context = await requireContentPermission(siteSlug, 'delete');
