@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { userFindUnique, siteUserFindFirst, siteUserFindMany, siteFindUnique, compare } = vi.hoisted(() => ({
+const { userFindUnique, siteUserFindFirst, siteUserFindMany, siteFindUnique, compare, loginRecordCreate } = vi.hoisted(() => ({
   userFindUnique: vi.fn(),
   siteUserFindFirst: vi.fn(),
   siteUserFindMany: vi.fn(),
   siteFindUnique: vi.fn(),
   compare: vi.fn(),
+  loginRecordCreate: vi.fn(),
 }));
 
 vi.mock('./prisma', () => ({
@@ -13,6 +14,7 @@ vi.mock('./prisma', () => ({
     user: { findUnique: userFindUnique },
     siteUser: { findFirst: siteUserFindFirst, findMany: siteUserFindMany },
     site: { findUnique: siteFindUnique },
+    loginRecord: { create: loginRecordCreate },
   },
 }));
 vi.mock('bcryptjs', () => ({ compare }));
@@ -93,5 +95,29 @@ describe('site login authorization', () => {
     await expect(
       credentialsProvider.options.authorize({ email: 'editor@example.com', password: 'pw' }),
     ).resolves.toMatchObject({ allSites: false });
+  });
+});
+
+describe('login record event', () => {
+  const signInEvent = authOptions.events?.signIn;
+  const signInParams = (userId: string) => ({ user: { id: userId } }) as Parameters<NonNullable<typeof signInEvent>>[0];
+
+  beforeEach(() => {
+    loginRecordCreate.mockReset().mockResolvedValue({ id: 1 });
+  });
+
+  it('records a login for the signed-in user', async () => {
+    await signInEvent?.(signInParams('9'));
+
+    expect(loginRecordCreate).toHaveBeenCalledWith({ data: { userId: 9 } });
+  });
+
+  it('never throws when the record write fails', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    loginRecordCreate.mockRejectedValue(new Error('db down'));
+
+    await expect(signInEvent?.(signInParams('9'))).resolves.toBeUndefined();
+
+    errorSpy.mockRestore();
   });
 });

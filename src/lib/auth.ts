@@ -119,6 +119,18 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login'
+  },
+  events: {
+    // 登入成功寫入登入紀錄；失敗不影響登入流程
+    async signIn({ user }) {
+      try {
+        const userId = Number(user.id)
+        if (!Number.isFinite(userId)) return
+        await prisma.loginRecord.create({ data: { userId } })
+      } catch (error) {
+        console.error('[auth] 登入紀錄寫入失敗', error)
+      }
+    }
   }
 }
 

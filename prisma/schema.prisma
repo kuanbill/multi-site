@@ -16,6 +16,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   sites     SiteUser[]
+  featureViews FeatureView[]
+  logins    LoginRecord[]
 }
 
 model Site {
@@ -44,6 +46,7 @@ model Site {
   maps         MapAsset[]
   attachments  ContentAttachment[]
   homeSections SiteHomeSection[]
+  featureViews FeatureView[]
 }
 
 model FeatureDefinition {
@@ -337,4 +340,30 @@ model ContentAttachment {
 
   @@index([siteId])
   @@index([ownerType, ownerId])
+}
+
+// 前台功能頁瀏覽記錄：feature 存 FeatureDefinition.key（冗餘），userId 為 null 代表未登入訪客
+model FeatureView {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  feature   String
+  path      String
+  userId    Int?
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, feature, createdAt])
+  @@index([siteId, userId, createdAt])
+}
+
+// 使用者登入紀錄（NextAuth events.signIn 寫入）
+model LoginRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }

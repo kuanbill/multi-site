@@ -1,6 +1,6 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { withAuth, type NextRequestWithAuth } from 'next-auth/middleware';
+import { NextResponse, type NextFetchEvent } from 'next/server';
+import { resolveFrontendView, trackFrontendView } from '@/lib/activity';
 
 const RESERVED = new Set(['login', 'register', 'api', 'sites', 'admin', 'users', '_next', 'favicon.ico']);
 
@@ -22,7 +22,7 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export default withAuth(
-  function middleware(req: NextRequest) {
+  function middleware(req: NextRequestWithAuth, event: NextFetchEvent) {
     const pathname = req.nextUrl.pathname;
     const parts = pathname.split('/').filter(Boolean);
     const requestHeaders = new Headers(req.headers);
@@ -35,6 +35,16 @@ export default withAuth(
     }
     // 前台守衛用來產生登入回導 callbackUrl 的目前路徑（含 query）
     requestHeaders.set('x-pathname', pathname + req.nextUrl.search);
+
+    // 前台功能頁瀏覽統計；已登入者同時記錄個人瀏覽
+    const target = resolveFrontendView(pathname);
+    if (target) {
+      const token = req.nextauth?.token;
+      const parsedId = token?.id ? Number(token.id) : Number.NaN;
+      const userId = Number.isFinite(parsedId) ? parsedId : null;
+      event.waitUntil(trackFrontendView(target, userId));
+    }
+
     return NextResponse.next({ request: { headers: requestHeaders } });
   },
   {
