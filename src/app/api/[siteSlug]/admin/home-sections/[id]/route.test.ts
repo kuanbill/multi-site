@@ -90,6 +90,20 @@ describe('home section item API', () => {
     expect(sectionUpdate).not.toHaveBeenCalled();
   });
 
+  it('updates only the sort order when it is the sole field', async () => {
+    const response = await PATCH(requestWith('PATCH', { sortOrder: 2 }), context);
+
+    expect(response.status).toBe(200);
+    expect(sectionUpdate).toHaveBeenCalledWith({ where: { id: 5 }, data: { sortOrder: 2 } });
+  });
+
+  it('rejects an invalid sort order', async () => {
+    const response = await PATCH(requestWith('PATCH', { sortOrder: -1 }), context);
+
+    expect(response.status).toBe(400);
+    expect(sectionUpdate).not.toHaveBeenCalled();
+  });
+
   it('deletes a section', async () => {
     const response = await DELETE(new Request('http://localhost/api/site-a/admin/home-sections/5'), context);
 

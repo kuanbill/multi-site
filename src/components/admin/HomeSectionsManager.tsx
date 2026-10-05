@@ -44,13 +44,27 @@ export default function HomeSectionsManager({
   canWrite: boolean;
 }) {
   const router = useRouter();
-  const [sections, setSections] = useState(initialSections);
+  const [orderOverride, setOrderOverride] = useState<number[] | null>(null);
   const [editing, setEditing] = useState<Editing>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<HomeSectionFormValue>(EMPTY_SECTION);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  const sections: HomeSectionRow[] = (() => {
+    if (!orderOverride) return initialSections;
+    const byId = new Map(initialSections.map((row) => [row.id, row]));
+    const ordered = orderOverride
+      .map((id) => byId.get(id))
+      .filter((row): row is HomeSectionRow => row !== undefined);
+    const rest = initialSections.filter((row) => !orderOverride.includes(row.id));
+    return [...ordered, ...rest];
+  })();
+
+  const orderDirty =
+    sections.map((row) => row.id).join(',') !== initialSections.map((row) => row.id).join(',');
 
   const atLimit = sections.length >= HOME_SECTION_MAX_COUNT;
 
@@ -95,30 +109,42 @@ export default function HomeSectionsManager({
     if (await callApi(`/${section.id}`, { method: 'DELETE' })) setMessage('已刪除');
   }
 
-  async function move(section: HomeSectionRow, offset: -1 | 1) {
-    const target = sections.findIndex((row) => row.sortOrder === section.sortOrder + offset);
-    const current = sections.findIndex((row) => row.id === section.id);
-    if (target < 0 || current < 0) return;
+  function move(index: number, offset: -1 | 1) {
+    const target = index + offset;
+    if (target < 0 || target >= sections.length) return;
 
-    const reordered = [...sections];
-    [reordered[current], reordered[target]] = [reordered[target], reordered[current]];
-    setSections(reordered.map((row, index) => ({ ...row, sortOrder: index })));
+    const ids = sections.map((row) => row.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    setOrderOverride(ids);
+    setOrderError('');
+    setMessage('');
+  }
 
-    const ok = await Promise.all(
-      reordered.map((row) =>
-        fetch(`/api/${siteSlug}/admin/home-sections/${row.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sortOrder: row.sortOrder }),
-        }).then((response) => response.ok),
-      ),
-    );
-    if (ok.every(Boolean)) {
-      setMessage('已調整順序');
+  async function saveOrder() {
+    setSaving(true);
+    setOrderError('');
+    setMessage('');
+    const serverOrder = new Map(initialSections.map((row) => [row.id, row.sortOrder]));
+    const changed = sections
+      .map((row, index) => ({ id: row.id, index }))
+      .filter(({ id, index }) => serverOrder.get(id) !== index);
+    try {
+      const results = await Promise.all(
+        changed.map(({ id, index }) =>
+          fetch(`/api/${siteSlug}/admin/home-sections/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sortOrder: index }),
+          }).then((response) => response.ok),
+        ),
+      );
+      if (!results.every(Boolean)) throw new Error('save failed');
+      setMessage('順序已儲存');
       router.refresh();
-    } else {
-      setError('順序調整失敗，請重新整理後再試');
-      router.refresh();
+    } catch {
+      setOrderError('順序儲存失敗，請再試一次');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -200,7 +226,7 @@ export default function HomeSectionsManager({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => move(section, -1)}
+                      onClick={() => move(index, -1)}
                       disabled={index === 0}
                       className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40"
                       aria-label="上移"
@@ -209,7 +235,7 @@ export default function HomeSectionsManager({
                     </button>
                     <button
                       type="button"
-                      onClick={() => move(section, 1)}
+                      onClick={() => move(index, 1)}
                       disabled={index === sections.length - 1}
                       className="px-2 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-40"
                       aria-label="下移"
@@ -265,6 +291,23 @@ onClick={() => {
             </li>
           ))}
         </ul>
+
+        {canWrite && sections.length > 1 && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4">
+            <button
+              type="button"
+              onClick={saveOrder}
+              disabled={saving || !orderDirty}
+              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? '儲存中...' : '儲存順序'}
+            </button>
+            {orderDirty && (
+              <p className="text-sm text-amber-700">順序已變更，儲存後才會顯示於前台。</p>
+            )}
+            {orderError && <p className="text-sm text-red-600">{orderError}</p>}
+          </div>
+        )}
 
         {creating && (
           <div className="mt-4 border-t pt-4">
