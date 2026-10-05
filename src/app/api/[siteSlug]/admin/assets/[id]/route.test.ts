@@ -55,6 +55,19 @@ describe('site media deletion', () => {
     }));
   });
 
+  it('allows a site editor to delete media of their own site', async () => {
+    requireContentPermission.mockResolvedValue({ site: { id: 7 }, siteRole: 'editor' });
+
+    const response = await DELETE(new Request('http://localhost/api/site-a/admin/assets/44', { method: 'DELETE' }), {
+      params: Promise.resolve({ siteSlug: 'site-a', id: '44' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(requireContentPermission).toHaveBeenCalledWith('site-a', 'write');
+    expect(mediaDelete).toHaveBeenCalledWith({ where: { id: 44 } });
+    expect(unlink).toHaveBeenCalled();
+  });
+
   it('rejects deleting media referenced by a feature entry', async () => {
     featureEntryFindFirst.mockResolvedValue({ id: 9 });
 

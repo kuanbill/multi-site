@@ -1,7 +1,7 @@
 import { unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
-import { canPerformContentAction, requireContentPermission } from '@/lib/contentAccess';
+import { requireContentPermission } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -41,10 +41,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { siteSlug, id } = await params;
-  const context = await requireContentPermission(siteSlug, 'delete');
-  if (context.siteRole !== 'global-admin' && context.siteRole !== 'admin' || !canPerformContentAction(context.siteRole, 'delete')) {
-    return NextResponse.json({ error: '沒有刪除權限' }, { status: 403 });
-  }
+  // 媒體屬站內資源且已以 siteId 嚴格過濢，編輯者對所屬子網站的媒體享有完整管理權限。
+  const context = await requireContentPermission(siteSlug, 'write');
   const mediaId = Number(id);
   if (!Number.isInteger(mediaId) || mediaId < 1) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
   const uploadDir = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'data', 'uploads');

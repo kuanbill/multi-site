@@ -9,7 +9,8 @@ export default async function MediaLibraryPage({ params }: { params: Promise<{ s
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'read');
   const canWrite = canPerformContentAction(context.siteRole, 'write');
-  const canDelete = context.siteRole === 'global-admin' || context.siteRole === 'admin';
+  // 媒體嚴格綁定所屬子網站，編輯者即可完整管理（含刪除）本站媒體。
+  const canDelete = canWrite;
 
   const rows = await prisma.media.findMany({
     where: { siteId: context.site.id },
