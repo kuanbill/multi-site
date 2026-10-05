@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
-import { validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { validateRequiredText } from '@/lib/contentValidation';
 import { readJsonBody, parseId, readSortOrder, readContentStatus } from '@/lib/adminValidation';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
@@ -44,23 +44,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   let title: string | undefined;
-  let slug: string | undefined;
   let status: string | undefined;
   try {
     if (record.title !== undefined) title = validateRequiredText(record.title, 'title');
-    if (record.slug !== undefined) slug = validateSlug(record.slug);
     if (record.status !== undefined) status = readContentStatus(record);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
-  }
-
-  if (slug && slug !== existing.slug) {
-    const duplicate = await prisma.announcement.findUnique({
-      where: { siteId_slug: { siteId: context.site.id, slug } },
-    });
-    if (duplicate) {
-      return NextResponse.json({ error: '識別碼已存在' }, { status: 409 });
-    }
   }
 
   const summary = record.summary !== undefined
@@ -86,7 +75,6 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       where: { id: announcementId },
       data: {
         title,
-        slug,
         summary,
         content,
         category,

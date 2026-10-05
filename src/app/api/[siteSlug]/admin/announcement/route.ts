@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { readJsonBody, readSortOrder, readContentStatus } from '@/lib/adminValidation';
-import { validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { validateRequiredText } from '@/lib/contentValidation';
+import { generateRandomSlug } from '@/lib/slug';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
@@ -27,11 +28,9 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   let title: string;
-  let slug: string;
   let status: string;
   try {
     title = validateRequiredText(record.title, 'title');
-    slug = validateSlug(record.slug);
     status = readContentStatus(record);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
@@ -46,11 +45,19 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
   }
 
-  const existing = await prisma.announcement.findUnique({
-    where: { siteId_slug: { siteId: context.site.id, slug } },
-  });
-  if (existing) {
-    return NextResponse.json({ error: '識別碼已存在' }, { status: 409 });
+  let slug = '';
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const candidate = generateRandomSlug();
+    const existing = await prisma.announcement.findUnique({
+      where: { siteId_slug: { siteId: context.site.id, slug: candidate } },
+    });
+    if (!existing) {
+      slug = candidate;
+      break;
+    }
+  }
+  if (!slug) {
+    return NextResponse.json({ error: '建立失敗' }, { status: 500 });
   }
 
   const publishedAt = status === 'published' ? new Date() : null;

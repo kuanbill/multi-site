@@ -7,7 +7,6 @@ import { Input, Select, Checkbox, TextArea } from '@/components/admin';
 
 type AnnouncementFormValues = {
   title: string;
-  slug: string;
   summary: string;
   content: string;
   category: string;
@@ -32,7 +31,6 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
   const router = useRouter();
   const [values, setValues] = useState<AnnouncementFormValues>(() => ({
     title: initial?.title ?? '',
-    slug: initial?.slug ?? '',
     summary: initial?.summary ?? '',
     content: initial?.content ?? '',
     category: initial?.category ?? '',
@@ -54,7 +52,6 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
     try {
       const payload = {
         title: values.title,
-        slug: values.slug,
         summary: values.summary || null,
         content: values.content || null,
         category: values.category || null,
@@ -82,7 +79,6 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
       if (!initial) {
         setValues({
           title: '',
-          slug: '',
           summary: '',
           content: '',
           category: '',
@@ -100,21 +96,13 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Input
           label="標題"
           value={values.title}
           onChange={(e) => update('title', e.target.value)}
           required
           placeholder="公告標題"
-        />
-        <Input
-          label="識別碼（slug）"
-          value={values.slug}
-          onChange={(e) => update('slug', e.target.value)}
-          required
-          placeholder="announcements-2024"
-          hint="僅小寫英文、數字與連字號"
         />
       </div>
 

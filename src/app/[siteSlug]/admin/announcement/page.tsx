@@ -52,7 +52,6 @@ export default async function AnnouncementListPage({ params }: { params: Promise
             <thead className="bg-gray-50 text-left">
               <tr>
                 <th className="px-4 py-3">標題</th>
-                <th className="px-4 py-3">識別碼</th>
                 <th className="px-4 py-3">分類</th>
                 <th className="px-4 py-3">狀態</th>
                 <th className="px-4 py-3">更新時間</th>
@@ -69,7 +68,6 @@ export default async function AnnouncementListPage({ params }: { params: Promise
                     </div>
                     {item.summary && <p className="text-xs text-gray-500 truncate max-w-xs">{item.summary}</p>}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{item.slug}</td>
                   <td className="px-4 py-3">{item.category ?? '-'}</td>
                   <td className="px-4 py-3">{statusBadge(item.status)}</td>
                   <td className="px-4 py-3 text-gray-500">{new Date(item.updatedAt).toLocaleDateString('zh-TW')}</td>
