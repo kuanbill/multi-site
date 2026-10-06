@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { roleLabel, ROLE_VALUES } from '@/lib/roles';
 
@@ -8,8 +8,15 @@ interface Member {
   userId: number;
   name: string;
   email: string;
+  phone: string;
   siteRole: string;
   createdAt: string;
+}
+
+interface ImportResultData {
+  created: Array<{ email: string; name: string; phone: string; password: string; generated: boolean }>;
+  skipped: Array<{ email: string; reason: string }>;
+  errors: Array<{ rowNumber: number; email: string; reason: string }>;
 }
 
 export default function SiteUsersClient({
@@ -39,6 +46,29 @@ export default function SiteUsersClient({
   const [editPassword, setEditPassword] = useState('');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importResult, setImportResult] = useState<ImportResultData | null>(null);
+  const [downloadingResult, setDownloadingResult] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  async function refreshMembers() {
+    const r2 = await fetch(`/api/${siteSlug}/admin/users`);
+    if (r2.ok) {
+      const list = await r2.json();
+      setMembers(
+        list.map((x: { user: { id: number; name: string; email: string; phone?: string | null; createdAt: string }; siteRole: string }) => ({
+          userId: x.user.id,
+          name: x.user.name,
+          email: x.user.email,
+          phone: x.user.phone ?? '',
+          siteRole: x.siteRole,
+          createdAt: x.user.createdAt,
+        })),
+      );
+    }
+  }
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -58,19 +88,68 @@ export default function SiteUsersClient({
     setEmail('');
     setName('');
     setPassword('');
-    // reload members
-    const r2 = await fetch(`/api/${siteSlug}/admin/users`);
-    if (r2.ok) {
-      const list = await r2.json();
-      setMembers(list.map((x: { user: { id: number; name: string; email: string; createdAt: string }; siteRole: string }) => ({
-        userId: x.user.id,
-        name: x.user.name,
-        email: x.user.email,
-        siteRole: x.siteRole,
-        createdAt: x.user.createdAt,
-      })));
-    }
+    await refreshMembers();
     router.refresh();
+  }
+
+  async function handleImport() {
+    if (!importFile) {
+      setImportError('請先選擇 Excel 檔案');
+      return;
+    }
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const form = new FormData();
+      form.append('file', importFile);
+      const res = await fetch(`/api/${siteSlug}/admin/users/import`, { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) {
+        setImportError(data.error || '匯入失敗');
+        return;
+      }
+      setImportResult(data as ImportResultData);
+      setImportFile(null);
+      if (importInputRef.current) importInputRef.current.value = '';
+      await refreshMembers();
+      router.refresh();
+    } catch {
+      setImportError('網路錯誤，請重試');
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function downloadImportResult() {
+    if (!importResult) return;
+    setDownloadingResult(true);
+    setImportError('');
+    try {
+      const res = await fetch(`/api/${siteSlug}/admin/users/import/result`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(importResult),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setImportError(data?.error || '下載結果檔失敗');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'member-import-result.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setImportError('下載結果檔失敗');
+    } finally {
+      setDownloadingResult(false);
+    }
   }
 
   async function handleRemove(userId: number) {
@@ -136,6 +215,7 @@ export default function SiteUsersClient({
             <tr>
               <th className="px-4 py-2 text-left text-sm">姓名</th>
               <th className="px-4 py-2 text-left text-sm">Email</th>
+              <th className="px-4 py-2 text-left text-sm">手機</th>
               <th className="px-4 py-2 text-left text-sm">站內角色</th>
               {canManage && <th className="px-4 py-2 text-right text-sm">操作</th>}
             </tr>
@@ -150,6 +230,7 @@ export default function SiteUsersClient({
                   <td className="px-4 py-2">
                     <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full px-2 py-1 border rounded" />
                   </td>
+                  <td className="px-4 py-2 text-gray-500">{m.phone}</td>
                   <td className="px-4 py-2">
                     <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
                       {assignableRoles.map((value) => (
@@ -180,6 +261,7 @@ export default function SiteUsersClient({
                 <tr key={m.userId}>
                   <td className="px-4 py-2">{m.name}</td>
                   <td className="px-4 py-2 text-gray-500">{m.email}</td>
+                  <td className="px-4 py-2 text-gray-500">{m.phone}</td>
                   <td className="px-4 py-2">{roleLabel(m.siteRole)}</td>
                   {canManage && (
                     <td className="px-4 py-2 text-right">
@@ -204,6 +286,135 @@ export default function SiteUsersClient({
         </table>
         {members.length === 0 && <div className="p-4 text-center text-gray-500">尚無成員</div>}
       </div>
+
+      {canManage && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6 space-y-4">
+          <div>
+            <h3 className="font-medium">匯入 Excel 成員</h3>
+            <p className="text-sm text-gray-500">
+              依範本填寫 Email、姓名、手機；角色一律預設為檢視者，密碼由系統產生 6 碼英數。
+            </p>
+          </div>
+          {importError && <div className="p-2 bg-red-100 text-red-700 rounded text-sm">{importError}</div>}
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={`/api/${siteSlug}/admin/users/import/template`}
+              className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm hover:bg-blue-50"
+            >
+              下載範本
+            </a>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+              className="text-sm"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importing || !importFile}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+            >
+              {importing ? '匯入中...' : '匯入'}
+            </button>
+          </div>
+
+          {importResult && (
+            <div className="space-y-4">
+              <div
+                className={`p-2 rounded text-sm ${
+                  importResult.errors.length > 0
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-green-100 text-green-700'
+                }`}
+              >
+                匯入完成：新增 {importResult.created.length} 筆、略過 {importResult.skipped.length} 筆、失敗{' '}
+                {importResult.errors.length} 筆
+              </div>
+
+              {importResult.created.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">新增成功（站內角色：檢視者）</h4>
+                  <div className="border rounded overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Email</th>
+                          <th className="px-3 py-2 text-left">姓名</th>
+                          <th className="px-3 py-2 text-left">手機</th>
+                          <th className="px-3 py-2 text-left">密碼</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {importResult.created.map((row) => (
+                          <tr key={`created-${row.email}`}>
+                            <td className="px-3 py-2">{row.email}</td>
+                            <td className="px-3 py-2">{row.name}</td>
+                            <td className="px-3 py-2">{row.phone}</td>
+                            <td className="px-3 py-2 font-mono">
+                              {row.generated ? row.password : '沿用原密碼'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    密碼為系統產生的 6 碼英數，請轉發給成員並提醒登入後修改。
+                  </p>
+                </div>
+              )}
+
+              {importResult.skipped.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1">略過</h4>
+                  <ul className="text-sm text-gray-600 list-disc pl-5">
+                    {importResult.skipped.map((row) => (
+                      <li key={`skipped-${row.email}`}>
+                        {row.email} — {row.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {importResult.errors.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-1 text-red-700">失敗</h4>
+                  <div className="border rounded overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-3 py-2 text-left">列</th>
+                          <th className="px-3 py-2 text-left">Email</th>
+                          <th className="px-3 py-2 text-left">原因</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {importResult.errors.map((row, index) => (
+                          <tr key={`error-${index}-${row.email}`}>
+                            <td className="px-3 py-2">{row.rowNumber}</td>
+                            <td className="px-3 py-2">{row.email}</td>
+                            <td className="px-3 py-2 text-red-700">{row.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={downloadImportResult}
+                disabled={downloadingResult}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+              >
+                {downloadingResult ? '產生中...' : '下載結果檔（含密碼）'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {canManage && (
         <form onSubmit={handleInvite} className="bg-white p-6 rounded-lg shadow space-y-4">

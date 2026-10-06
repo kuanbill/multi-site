@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ siteSlu
 
   const members = await prisma.siteUser.findMany({
     where: { siteId: site.id },
-    include: { user: { select: { id: true, name: true, email: true, role: true, createdAt: true } } },
+    include: { user: { select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });
   const result = members.map((m) => ({

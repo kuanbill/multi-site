@@ -11,6 +11,7 @@ model User {
   email     String   @unique
   name      String
   password  String
+  phone     String? // 聯絡電話（Excel 匯入成員用，選填）
   role      String   @default("editor") // admin, editor, viewer
   allSites  Boolean  @default(false) // 編輯者不設限：可管理所有子網站
   createdAt DateTime @default(now())

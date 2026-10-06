@@ -13,7 +13,7 @@ export default async function SiteUsersPage({ params }: { params: Promise<{ site
   if (!site) notFound();
   const members = await prisma.siteUser.findMany({
     where: { siteId: site.id },
-    include: { user: { select: { id: true, name: true, email: true, createdAt: true } } },
+    include: { user: { select: { id: true, name: true, email: true, phone: true, createdAt: true } } },
     orderBy: { createdAt: 'asc' },
   });
   const list = members.map((m) => ({
@@ -21,6 +21,7 @@ export default async function SiteUsersPage({ params }: { params: Promise<{ site
     userId: m.user.id,
     name: m.user.name,
     email: m.user.email,
+    phone: m.user.phone ?? '',
     createdAt: m.user.createdAt.toISOString(),
   }));
   const canManage = canManageSiteMembers(siteRole);
