@@ -6,6 +6,7 @@ import {
   canManageSiteMembers,
   requireSiteContext,
 } from '@/lib/contentAccess';
+import { parsePhoneInput } from '@/lib/memberImport';
 
 export async function POST(req: Request, { params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
@@ -20,8 +21,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const role = ['admin', 'editor', 'viewer'].includes(body.role) ? body.role : 'editor';
     const passwordRaw = typeof body.password === 'string' ? body.password : '';
+    const parsedPhone = parsePhoneInput(body.phone);
 
     if (!emailRaw || !name) return NextResponse.json({ error: 'email 與姓名為必填' }, { status: 400 });
+    if (parsedPhone.error) return NextResponse.json({ error: parsedPhone.error }, { status: 400 });
     if (role === 'admin' && !canAssignSiteAdmin(siteRole)) {
       return NextResponse.json({ error: '只有站點管理員可指派站點管理員' }, { status: 403 });
     }
@@ -42,7 +45,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
       const existingLink = await prisma.siteUser.findFirst({ where: { userId: user.id, siteId: site.id } });
       if (existingLink) return NextResponse.json({ error: '已在該專案' }, { status: 409 });
       const link = await prisma.siteUser.create({ data: { userId: user.id, siteId: site.id, role } });
-      return NextResponse.json({ user, link }, { status: 201 });
+      let updatedUser = user;
+      if (parsedPhone.phone && !user.phone) {
+        updatedUser = await prisma.user.update({ where: { id: user.id }, data: { phone: parsedPhone.phone } });
+      }
+      return NextResponse.json({ user: updatedUser, link }, { status: 201 });
     }
 
     // 新使用者
@@ -50,13 +57,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
     if (password.length < 6) return NextResponse.json({ error: '密碼至少 6 字元' }, { status: 400 });
     const hashed = await hash(password, 12);
     user = await prisma.user.create({
-      data: { email: emailRaw, name, password: hashed, role: role === 'admin' ? 'editor' : 'editor' },
+      data: {
+        email: emailRaw,
+        name,
+        password: hashed,
+        role: role === 'admin' ? 'editor' : 'editor',
+        phone: parsedPhone.phone || null,
+      },
     });
     const link = await prisma.siteUser.create({ data: { userId: user.id, siteId: site.id, role } });
 
     // MVP: 回傳明文密碼供管理員轉告 (後續應寄信)
-    return NextResponse.json({ user: { id: user.id, email: user.email, name: user.name }, link, tempPassword: password }, { status: 201 });
+    return NextResponse.json(
+      {
+        user: { id: user.id, email: user.email, name: user.name, phone: user.phone ?? null },
+        link,
+        tempPassword: password,
+      },
+      { status: 201 },
+    );
   } catch (e) {
-    return NextResponse.json({ error: '邀請失敗' }, { status: 500 });
+    return NextResponse.json({ error: '新增失敗' }, { status: 500 });
   }
 }

@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireSiteContext, hash, userFindUnique, userCreate, siteUserCount, siteUserFindFirst, siteUserCreate } =
+const { requireSiteContext, hash, userFindUnique, userCreate, userUpdate, siteUserCount, siteUserFindFirst, siteUserCreate } =
   vi.hoisted(() => ({
     requireSiteContext: vi.fn(),
     hash: vi.fn(),
     userFindUnique: vi.fn(),
     userCreate: vi.fn(),
+    userUpdate: vi.fn(),
     siteUserCount: vi.fn(),
     siteUserFindFirst: vi.fn(),
     siteUserCreate: vi.fn(),
@@ -18,7 +19,7 @@ vi.mock('@/lib/contentAccess', async (importOriginal) => ({
 vi.mock('bcryptjs', () => ({ hash }));
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    user: { findUnique: userFindUnique, create: userCreate },
+    user: { findUnique: userFindUnique, create: userCreate, update: userUpdate },
     siteUser: { count: siteUserCount, findFirst: siteUserFindFirst, create: siteUserCreate },
   },
 }));
@@ -53,7 +54,8 @@ describe('site member invite API', () => {
     requireSiteContext.mockReset().mockResolvedValue(siteContextOf('admin'));
     hash.mockReset().mockResolvedValue('hashed');
     userFindUnique.mockReset().mockResolvedValue(null);
-    userCreate.mockReset().mockResolvedValue({ id: 11, email: 'new@example.com', name: '新成員' });
+    userCreate.mockReset().mockResolvedValue({ id: 11, email: 'new@example.com', name: '新成員', phone: null });
+    userUpdate.mockReset().mockResolvedValue({ id: 12, email: 'new@example.com', name: '既有帳號', phone: '0912345678' });
     siteUserCount.mockReset().mockResolvedValue(0);
     siteUserFindFirst.mockReset().mockResolvedValue(null);
     siteUserCreate.mockReset().mockResolvedValue({ id: 501, role: 'editor' });
@@ -147,5 +149,65 @@ describe('site member invite API', () => {
 
     expect(response.status).toBe(409);
     expect(siteUserCreate).not.toHaveBeenCalled();
+  });
+
+  it('creates a new member with an optional phone', async () => {
+    const response = await invite({ ...validBody, phone: ' 0912345678 ' });
+
+    expect(response.status).toBe(201);
+    expect(userCreate).toHaveBeenCalledWith({
+      data: {
+        email: 'new@example.com',
+        name: '新成員',
+        password: 'hashed',
+        role: 'editor',
+        phone: '0912345678',
+      },
+    });
+  });
+
+  it('stores a null phone when the phone field is left blank', async () => {
+    const response = await invite({ ...validBody, phone: '' });
+
+    expect(response.status).toBe(201);
+    expect(userCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ phone: null }) }),
+    );
+  });
+
+  it('rejects a malformed phone', async () => {
+    const response = await invite({ ...validBody, phone: 'abc123' });
+
+    expect(response.status).toBe(400);
+    expect(userCreate).not.toHaveBeenCalled();
+    expect(siteUserCreate).not.toHaveBeenCalled();
+  });
+
+  it('fills in a phone for an existing account only when it has none', async () => {
+    userFindUnique.mockResolvedValue({ id: 12, email: 'new@example.com', name: '既有帳號', role: 'editor', phone: null });
+    siteUserCount.mockResolvedValue(0);
+
+    const response = await invite({ ...validBody, phone: '0912345678' });
+
+    expect(response.status).toBe(201);
+    expect(userUpdate).toHaveBeenCalledWith({ where: { id: 12 }, data: { phone: '0912345678' } });
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
+  it('keeps an existing phone untouched for an existing account', async () => {
+    userFindUnique.mockResolvedValue({
+      id: 12,
+      email: 'new@example.com',
+      name: '既有帳號',
+      role: 'editor',
+      phone: '0987654321',
+    });
+    siteUserCount.mockResolvedValue(0);
+
+    const response = await invite({ ...validBody, phone: '0912345678' });
+
+    expect(response.status).toBe(201);
+    expect(userUpdate).not.toHaveBeenCalled();
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 12, siteId: 7, role: 'editor' } });
   });
 });

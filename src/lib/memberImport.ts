@@ -50,7 +50,14 @@ const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
 const DIGITS = '23456789';
 const ALL_CHARS = LETTERS + DIGITS;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^[0-9+()\- ]{6,20}$/;
+export const PHONE_RE = /^[0-9+()\- ]{6,20}$/;
+export const PHONE_ERROR = '手機格式不正確（限 6-20 碼數字與 +()-';
+
+export function parsePhoneInput(value: unknown): { phone: string; error?: string } {
+  const phone = typeof value === 'string' ? value.trim() : '';
+  if (phone && !PHONE_RE.test(phone)) return { phone: '', error: PHONE_ERROR };
+  return { phone };
+}
 const MAX_ROWS = 1000;
 
 function pick(chars: string): string {
@@ -137,8 +144,9 @@ export function parseMemberRows(rows: SheetRow[]): ParsedMemberRows {
       errors.push({ rowNumber: row.rowNumber, email, reason: '缺少姓名' });
       continue;
     }
-    if (phone && !PHONE_RE.test(phone)) {
-      errors.push({ rowNumber: row.rowNumber, email, reason: '手機格式不正確（限 6-20 碼數字與 +()-' });
+    const parsedPhone = parsePhoneInput(phone);
+    if (parsedPhone.error) {
+      errors.push({ rowNumber: row.rowNumber, email, reason: parsedPhone.error });
       continue;
     }
     if (seen.has(email)) {

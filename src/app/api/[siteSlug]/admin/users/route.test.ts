@@ -118,7 +118,7 @@ describe('site member update API', () => {
     expect(userUpdate).toHaveBeenCalledWith({
       where: { id: 5 },
       data: { name: '王小明', email: 'ming@example.com' },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
     });
   });
 
@@ -193,6 +193,41 @@ describe('site member update API', () => {
     const response = await put(validBody);
 
     expect(response.status).toBe(409);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('updates the phone when one is provided', async () => {
+    const response = await put({ ...validBody, phone: '0912-345-678' });
+
+    expect(response.status).toBe(200);
+    expect(userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { name: '王小明', email: 'ming@example.com', phone: '0912-345-678' } }),
+    );
+  });
+
+  it('clears the phone when an empty phone is provided', async () => {
+    const response = await put({ ...validBody, phone: '   ' });
+
+    expect(response.status).toBe(200);
+    expect(userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { name: '王小明', email: 'ming@example.com', phone: null } }),
+    );
+  });
+
+  it('leaves the phone unchanged when the field is omitted', async () => {
+    const response = await put(validBody);
+
+    expect(response.status).toBe(200);
+    expect(userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { name: '王小明', email: 'ming@example.com' } }),
+    );
+    expect(userUpdate.mock.calls[0][0].data).not.toHaveProperty('phone');
+  });
+
+  it('rejects a malformed phone', async () => {
+    const response = await put({ ...validBody, phone: 'abc' });
+
+    expect(response.status).toBe(400);
     expect(transaction).not.toHaveBeenCalled();
   });
 });

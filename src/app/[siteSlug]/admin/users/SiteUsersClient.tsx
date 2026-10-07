@@ -35,6 +35,7 @@ export default function SiteUsersClient({
   const [members, setMembers] = useState(initial);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [role, setRole] = useState('editor');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
@@ -42,6 +43,7 @@ export default function SiteUsersClient({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
   const [editRole, setEditRole] = useState('editor');
   const [editPassword, setEditPassword] = useState('');
   const [editSaving, setEditSaving] = useState(false);
@@ -77,16 +79,17 @@ export default function SiteUsersClient({
     const res = await fetch(`/api/${siteSlug}/admin/users/invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, role, password: password || undefined }),
+      body: JSON.stringify({ email, name, phone, role, password: password || undefined }),
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error || '邀請失敗');
+      setError(data.error || '新增失敗');
       return;
     }
-    setMsg(data.tempPassword ? `已建立，臨時密碼: ${data.tempPassword}` : '已邀請');
+    setMsg(data.tempPassword ? `已建立，臨時密碼: ${data.tempPassword}` : '已新增');
     setEmail('');
     setName('');
+    setPhone('');
     setPassword('');
     await refreshMembers();
     router.refresh();
@@ -165,6 +168,7 @@ export default function SiteUsersClient({
     setEditingId(m.userId);
     setEditName(m.name);
     setEditEmail(m.email);
+    setEditPhone(m.phone);
     setEditRole(m.siteRole);
     setEditPassword('');
     setEditError('');
@@ -185,6 +189,7 @@ export default function SiteUsersClient({
         userId,
         name: editName,
         email: editEmail,
+        phone: editPhone,
         role: editRole,
         password: editPassword || undefined,
       }),
@@ -198,7 +203,7 @@ export default function SiteUsersClient({
     setMembers(
       members.map((m) =>
         m.userId === userId
-          ? { ...m, name: data.user.name, email: data.user.email, siteRole: data.siteRole }
+          ? { ...m, name: data.user.name, email: data.user.email, phone: data.user.phone ?? '', siteRole: data.siteRole }
           : m,
       ),
     );
@@ -230,7 +235,9 @@ export default function SiteUsersClient({
                   <td className="px-4 py-2">
                     <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full px-2 py-1 border rounded" />
                   </td>
-                  <td className="px-4 py-2 text-gray-500">{m.phone}</td>
+                  <td className="px-4 py-2">
+                    <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="選填" className="w-full px-2 py-1 border rounded" />
+                  </td>
                   <td className="px-4 py-2">
                     <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
                       {assignableRoles.map((value) => (
@@ -418,7 +425,7 @@ export default function SiteUsersClient({
 
       {canManage && (
         <form onSubmit={handleInvite} className="bg-white p-6 rounded-lg shadow space-y-4">
-          <h3 className="font-medium">邀請成員</h3>
+          <h3 className="font-medium">新增成員</h3>
           {error && <div className="p-2 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
           {msg && <div className="p-2 bg-green-100 text-green-700 rounded text-sm">{msg}</div>}
           <div className="grid grid-cols-2 gap-4">
@@ -429,6 +436,10 @@ export default function SiteUsersClient({
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">手機 (選填)</label>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="09xxxxxxxx" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">站內角色</label>
@@ -444,7 +455,7 @@ export default function SiteUsersClient({
             </div>
           </div>
           <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            邀請
+            新增
           </button>
         </form>
       )}

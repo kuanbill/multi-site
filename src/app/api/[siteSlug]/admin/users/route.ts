@@ -6,6 +6,7 @@ import {
   canManageSiteMembers,
   requireSiteContext,
 } from '@/lib/contentAccess';
+import { parsePhoneInput } from '@/lib/memberImport';
 
 const SITE_ROLES = ['admin', 'editor', 'viewer'] as const;
 
@@ -75,7 +76,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug
     const name = typeof body.name === 'string' ? body.name.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
+    const parsedPhone = parsePhoneInput(body.phone);
+    const phoneProvided = body.phone !== undefined && body.phone !== null;
     if (!name || !email) return NextResponse.json({ error: '姓名與 Email 為必填' }, { status: 400 });
+    if (parsedPhone.error) return NextResponse.json({ error: parsedPhone.error }, { status: 400 });
     if (!isSiteRole(body.role)) return NextResponse.json({ error: '無效的站內角色' }, { status: 400 });
     if (password && password.length < 6) {
       return NextResponse.json({ error: '密碼至少 6 字元' }, { status: 400 });
@@ -96,14 +100,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ siteSlug
       }
     }
 
-    const userData: { name: string; email: string; password?: string } = { name, email };
+    const userData: { name: string; email: string; phone?: string | null; password?: string } = {
+      name,
+      email,
+    };
+    if (phoneProvided) userData.phone = parsedPhone.phone || null;
     if (password) userData.password = await hash(password, 12);
 
     const [user, link] = await prisma.$transaction([
       prisma.user.update({
         where: { id: userId },
         data: userData,
-        select: { id: true, name: true, email: true, role: true, createdAt: true },
+        select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
       }),
       prisma.siteUser.update({
         where: { userId_siteId: { userId, siteId: site.id } },
