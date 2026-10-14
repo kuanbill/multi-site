@@ -4,73 +4,124 @@ import { parseContentStatus, validateExternalUrl, validateRequiredText } from '@
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
+type AttachmentInput = { mediaId: number; label: string | null };
+
+function parseAttachments(value: unknown): AttachmentInput[] {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value)) throw new Error('附件參數錯誤');
+  const seen = new Set<number>();
+  return value.map((item) => {
+    if (typeof item !== 'object' || item === null || !('mediaId' in item)) throw new Error('附件參數錯誤');
+    const rawMediaId = (item as Record<string, unknown>).mediaId;
+    const mediaId = typeof rawMediaId === 'number' ? rawMediaId : Number(rawMediaId);
+    if (!Number.isInteger(mediaId) || mediaId < 1 || seen.has(mediaId)) throw new Error('附件參數錯誤');
+    seen.add(mediaId);
+    const rawLabel = (item as Record<string, unknown>).label;
+    if (rawLabel !== undefined && rawLabel !== null && typeof rawLabel !== 'string') throw new Error('附件名稱格式錯誤');
+    return { mediaId, label: typeof rawLabel === 'string' ? rawLabel.trim() || null : null };
+  });
+}
+
+function parseDeadline(value: unknown): Date | null {
+  if (value === undefined || value === null || value === '') return null;
+  const deadline = new Date(String(value));
+  if (Number.isNaN(deadline.getTime())) throw new Error('截止日期格式無效');
+  return deadline;
+}
+
+function parseText(value: unknown): string | null {
+  return typeof value === 'string' ? value.trim() || null : null;
+}
+
 export async function GET(_request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'read');
-  return NextResponse.json(await prisma.selectionInfo.findUnique({ where: { siteId: context.site.id } }));
+  const items = await prisma.selectionInfo.findMany({
+    where: { siteId: context.site.id },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+  });
+  const attachments = await prisma.contentAttachment.findMany({
+    where: { siteId: context.site.id, ownerType: 'selection', ownerId: { in: items.map((item) => item.id) } },
+    include: { media: true },
+    orderBy: { sortOrder: 'asc' },
+  });
+  const byOwner = new Map<number, typeof attachments>();
+  for (const attachment of attachments) {
+    const ownerAttachments = byOwner.get(attachment.ownerId) ?? [];
+    ownerAttachments.push(attachment);
+    byOwner.set(attachment.ownerId, ownerAttachments);
+  }
+  return NextResponse.json(items.map((item) => ({ ...item, attachments: byOwner.get(item.id) ?? [] })));
 }
 
-export async function PATCH(request: Request, { params }: RouteContext) {
+export async function POST(request: Request, { params }: RouteContext) {
   const { siteSlug } = await params;
   const context = await requireContentPermission(siteSlug, 'write');
   let body: Record<string, unknown>;
-  try { body = await request.json() as Record<string, unknown>; } catch { return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 }); }
-  const existing = await prisma.selectionInfo.findUnique({ where: { siteId: context.site.id } });
-  let title: string | undefined;
-  let externalUrl: string | null | undefined;
-  let status: string;
   try {
-    if (body.title !== undefined) title = validateRequiredText(body.title, 'title');
-    if (!existing && title === undefined) throw new Error('標題為必填');
-    if (body.externalUrl !== undefined) externalUrl = validateExternalUrl(body.externalUrl);
-    status = body.status === undefined
-      ? existing?.status ?? 'draft'
-      : parseContentStatus(body.status);
-  } catch (error) { return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 }); }
-  let deadline: Date | null | undefined;
-  if (body.deadline !== undefined) {
-    deadline = null;
-    if (body.deadline !== null && body.deadline !== '') {
-      deadline = new Date(String(body.deadline));
-      if (Number.isNaN(deadline.getTime())) return NextResponse.json({ error: '截止日期格式無效' }, { status: 400 });
+    body = await request.json() as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: '參數格式錯誤' }, { status: 400 });
+  }
+
+  let title: string;
+  let status: string;
+  let externalUrl: string | null;
+  let deadline: Date | null;
+  let attachments: AttachmentInput[];
+  try {
+    title = validateRequiredText(body.title, 'title');
+    status = body.status === undefined || body.status === '' ? 'draft' : parseContentStatus(body.status);
+    externalUrl = validateExternalUrl(body.externalUrl);
+    deadline = parseDeadline(body.deadline);
+    attachments = parseAttachments(body.attachments);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
+  }
+
+  if (attachments.length) {
+    const medias = await prisma.media.findMany({
+      where: { id: { in: attachments.map(({ mediaId }) => mediaId) }, siteId: context.site.id },
+      select: { id: true },
+    });
+    if (medias.length !== attachments.length) {
+      return NextResponse.json({ error: '附件不存在或不屬於此站點' }, { status: 400 });
     }
   }
-  const optional = (key: string) => body[key] === undefined
-    ? undefined
-    : typeof body[key] === 'string' ? (body[key] as string).trim() || null : null;
-  const description = optional('description');
-  const applicableStage = optional('applicableStage');
-  const rules = optional('rules');
-  const notice = optional('notice');
-  const updateData: Record<string, unknown> = {
-    ...(title !== undefined ? { title } : {}),
-    ...(description !== undefined ? { description } : {}),
-    ...(applicableStage !== undefined ? { applicableStage } : {}),
-    ...(rules !== undefined ? { rules } : {}),
-    ...(notice !== undefined ? { notice } : {}),
-    ...(deadline !== undefined ? { deadline } : {}),
-    ...(externalUrl !== undefined ? { externalUrl } : {}),
-  };
-  const createData = {
-    siteId: context.site.id,
-    title: title!,
-    description: description ?? null,
-    applicableStage: applicableStage ?? null,
-    rules: rules ?? null,
-    notice: notice ?? null,
-    deadline: deadline ?? null,
-    externalUrl: externalUrl ?? null,
-    status,
-    publishedAt: status === 'published' ? new Date() : null,
-  };
-  if (body.status !== undefined) {
-    updateData.status = status;
-    updateData.publishedAt = status === 'published' ? existing?.publishedAt ?? new Date() : null;
+
+  const publishedAt = status === 'published' ? new Date() : null;
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      const selection = await tx.selectionInfo.create({
+        data: {
+          siteId: context.site.id,
+          title,
+          description: parseText(body.description),
+          applicableStage: parseText(body.applicableStage),
+          rules: parseText(body.rules),
+          notice: parseText(body.notice),
+          deadline,
+          externalUrl,
+          status,
+          publishedAt,
+        },
+      });
+      if (attachments.length) {
+        await tx.contentAttachment.createMany({
+          data: attachments.map(({ mediaId, label }, sortOrder) => ({
+            siteId: context.site.id,
+            mediaId,
+            ownerType: 'selection',
+            ownerId: selection.id,
+            label,
+            sortOrder,
+          })),
+        });
+      }
+      return selection;
+    });
+    return NextResponse.json(created, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: '建立失敗' }, { status: 500 });
   }
-  const result = await prisma.selectionInfo.upsert({
-    where: { siteId: context.site.id },
-    create: createData,
-    update: updateData,
-  });
-  return NextResponse.json(result);
 }

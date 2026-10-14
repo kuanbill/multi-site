@@ -119,4 +119,27 @@ describe('media visibility', () => {
       memberReference: true,
     });
   });
+
+  it('applies selection feature visibility to published selection attachments only', async () => {
+    siteFeatureFindMany.mockResolvedValue([
+      { feature: { key: 'selection' }, visibility: 'members' },
+    ]);
+    attachmentFindMany.mockResolvedValue([{ ownerType: 'selection', ownerId: 12 }]);
+    selectionFindMany.mockResolvedValue([{ id: 12 }]);
+
+    await expect(resolveMediaVisibility(10, 42)).resolves.toEqual({
+      publicReference: false,
+      memberReference: true,
+    });
+    expect(selectionFindMany).toHaveBeenCalledWith({
+      where: { siteId: 10, status: 'published', id: { in: [12] } },
+      select: { id: true },
+    });
+
+    selectionFindMany.mockResolvedValue([]);
+    await expect(resolveMediaVisibility(10, 43)).resolves.toEqual({
+      publicReference: false,
+      memberReference: false,
+    });
+  });
 });

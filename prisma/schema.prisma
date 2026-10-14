@@ -43,7 +43,7 @@ model Site {
   exhibitions Exhibition[]
   meetings     MeetingRecord[]
   vendors      Vendor[]
-  selection    SelectionInfo?
+  selection    SelectionInfo[]
   maps         MapAsset[]
   attachments  ContentAttachment[]
   homeSections SiteHomeSection[]
@@ -293,7 +293,7 @@ model Vendor {
 
 model SelectionInfo {
   id             Int      @id @default(autoincrement())
-  siteId         Int      @unique
+  siteId         Int
   title          String
   description    String?
   applicableStage String?
@@ -303,8 +303,11 @@ model SelectionInfo {
   externalUrl    String?
   status         String   @default("draft")
   publishedAt    DateTime?
+  createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   site           Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
 }
 
 model MapAsset {

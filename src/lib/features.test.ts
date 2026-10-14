@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { getSiteAdminFeatureLinks, mergeSiteFeatures } from './features';
+import { CONTENT_FEATURES, getSiteAdminFeatureLinks, mergeSiteFeatures } from './features';
 
 describe('site feature settings', () => {
+  it('uses the user-facing selection feature name without changing its route key', () => {
+    expect(CONTENT_FEATURES.find((feature) => feature.key === 'selection')).toMatchObject({
+      label: '選配作業',
+      path: 'selection',
+    });
+  });
+
   it('creates ordered admin menu links for every enabled system and custom feature', () => {
     expect(getSiteAdminFeatureLinks('site-a', [
       { key: 'announcements', path: 'announcement', label: '公告欄', icon: '📢' },
