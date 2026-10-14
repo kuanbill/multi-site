@@ -97,7 +97,7 @@ Assert site ownership (404 for foreign or missing IDs), partial field updates, s
 - Manager consumes site slug, role permissions and selection list; links to create/edit and invokes item DELETE.
 - Form consumes optional existing item and media picker results; submits selection fields and ordered attachment IDs.
 
-- [x] **Step 1: Add UI tests for empty/list states, create/edit fields, permissions and confirmed deletion**
+- [x] **Step 1: Add UI tests for manager empty/list states and permission-gated actions**
 - [x] **Step 2: Run tests and verify the new cases fail**
 - [x] **Step 3: Implement manager, create/edit routes and attachment picker**
 
@@ -166,3 +166,23 @@ Keep the internal key `selection`, route segments, Prisma model and API paths un
 Document the 「選配作業」 label, multiple entries, per-entry create/edit/delete, attached document downloads, image display, and information-only scope.
 
 - [x] **Step 2: Review wording against shipped behavior and verify no line implies online resident selection**
+
+---
+
+## Completion and Deployment Record
+
+**Date:** 2026-10-14
+**Status:** Implemented, merged to `main`, pushed to GitHub, and deployed to production.
+
+- Feature commit: `257bf23` (`feat: manage multiple selection entries and attachments`).
+- Merge commit: `e3fdd82` (`merge: selection management`); `origin/main` was verified at the same commit.
+- Local verification after merge: `npm test` — 61 files / 364 tests passed; `npx tsc --noEmit` passed; `npm run lint -- --no-cache` exited successfully with 17 warnings in existing files; `npm run build` passed with six existing Turbopack dynamic-filesystem tracing warnings.
+- Production build used Windows Docker Desktop on `192.168.6.6`; Compose configuration validation and image build succeeded.
+- Before migration, SQLite online backup created at `data/prod.db.pre-selection-20261014-133622.bak`; backup `quick_check` returned `ok`.
+- `20261014000000_selection_items` migration applied successfully; Prisma reported the database schema up to date.
+- Post-deployment checks: `multi-site-app` was `running (healthy)`; `https://ur.landagent.com.tw/` returned HTTP 200; remote `main` was clean and synchronized with `origin/main`.
+- Temporary SSH credential file was removed after deployment. No production seed was run.
+
+### Test Coverage Note
+
+The selection manager tests cover the empty/list states and permission-gated create/edit/delete controls. API tests cover item CRUD and attachment validation. Interactive form submission/upload and the browser confirmation flow are not covered by component-level tests yet.
