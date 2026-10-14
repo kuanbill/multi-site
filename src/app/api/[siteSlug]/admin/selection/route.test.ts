@@ -1,75 +1,109 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const findUnique = vi.hoisted(() => vi.fn());
-const upsert = vi.hoisted(() => vi.fn());
+const findMany = vi.hoisted(() => vi.fn());
+const create = vi.hoisted(() => vi.fn());
+const mediaFindMany = vi.hoisted(() => vi.fn());
+const attachmentFindMany = vi.hoisted(() => vi.fn());
+const attachmentCreateMany = vi.hoisted(() => vi.fn());
+const transaction = vi.hoisted(() => vi.fn());
 const requireContentPermission = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/prisma', () => ({ prisma: { selectionInfo: { findUnique, upsert } } }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    selectionInfo: { findMany, create },
+    contentAttachment: { findMany: attachmentFindMany },
+    media: { findMany: mediaFindMany },
+    $transaction: transaction,
+  },
+}));
 vi.mock('@/lib/contentAccess', () => ({ requireContentPermission }));
 
-import { PATCH } from './route';
+import { GET, POST } from './route';
 
-const existing = {
-  id: 4,
-  siteId: 8,
-  title: '既有選配說明',
-  description: '原說明',
-  applicableStage: '權利變換',
-  rules: '原規則',
-  notice: '原注意事項',
-  deadline: new Date('2026-12-01T00:00:00.000Z'),
-  externalUrl: 'https://example.com/selection',
-  status: 'published',
-  publishedAt: new Date('2026-09-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-09-01T00:00:00.000Z'),
-};
+const params = { params: Promise.resolve({ siteSlug: 'site' }) };
 
-describe('selection PATCH', () => {
+describe('selection collection API', () => {
   beforeEach(() => {
-    findUnique.mockReset();
-    upsert.mockReset();
+    findMany.mockReset();
+    create.mockReset();
+    mediaFindMany.mockReset();
+    attachmentFindMany.mockReset();
+    attachmentCreateMany.mockReset();
+    transaction.mockReset();
     requireContentPermission.mockReset();
     requireContentPermission.mockResolvedValue({ site: { id: 8 } });
-    findUnique.mockResolvedValue(existing);
-    upsert.mockImplementation(async ({ update }: { update: Record<string, unknown> }) => ({ ...existing, ...update }));
+    findMany.mockResolvedValue([]);
+    attachmentFindMany.mockResolvedValue([]);
+    mediaFindMany.mockResolvedValue([{ id: 3 }, { id: 4 }]);
+    create.mockResolvedValue({ id: 20, siteId: 8, title: '選配說明', status: 'draft' });
+    transaction.mockImplementation((callback: (tx: unknown) => unknown) => callback({
+      selectionInfo: { create },
+      contentAttachment: { createMany: attachmentCreateMany },
+    }));
   });
 
-  it('preserves omitted fields and publication state during a partial edit', async () => {
-    const response = await PATCH(
-      new Request('http://localhost/api/site/admin/selection', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ title: '更新後的說明' }),
-      }),
-      { params: Promise.resolve({ siteSlug: 'site' }) },
-    );
+  it('lists only the current site’s selection items with ordered media attachments', async () => {
+    findMany.mockResolvedValue([{ id: 10, title: '第一期', attachments: [] }]);
+    attachmentFindMany.mockResolvedValue([{
+      id: 7,
+      ownerId: 10,
+      mediaId: 3,
+      label: '選配辦法.pdf',
+      sortOrder: 0,
+      media: { id: 3, type: 'pdf', filename: 'guide.pdf', url: '/uploads/guide.pdf' },
+    }]);
+
+    const response = await GET(new Request('http://localhost/api/site/admin/selection'), params);
 
     expect(response.status).toBe(200);
-    expect(upsert).toHaveBeenCalledWith({
-      where: { siteId: 8 },
-      create: expect.objectContaining({ siteId: 8, title: '更新後的說明', status: 'published' }),
-      update: { title: '更新後的說明' },
-    });
-    await expect(response.json()).resolves.toMatchObject({
-      title: '更新後的說明',
-      description: '原說明',
-      status: 'published',
-      publishedAt: existing.publishedAt.toISOString(),
-    });
+    expect(findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { siteId: 8 } }));
+    expect(attachmentFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { siteId: 8, ownerType: 'selection', ownerId: { in: [10] } },
+      include: { media: true },
+      orderBy: { sortOrder: 'asc' },
+    }));
+    await expect(response.json()).resolves.toMatchObject([{
+      id: 10,
+      title: '第一期',
+      attachments: [{ id: 7, label: '選配辦法.pdf', media: { id: 3, type: 'pdf' } }],
+    }]);
   });
 
-  it('clears publishedAt only when the caller explicitly unpublishes', async () => {
-    await PATCH(
-      new Request('http://localhost/api/site/admin/selection', {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ status: 'draft' }),
+  it('creates a draft selection and ordered file/image attachments', async () => {
+    const response = await POST(new Request('http://localhost/api/site/admin/selection', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        title: '選配說明',
+        attachments: [
+          { mediaId: 3, label: '選配辦法.pdf' },
+          { mediaId: 4, label: '配置圖.png' },
+        ],
       }),
-      { params: Promise.resolve({ siteSlug: 'site' }) },
-    );
+    }), params);
 
-    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
-      update: { status: 'draft', publishedAt: null },
+    expect(response.status).toBe(201);
+    expect(mediaFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: { in: [3, 4] }, siteId: 8 },
     }));
+    expect(transaction).toHaveBeenCalledOnce();
+    expect(attachmentCreateMany).toHaveBeenCalledWith({ data: [
+      { siteId: 8, mediaId: 3, ownerType: 'selection', ownerId: 20, label: '選配辦法.pdf', sortOrder: 0 },
+      { siteId: 8, mediaId: 4, ownerType: 'selection', ownerId: 20, label: '配置圖.png', sortOrder: 1 },
+    ] });
+    expect(create).toHaveBeenCalledWith({ data: expect.objectContaining({ siteId: 8, title: '選配說明', status: 'draft' }) });
+  });
+
+  it('rejects attachments owned by another site before creating a selection', async () => {
+    mediaFindMany.mockResolvedValue([{ id: 3 }]);
+    const response = await POST(new Request('http://localhost/api/site/admin/selection', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '選配說明', attachments: [{ mediaId: 3 }, { mediaId: 4 }] }),
+    }), params);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: '附件不存在或不屬於此站點' });
+    expect(transaction).not.toHaveBeenCalled();
   });
 });
