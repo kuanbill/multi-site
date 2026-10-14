@@ -75,6 +75,23 @@ export async function requirePublicFeature(
   return { site, feature, publishedWhere: PUBLISHED_CONTENT_WHERE };
 }
 
+export async function requirePublicHome(siteSlug: string) {
+  const site = await getSiteBySlug(siteSlug);
+  if (!site || site.status === 'archived') notFound();
+  if (site.homeVisibility !== 'members') return site;
+
+  const session = await getServerSession(authOptions);
+  if (!session || !isSiteMember(session, siteSlug)) {
+    const params = new URLSearchParams({
+      [session ? 'error' : 'reason']: session ? 'not-member' : 'members-only',
+      callbackUrl: `/${siteSlug}`,
+    });
+    redirect(`/${siteSlug}/login?${params.toString()}`);
+  }
+
+  return site;
+}
+
 async function buildSiteLoginRedirect(
   siteSlug: string,
   featurePath: string,

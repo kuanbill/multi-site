@@ -18,14 +18,17 @@ interface Item {
 export default function SiteFeatureClient({
   siteSlug,
   initial,
+  initialHomeVisibility,
   canManageSettings,
 }: {
   siteSlug: string;
   initial: Item[];
+  initialHomeVisibility: 'public' | 'members';
   canManageSettings: boolean;
 }) {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>(() => [...initial].sort((a, b) => a.sortOrder - b.sortOrder));
+  const [homeVisibility, setHomeVisibility] = useState(initialHomeVisibility);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -59,6 +62,7 @@ export default function SiteFeatureClient({
           displayMode: it.displayMode,
           visibility: it.visibility,
         })),
+        homeVisibility,
       }),
     });
     if (res.ok) {
@@ -86,6 +90,26 @@ export default function SiteFeatureClient({
           </tr>
         </thead>
         <tbody className="divide-y">
+          <tr>
+            <td className="px-4 py-2">
+              <input type="checkbox" checked disabled aria-label="首頁固定啟用" />
+            </td>
+            <td className="px-4 py-2 font-medium">🏠 首頁</td>
+            <td className="px-4 py-2 text-gray-500">/{siteSlug}</td>
+            <td className="px-4 py-2 text-sm text-gray-500">固定啟用</td>
+            <td className="px-4 py-2">
+              <select
+                value={homeVisibility}
+                disabled={!canManageSettings}
+                onChange={(event) => setHomeVisibility(event.target.value as 'public' | 'members')}
+                className="px-2 py-1 border rounded text-sm disabled:bg-gray-100"
+              >
+                <option value="public">公開</option>
+                <option value="members">僅限成員</option>
+              </select>
+            </td>
+            <td className="px-4 py-2 text-gray-400">—</td>
+          </tr>
           {items.map((it) => (
             <tr key={it.id}>
               <td className="px-4 py-2">

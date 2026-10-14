@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { getSiteBySlug } from '@/lib/site';
+import { requirePublicHome } from '@/lib/contentAccess';
 import HomeSections from '@/components/public/HomeSections';
-import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +10,7 @@ export default async function PublicSitePage({
   params: Promise<{ siteSlug: string }>;
 }) {
   const { siteSlug } = await params;
-  const site = await getSiteBySlug(siteSlug);
-  if (!site) notFound();
+  const site = await requirePublicHome(siteSlug);
 
   const [home, sections] = await Promise.all([
     prisma.siteHome.findUnique({

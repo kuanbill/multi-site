@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { canManageFeatureSettings, requireContentPermission, requireSiteContext } from '@/lib/contentAccess';
 import { parseFeatureVisibility } from '@/lib/contentValidation';
 import { mergeSiteFeatures } from '@/lib/features';
+import { clearSiteCache } from '@/lib/site';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
@@ -42,6 +43,7 @@ async function saveFeatures(request: Request, { params }: RouteContext) {
 
   try {
     const features = readFeaturePayload(body);
+    const homeVisibility = readHomeVisibility(body);
     const definitions = await prisma.featureDefinition.findMany({ orderBy: { createdAt: 'asc' } });
     const definitionIds = new Set(definitions.map((definition) => definition.id));
     const existing = await prisma.siteFeature.findMany({ where: { siteId: context.site.id } });
@@ -85,6 +87,13 @@ async function saveFeatures(request: Request, { params }: RouteContext) {
         },
       });
     }
+    if (homeVisibility !== undefined) {
+      await prisma.site.update({
+        where: { id: context.site.id },
+        data: { homeVisibility },
+      });
+      clearSiteCache(siteSlug);
+    }
     return NextResponse.json({ message: '已更新' });
   } catch (error) {
     if (error instanceof Error && [
@@ -93,6 +102,7 @@ async function saveFeatures(request: Request, { params }: RouteContext) {
       '排序參數錯誤',
       '顯示方式無效',
       '功能可見性無效',
+      '首頁可見性無效',
       '只有站點管理員與編輯者可設定功能可見性',
     ].includes(error.message)) {
       return NextResponse.json({ error: error.message }, { status: error.message.includes('只有') ? 403 : 400 });
@@ -106,6 +116,17 @@ function readFeaturePayload(value: unknown) {
     throw new Error('參數錯誤');
   }
   return (value as { features: FeaturePayload[] }).features;
+}
+
+function readHomeVisibility(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('參數錯誤');
+  const visibility = (value as { homeVisibility?: unknown }).homeVisibility;
+  if (visibility === undefined) return undefined;
+  try {
+    return parseFeatureVisibility(visibility);
+  } catch {
+    throw new Error('首頁可見性無效');
+  }
 }
 
 type FeaturePayload = {

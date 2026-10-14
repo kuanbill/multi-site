@@ -120,6 +120,23 @@ describe('media visibility', () => {
     });
   });
 
+  it('requires member access for a homepage hero image when the home page is members-only', async () => {
+    siteFeatureFindMany.mockResolvedValue([]);
+    homeFindFirst.mockResolvedValue({ site: { homeVisibility: 'members' } });
+    attachmentFindMany.mockResolvedValue([]);
+    announcementFindMany.mockResolvedValue([]);
+    meetingFindMany.mockResolvedValue([]);
+
+    await expect(resolveMediaVisibility(10, 42)).resolves.toEqual({
+      publicReference: false,
+      memberReference: true,
+    });
+    expect(homeFindFirst).toHaveBeenCalledWith({
+      where: { siteId: 10, heroMediaId: 42 },
+      select: { site: { select: { homeVisibility: true } } },
+    });
+  });
+
   it('applies selection feature visibility to published selection attachments only', async () => {
     siteFeatureFindMany.mockResolvedValue([
       { feature: { key: 'selection' }, visibility: 'members' },

@@ -28,7 +28,10 @@ export async function resolveMediaVisibility(siteId: number, mediaId: number): P
   };
 
   const [home, vendorLogo, mapAsset, attachments, featureEntries] = await Promise.all([
-    prisma.siteHome.findFirst({ where: { siteId, heroMediaId: mediaId }, select: { id: true } }),
+    prisma.siteHome.findFirst({
+      where: { siteId, heroMediaId: mediaId },
+      select: { site: { select: { homeVisibility: true } } },
+    }),
     visibilityByFeature.has('vendors')
       ? prisma.vendor.findFirst({ where: { siteId, logoMediaId: mediaId, status: 'published' }, select: { id: true } })
       : Promise.resolve(null),
@@ -48,7 +51,8 @@ export async function resolveMediaVisibility(siteId: number, mediaId: number): P
     }),
   ]);
 
-  if (home) result.publicReference = true;
+  if (home?.site.homeVisibility === 'members') result.memberReference = true;
+  else if (home) result.publicReference = true;
   if (vendorLogo) markFeature('vendors');
   if (mapAsset) markFeature('maps');
   for (const entry of featureEntries) markFeature(entry.feature.key);

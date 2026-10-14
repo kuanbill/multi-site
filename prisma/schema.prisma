@@ -29,6 +29,7 @@ model Site {
   status       String        @default("active")
   primaryColor String        @default("#2563eb")
   accentColor  String        @default("#1d4ed8")
+  homeVisibility String      @default("public")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   users        SiteUser[]

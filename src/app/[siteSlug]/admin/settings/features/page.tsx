@@ -28,7 +28,12 @@ export default async function SiteFeaturesPage({ params }: { params: Promise<{ s
       <p className="text-gray-500 mb-6">
         勾選啟用功能並調整前台排序與可見性。站點管理員與編輯者可修改設定。
       </p>
-      <SiteFeatureClient siteSlug={siteSlug} initial={merged} canManageSettings={canManageSettings} />
+      <SiteFeatureClient
+        siteSlug={siteSlug}
+        initial={merged}
+        initialHomeVisibility={site.homeVisibility === 'members' ? 'members' : 'public'}
+        canManageSettings={canManageSettings}
+      />
     </div>
   );
 }
