@@ -75,9 +75,9 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
                       <div key={item.id} className={`${displayMode === 'list' ? 'py-4 border-b last:border-0' : 'rounded-lg border p-4'} flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4`}>
                         <div className="sm:flex-1 min-w-0">
                           <p className="text-sm text-gray-500">{new Date(item.meetingDate).toLocaleDateString('zh-TW')}</p>
-                          <h3 className="font-medium">{item.title}</h3>
-                          {item.meetingNo && <p className="text-xs text-gray-500">編號：{item.meetingNo}</p>}
-                          {item.summary && <p className="text-sm text-gray-600 mt-1">{item.summary}</p>}
+                          <h3 className="font-medium break-words">{item.title}</h3>
+                          {item.meetingNo && <p className="text-xs text-gray-500 break-words">編號：{item.meetingNo}</p>}
+                          {item.summary && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">{item.summary}</p>}
                         </div>
                         <div className="shrink-0 flex flex-col gap-1 text-sm min-w-0 break-all">
                           {atts.length === 0 ? (
