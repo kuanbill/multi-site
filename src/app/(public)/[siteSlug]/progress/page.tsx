@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +26,7 @@ function progressStatusStyle(status: string) {
 export default async function PublicProgressPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site } = await requirePublicFeature(siteSlug, 'progress');
+  const displayMode = await getFeatureDisplayMode(site.id, 'progress');
 
   const items = await prisma.progressItem.findMany({
     where: { siteId: site.id, status: 'published' },
@@ -41,12 +44,12 @@ export default async function PublicProgressPage({ params }: { params: Promise<{
         {items.length === 0 ? (
           <p className="text-gray-500">尚無進度</p>
         ) : (
-          <div className="relative border-l-2 border-gray-200 ml-4 space-y-6">
+          <div className={displayMode === 'list' ? 'relative border-l-2 border-gray-200 ml-4 space-y-6' : getFeatureEntryLayoutClass(displayMode)}>
             {items.map((item) => (
-              <div key={item.id} className="relative pl-8">
-                <span
+              <div key={item.id} className={displayMode === 'list' ? 'relative pl-8' : 'rounded-lg border bg-white p-4 shadow-sm'}>
+                {displayMode === 'list' && <span
                   className={`absolute left-0 top-1 -translate-x-1/2 w-4 h-4 rounded-full border-2 ${progressStatusStyle(item.progressStatus)}`}
-                />
+                />}
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`px-2 py-0.5 rounded text-xs border ${progressStatusStyle(item.progressStatus)}`}>
                     {progressStatusLabel(item.progressStatus)}

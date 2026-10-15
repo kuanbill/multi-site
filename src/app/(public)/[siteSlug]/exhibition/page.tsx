@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PublicExhibitionListPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site } = await requirePublicFeature(siteSlug, 'exhibitions');
+  const displayMode = await getFeatureDisplayMode(site.id, 'exhibitions');
 
   const items = await prisma.exhibition.findMany({
     where: { siteId: site.id, status: 'published' },
@@ -24,12 +27,12 @@ export default async function PublicExhibitionListPage({ params }: { params: Pro
         {items.length === 0 ? (
           <p className="text-gray-500">尚無展覽</p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className={getFeatureEntryLayoutClass(displayMode)}>
             {items.map((item) => (
               <Link
                 key={item.id}
                 href={`/${siteSlug}/exhibition/${item.slug}`}
-                className="border rounded-lg p-4 hover:shadow-md transition-shadow block"
+                className={`border rounded-lg p-4 hover:shadow-md transition-shadow block ${displayMode === 'list' ? 'rounded-none border-x-0 border-t-0' : ''}`}
               >
                 <h3 className="font-bold text-lg">{item.title}</h3>
                 <p className="text-sm text-gray-500 mt-1">

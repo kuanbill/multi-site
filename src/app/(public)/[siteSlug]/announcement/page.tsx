@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PublicAnnouncementListPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site } = await requirePublicFeature(siteSlug, 'announcements');
+  const displayMode = await getFeatureDisplayMode(site.id, 'announcements');
 
   const items = await prisma.announcement.findMany({
     where: { siteId: site.id, status: 'published' },
@@ -24,9 +27,9 @@ export default async function PublicAnnouncementListPage({ params }: { params: P
         {items.length === 0 ? (
           <p className="text-gray-500">尚無公告</p>
         ) : (
-          <ul className="space-y-4">
+          <ul className={getFeatureEntryLayoutClass(displayMode)}>
             {items.map((item) => (
-              <li key={item.id} className="border-b pb-4 last:border-0">
+              <li key={item.id} className={displayMode === 'list' ? 'border-b pb-4 last:border-0' : 'rounded-lg border bg-white p-4 hover:shadow-sm'}>
                 <div className="flex items-center gap-2 mb-1">
                   {item.pinned && <span className="text-xs bg-primary/10 text-accent px-2 py-0.5 rounded">置頂</span>}
                   {item.category && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.category}</span>}

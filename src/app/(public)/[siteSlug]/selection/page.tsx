@@ -1,11 +1,14 @@
 import { requirePublicFeature } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PublicSelectionPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site, publishedWhere } = await requirePublicFeature(siteSlug, 'selection');
+  const displayMode = await getFeatureDisplayMode(site.id, 'selection');
   const items = await prisma.selectionInfo.findMany({
     where: { siteId: site.id, ...publishedWhere },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -35,6 +38,7 @@ export default async function PublicSelectionPage({ params }: { params: Promise<
   return (
     <section className="space-y-6">
       <h1 className="text-2xl font-bold">選配作業</h1>
+      <div className={getFeatureEntryLayoutClass(displayMode)}>
       {items.map((item) => (
         <article key={item.id} className="space-y-4 rounded bg-white p-6 shadow sm:p-8">
           <h2 className="text-xl font-bold">{item.title}</h2>
@@ -68,6 +72,7 @@ export default async function PublicSelectionPage({ params }: { params: Promise<
           )}
         </article>
       ))}
+      </div>
     </section>
   );
 }

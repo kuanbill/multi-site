@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PublicVendorsPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site, publishedWhere } = await requirePublicFeature(siteSlug, 'vendors');
+  const displayMode = await getFeatureDisplayMode(site.id, 'vendors');
 
   const items = await prisma.vendor.findMany({
     where: { siteId: site.id, ...publishedWhere },
@@ -25,12 +28,12 @@ export default async function PublicVendorsPage({ params }: { params: Promise<{ 
         {items.length === 0 ? (
           <p className="text-gray-500">尚無廠商</p>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className={getFeatureEntryLayoutClass(displayMode)}>
             {items.map((item) => (
               <Link
                 key={item.id}
                 href={`/${siteSlug}/vendors/${item.id}`}
-                className="border rounded-lg p-4 hover:shadow-md transition-shadow block"
+                className={`border rounded-lg p-4 hover:shadow-md transition-shadow block ${displayMode === 'list' ? 'rounded-none border-x-0 border-t-0' : ''}`}
               >
                 {item.logoMedia?.url && (
                   // eslint-disable-next-line @next/next/no-img-element

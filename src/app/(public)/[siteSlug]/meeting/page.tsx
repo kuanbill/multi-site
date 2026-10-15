@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { getFeatureDisplayMode } from '@/lib/site';
+import { getFeatureEntryLayoutClass } from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +17,7 @@ function meetingTypeLabel(type: string) {
 export default async function PublicMeetingPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params;
   const { site, publishedWhere } = await requirePublicFeature(siteSlug, 'meetings');
+  const displayMode = await getFeatureDisplayMode(site.id, 'meetings');
 
   const items = await prisma.meetingRecord.findMany({
     where: { siteId: site.id, ...publishedWhere },
@@ -65,11 +68,11 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
             return (
               <div key={type} className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-lg font-bold mb-4">{meetingTypeLabel(type)}</h2>
-                <div className="divide-y">
+                <div className={getFeatureEntryLayoutClass(displayMode)}>
                   {group.map((item) => {
                     const atts = attachmentMap.get(item.id) ?? [];
                     return (
-                      <div key={item.id} className="py-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                      <div key={item.id} className={`${displayMode === 'list' ? 'py-4 border-b last:border-0' : 'rounded-lg border p-4'} flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4`}>
                         <div className="sm:flex-1 min-w-0">
                           <p className="text-sm text-gray-500">{new Date(item.meetingDate).toLocaleDateString('zh-TW')}</p>
                           <h3 className="font-medium">{item.title}</h3>
