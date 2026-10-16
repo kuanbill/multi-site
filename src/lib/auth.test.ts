@@ -86,7 +86,7 @@ describe('site login authorization', () => {
         password: 'pw',
         siteSlug: 'site-a',
       }),
-    ).resolves.toMatchObject({ id: '9' });
+    ).resolves.toMatchObject({ id: '9', loginSiteId: 3 });
   });
 
   it('exposes the allSites flag on the authorized user', async () => {
@@ -94,13 +94,25 @@ describe('site login authorization', () => {
 
     await expect(
       credentialsProvider.options.authorize({ email: 'editor@example.com', password: 'pw' }),
-    ).resolves.toMatchObject({ allSites: false });
+    ).resolves.toMatchObject({ allSites: false, loginSiteId: null });
+  });
+
+  it('associates a global-form login with the only site of a regular member', async () => {
+    mockUser({ role: 'viewer' });
+    siteUserFindMany.mockResolvedValue([
+      { role: 'viewer', siteId: 3, site: { id: 3, slug: 'site-a' } },
+    ]);
+
+    await expect(
+      credentialsProvider.options.authorize({ email: 'editor@example.com', password: 'pw' }),
+    ).resolves.toMatchObject({ loginSiteId: 3 });
   });
 });
 
 describe('login record event', () => {
   const signInEvent = authOptions.events?.signIn;
-  const signInParams = (userId: string) => ({ user: { id: userId } }) as Parameters<NonNullable<typeof signInEvent>>[0];
+  const signInParams = (userId: string, loginSiteId: number | null = null) =>
+    ({ user: { id: userId, loginSiteId } }) as Parameters<NonNullable<typeof signInEvent>>[0];
 
   beforeEach(() => {
     loginRecordCreate.mockReset().mockResolvedValue({ id: 1 });
@@ -109,7 +121,13 @@ describe('login record event', () => {
   it('records a login for the signed-in user', async () => {
     await signInEvent?.(signInParams('9'));
 
-    expect(loginRecordCreate).toHaveBeenCalledWith({ data: { userId: 9 } });
+    expect(loginRecordCreate).toHaveBeenCalledWith({ data: { userId: 9, siteId: null } });
+  });
+
+  it('records the subsite for a site-specific login', async () => {
+    await signInEvent?.(signInParams('9', 3));
+
+    expect(loginRecordCreate).toHaveBeenCalledWith({ data: { userId: 9, siteId: 3 } });
   });
 
   it('never throws when the record write fails', async () => {

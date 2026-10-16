@@ -66,8 +66,9 @@ export default async function SiteDashboardPage({
             <h3 className="font-medium">最近登入紀錄</h3>
             <LogPanelActions siteSlug={siteSlug} type="logins" canExport={canExport} canClear={canClear} />
           </div>
+          <p className="px-4 pt-3 text-xs text-gray-500">僅顯示此子網站的登入紀錄；未標註站點的舊紀錄不會混入。</p>
           {stats.recentLogins.length === 0 ? (
-            <p className="p-4 text-sm text-gray-500">尚無登入紀錄。</p>
+            <p className="p-4 text-sm text-gray-500">尚無此子網站的登入紀錄。</p>
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left">

@@ -20,6 +20,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   let csv: string;
   if (type === 'logins') {
     const rows = await prisma.loginRecord.findMany({
+      where: { siteId: context.site.id },
       orderBy: { createdAt: 'desc' },
       include: { user: { select: { name: true, email: true } } },
     });

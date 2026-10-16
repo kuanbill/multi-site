@@ -61,6 +61,7 @@ describe('getSiteDashboardStats', () => {
     expect(stats.siteFeatures).toHaveLength(1);
     expect(stats.recentLogins[0].user.name).toBe('管理員');
     expect(stats.recentBrowses[0]).toMatchObject({ feature: 'meetings', path: '/site-a/meeting' });
+    expect(loginRecordFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { siteId: 7 } }));
     expect(featureViewCount).toHaveBeenCalledWith(expect.objectContaining({ where: { siteId: 7 } }));
   });
 });

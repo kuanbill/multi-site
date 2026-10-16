@@ -53,11 +53,11 @@ describe('log clear route', () => {
     expect(response.status).toBe(400);
   });
 
-  it('clears login records across sites because they are stored per user', async () => {
+  it('clears login records for this site only', async () => {
     const response = await DELETE(request('?type=logins'), context);
 
     expect(response.status).toBe(200);
-    expect(loginRecordDeleteMany).toHaveBeenCalledWith({});
+    expect(loginRecordDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
     expect(featureViewDeleteMany).not.toHaveBeenCalled();
     expect(await response.json()).toEqual({ cleared: 3 });
   });

@@ -18,10 +18,9 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   if (!type) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
 
   try {
-    // 登入紀錄依使用者儲存、不綁站點，屬全站共用資料。
     const result =
       type === 'logins'
-        ? await prisma.loginRecord.deleteMany({})
+        ? await prisma.loginRecord.deleteMany({ where: { siteId: context.site.id } })
         : await prisma.featureView.deleteMany({ where: { siteId: context.site.id } });
     return NextResponse.json({ cleared: result.count });
   } catch {

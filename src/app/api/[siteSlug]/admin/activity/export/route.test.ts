@@ -56,6 +56,7 @@ describe('log export route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('text/csv; charset=utf-8');
     expect(response.headers.get('content-disposition')).toBe('attachment; filename="logins-site-a.csv"');
+    expect(loginRecordFindMany).toHaveBeenCalledWith(expect.objectContaining({ where: { siteId: 7 } }));
     const bytes = Buffer.from(await response.arrayBuffer());
     // 前三個位元組必須是 UTF-8 BOM；fetch 的 text() 會解碼時吃掉它，所以直接驗位元組。
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);

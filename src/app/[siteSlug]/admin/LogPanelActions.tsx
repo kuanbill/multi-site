@@ -8,7 +8,7 @@ type LogPanelType = 'logins' | 'views';
 const LABELS: Record<LogPanelType, { name: string; confirm: string }> = {
   logins: {
     name: '登入紀錄',
-    confirm: '確定要清除所有登入紀錄嗎？此操作無法復原。',
+    confirm: '確定要清除這個子網站的登入紀錄嗎？此操作無法復原。',
   },
   views: {
     name: '瀏覽記錄',

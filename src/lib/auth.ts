@@ -12,6 +12,7 @@ declare module 'next-auth' {
     role: string
     allSites?: boolean
     siteRoles?: SiteRole[]
+    loginSiteId?: number | null
   }
 
   interface Session {
@@ -62,9 +63,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         const siteSlug = (credentials as Record<string, string>).siteSlug
+        let loginSiteId: number | null = null
         if (siteSlug) {
           const site = await prisma.site.findUnique({ where: { slug: siteSlug } })
           if (!site) throw new Error('專案不存在')
+          loginSiteId = site.id
           const membership = await prisma.siteUser.findFirst({
             where: { userId: user.id, siteId: site.id }
           })
@@ -82,6 +85,14 @@ export const authOptions: NextAuthOptions = {
           slug: su.site.slug,
           role: su.role,
         }))
+        if (
+          loginSiteId === null &&
+          user.role !== 'admin' &&
+          !isUnlimitedEditor(user) &&
+          siteUsers.length === 1
+        ) {
+          loginSiteId = siteUsers[0].siteId
+        }
 
         return {
           id: user.id.toString(),
@@ -90,6 +101,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           allSites: user.allSites === true,
           siteRoles,
+          loginSiteId,
         }
       }
     })
@@ -126,7 +138,8 @@ export const authOptions: NextAuthOptions = {
       try {
         const userId = Number(user.id)
         if (!Number.isFinite(userId)) return
-        await prisma.loginRecord.create({ data: { userId } })
+        const loginSiteId = typeof user.loginSiteId === 'number' ? user.loginSiteId : null
+        await prisma.loginRecord.create({ data: { userId, siteId: loginSiteId } })
       } catch (error) {
         console.error('[auth] 登入紀錄寫入失敗', error)
       }

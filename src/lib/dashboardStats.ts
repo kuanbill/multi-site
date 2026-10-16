@@ -25,6 +25,7 @@ export async function getSiteDashboardStats(siteId: number): Promise<SiteDashboa
       prisma.featureView.count({ where: { siteId, createdAt: { gte: since30Days } } }),
       prisma.featureView.groupBy({ by: ['feature'], where: { siteId }, _count: { _all: true } }),
       prisma.loginRecord.findMany({
+        where: { siteId },
         orderBy: { createdAt: 'desc' },
         take: RECENT_ACTIVITY_TAKE,
         include: { user: { select: { name: true, email: true } } },
