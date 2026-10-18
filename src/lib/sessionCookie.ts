@@ -1,4 +1,4 @@
-const SESSION_COOKIE_NAME = /^(?:__Secure-)?next-auth\.session-token(?:\.\d+)?=/i;
+const SESSION_COOKIE_NAME = /^(?:__Secure-)?(?:next-auth\.session-token|site-session-token|admin-session-token)(?:\.\d+)?=/i;
 
 export function makeSessionCookieBrowserSession(setCookieHeaders: string[]): string[] {
   return setCookieHeaders.map((header) => {
