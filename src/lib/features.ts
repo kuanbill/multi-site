@@ -17,7 +17,7 @@ export function getSiteAdminFeatureLinks<T extends { path: string; label: string
   features: T[],
 ) {
   return features.map((feature) => ({
-    href: `/${siteSlug}/admin/${feature.path}`,
+    href: `/admin/sites/${siteSlug}/${feature.path}`,
     label: feature.label,
     icon: feature.icon || '•',
   }));

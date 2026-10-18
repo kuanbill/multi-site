@@ -7,6 +7,7 @@ const headers = vi.hoisted(() => vi.fn());
 
 vi.mock('./site', () => ({ getSiteBySlug, getSiteFeature }));
 vi.mock('./auth', () => ({ authOptions: {} }));
+vi.mock('./adminAuth', () => ({ adminAuthOptions: {} }));
 vi.mock('next-auth', () => ({ getServerSession }));
 vi.mock('next/headers', () => ({ headers }));
 vi.mock('next/navigation', () => ({
@@ -163,7 +164,7 @@ describe('public feature access', () => {
   });
 });
 
-describe('site context for unlimited editors', () => {
+describe('admin-only site context', () => {
   beforeEach(() => {
     getSiteBySlug.mockReset().mockResolvedValue(activeSite);
     getServerSession.mockReset();
@@ -171,36 +172,20 @@ describe('site context for unlimited editors', () => {
     mockPathname('/site-a');
   });
 
-  it('treats an unlimited editor as an editor on any site', async () => {
+  it.each(['admin', 'editor', 'viewer'])('rejects a site member with the %s site role', async (role) => {
     getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: true, siteRoles: [] },
+      user: { authType: 'site', role: 'editor', siteRoles: [{ slug: 'site-a', role }] },
     });
 
-    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'editor' });
+    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/admin/login');
   });
 
-  it('keeps the explicit site membership role for an unlimited editor', async () => {
+  it('allows a global admin session to manage a site', async () => {
     getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: true, siteRoles: [{ slug: 'site-a', role: 'viewer' }] },
+      user: { authType: 'admin', role: 'admin', siteRoles: [] },
     });
 
-    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'viewer' });
-  });
-
-  it('rejects an editor without any site membership', async () => {
-    getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: false, siteRoles: [{ slug: 'site-b', role: 'editor' }] },
-    });
-
-    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
-  });
-
-  it('rejects a viewer even when the unlimited flag is set', async () => {
-    getServerSession.mockResolvedValue({
-      user: { role: 'viewer', allSites: true, siteRoles: [] },
-    });
-
-    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
+    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'global-admin' });
   });
 });
 

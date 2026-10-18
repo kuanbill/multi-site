@@ -21,6 +21,12 @@ describe('admin route contract', () => {
     expect(existsSync(join(root, 'src/app/(dashboard)/users/page.tsx'))).toBe(false);
   });
 
+  it('keeps site management pages under the admin namespace', () => {
+    expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/page.tsx'))).toBe(true);
+    expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/layout.tsx'))).toBe(true);
+    expect(existsSync(join(root, 'src/app/[siteSlug]/admin/page.tsx'))).toBe(false);
+  });
+
   it('turns the legacy login and register pages into redirects', () => {
     const loginPage = readFileSync(join(root, 'src/app/(auth)/login/page.tsx'), 'utf8');
     const registerPage = readFileSync(join(root, 'src/app/(auth)/register/page.tsx'), 'utf8');

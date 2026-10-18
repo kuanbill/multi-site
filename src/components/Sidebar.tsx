@@ -29,16 +29,16 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
 
   if (siteSlug && features) {
     const featureItems = [
-      { href: `/${siteSlug}/admin/home`, label: '首頁設定', icon: '🏠' },
+      { href: `/admin/sites/${siteSlug}/home`, label: '首頁設定', icon: '🏠' },
       ...getSiteAdminFeatureLinks(siteSlug, features),
     ]
     const siteMenu = [
-      { href: `/${siteSlug}/admin`, label: '站點儀表板', icon: '📊' },
+      { href: `/admin/sites/${siteSlug}`, label: '站點儀表板', icon: '📊' },
       ...featureItems,
-      { href: `/${siteSlug}/admin/media`, label: '媒體庫', icon: '📁' },
-      { href: `/${siteSlug}/admin/users`, label: '成員管理', icon: '👥' },
-      { href: `/${siteSlug}/admin/settings/features`, label: '功能設定', icon: '⚙️' },
-      { href: `/${siteSlug}/admin/settings/appearance`, label: '外觀設定', icon: '🎨' },
+      { href: `/admin/sites/${siteSlug}/media`, label: '媒體庫', icon: '📁' },
+      { href: `/admin/sites/${siteSlug}/users`, label: '成員管理', icon: '👥' },
+      { href: `/admin/sites/${siteSlug}/settings/features`, label: '功能設定', icon: '⚙️' },
+      { href: `/admin/sites/${siteSlug}/settings/appearance`, label: '外觀設定', icon: '🎨' },
     ]
 
     return (

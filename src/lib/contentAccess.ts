@@ -4,8 +4,8 @@ import { getServerSession } from 'next-auth';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { authOptions } from './auth';
+import { adminAuthOptions } from './adminAuth';
 import { resolveSafeCallbackUrl } from './callbackUrl';
-import { isUnlimitedEditor } from './roles';
 import { getSiteBySlug, getSiteFeature } from './site';
 import { isSiteMember } from './siteLogin';
 
@@ -25,17 +25,16 @@ export async function requireSiteContext(siteSlug: string): Promise<SiteContext>
   const site = await getSiteBySlug(siteSlug);
   if (!site || site.status === 'archived') notFound();
 
-  const session = await getServerSession(authOptions);
-  if (!session) redirect(`/${siteSlug}/login`);
+  const session = await getServerSession(adminAuthOptions);
+  if (!session || session.user.authType !== 'admin' || session.user.role !== 'admin') {
+    redirect('/admin/login');
+  }
 
   if (session.user.role === 'admin') {
     return { site, session, siteRole: 'global-admin' };
   }
 
-  const membership = session.user.siteRoles?.find((role) => role.slug === siteSlug);
-  if (membership && isSiteRole(membership.role)) return { site, session, siteRole: membership.role };
-  if (isUnlimitedEditor(session.user)) return { site, session, siteRole: 'editor' };
-  redirect('/403');
+  redirect('/admin/login');
 }
 
 export async function requireContentPermission(
@@ -147,6 +146,3 @@ export function canAssignSiteAdmin(role: SiteRole): boolean {
   return role === 'global-admin' || role === 'admin';
 }
 
-function isSiteRole(value: string): value is Exclude<SiteRole, 'global-admin'> {
-  return value === 'admin' || value === 'editor' || value === 'viewer';
-}

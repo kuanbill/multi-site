@@ -53,7 +53,7 @@ export function resolveSiteLoginState(input: {
   return { mode: 'form', notice, safeCallbackUrl };
 }
 
-/** 登入成功後的導向目標：安全的 callbackUrl，否則退回站點後台。 */
+/** 登入成功後的導向目標：安全的 callbackUrl，否則回到站點前台。 */
 export function resolveSiteLoginTarget(state: SiteLoginState, siteSlug: string): string {
-  return state.safeCallbackUrl ?? `/${siteSlug}/admin`;
+  return state.safeCallbackUrl ?? `/${siteSlug}`;
 }
