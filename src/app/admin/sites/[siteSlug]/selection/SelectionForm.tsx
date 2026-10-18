@@ -122,7 +122,7 @@ export default function SelectionForm({
     }
   }
 
-  const input = 'mt-1 w-full rounded border px-3 py-2';
+  const input = 'mt-1 min-h-11 w-full rounded border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600';
   return (
     <form onSubmit={submit} className="space-y-5 rounded-lg bg-white p-6 shadow">
       <label className="block">標題<input name="title" required defaultValue={initial?.title ?? '選配作業說明'} className={input} /></label>
@@ -147,8 +147,8 @@ export default function SelectionForm({
           <button type="button" disabled={!selectedMediaId} onClick={() => {
             const item = media.find((candidate) => candidate.id === Number(selectedMediaId));
             if (item) addMedia(item);
-          }} className="rounded border px-3 py-2 text-sm disabled:opacity-50">加入附件</button>
-          <label className="cursor-pointer rounded border px-3 py-2 text-sm">
+           }} className="inline-flex min-h-11 items-center rounded border px-3 py-2 text-sm disabled:opacity-50">加入附件</button>
+           <label className="inline-flex min-h-11 cursor-pointer items-center rounded border px-3 py-2 text-sm">
             {uploading ? '上傳中…' : '上傳新檔'}
             <input type="file" multiple accept="application/pdf,image/avif,image/gif,image/jpeg,image/png,image/webp" disabled={uploading} className="sr-only" onChange={(event) => {
               const files = Array.from(event.currentTarget.files ?? []);
@@ -171,11 +171,11 @@ export default function SelectionForm({
                 <label className="min-w-48 flex-1 text-sm">顯示名稱
                   <input value={label ?? ''} onChange={(event) => updateLabel(mediaId, event.target.value)} className={input} />
                 </label>
-                <div className="flex gap-2">
-                  <button type="button" disabled={index === 0} onClick={() => moveAttachment(mediaId, -1)} aria-label={`上移 ${item.filename}`} className="rounded border px-2 py-1 text-sm disabled:opacity-40">↑</button>
-                  <button type="button" disabled={index === attachments.length - 1} onClick={() => moveAttachment(mediaId, 1)} aria-label={`下移 ${item.filename}`} className="rounded border px-2 py-1 text-sm disabled:opacity-40">↓</button>
-                </div>
-                <button type="button" onClick={() => removeAttachment(mediaId)} className="text-sm text-red-700 underline">移除此附件</button>
+                 <div className="flex flex-wrap gap-2">
+                   <button type="button" disabled={index === 0} onClick={() => moveAttachment(mediaId, -1)} aria-label={`上移 ${item.filename}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border px-2 py-1 text-sm disabled:opacity-40">↑</button>
+                   <button type="button" disabled={index === attachments.length - 1} onClick={() => moveAttachment(mediaId, 1)} aria-label={`下移 ${item.filename}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border px-2 py-1 text-sm disabled:opacity-40">↓</button>
+                 </div>
+                 <button type="button" onClick={() => removeAttachment(mediaId)} className="inline-flex min-h-11 items-center text-sm text-red-700 underline">移除此附件</button>
               </li>
             ))}
           </ul>
@@ -184,9 +184,9 @@ export default function SelectionForm({
 
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {message && <p role="status" className="text-sm text-green-700">{message}</p>}
-      <div className="flex gap-3">
-        <button disabled={saving || uploading} className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saving ? '儲存中…' : '儲存'}</button>
-        <a href={`/admin/sites/${siteSlug}/selection`} className="rounded border px-4 py-2">取消</a>
+       <div className="flex flex-wrap gap-3">
+         <button disabled={saving || uploading} className="inline-flex min-h-11 items-center rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50">{saving ? '儲存中…' : '儲存'}</button>
+         <a href={`/admin/sites/${siteSlug}/selection`} className="inline-flex min-h-11 items-center rounded border px-4 py-2">取消</a>
       </div>
     </form>
   );

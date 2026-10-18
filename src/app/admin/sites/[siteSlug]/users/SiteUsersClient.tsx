@@ -214,8 +214,9 @@ export default function SiteUsersClient({
   return (
     <div>
       {editError && <div className="mb-4 p-2 bg-red-100 text-red-700 rounded text-sm">{editError}</div>}
-      <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-        <table className="w-full">
+      <div className="mb-6 overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-x-auto">
+        <table className="min-w-[760px] w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-2 text-left text-sm">姓名</th>
@@ -230,16 +231,16 @@ export default function SiteUsersClient({
               editingId === m.userId ? (
                 <tr key={m.userId} className="bg-blue-50">
                   <td className="px-4 py-2">
-                    <input value={editName} onChange={(e) => setEditName(e.target.value)} className="w-full px-2 py-1 border rounded" />
+                     <input value={editName} onChange={(e) => setEditName(e.target.value)} className="min-h-11 w-full rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
                   </td>
                   <td className="px-4 py-2">
-                    <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="w-full px-2 py-1 border rounded" />
+                     <input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="min-h-11 w-full rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
                   </td>
                   <td className="px-4 py-2">
-                    <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="選填" className="w-full px-2 py-1 border rounded" />
+                     <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="選填" className="min-h-11 w-full rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
                   </td>
                   <td className="px-4 py-2">
-                    <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="px-2 py-1 border rounded text-sm">
+                     <select value={editRole} onChange={(e) => setEditRole(e.target.value)} className="min-h-11 rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                       {assignableRoles.map((value) => (
                         <option key={value} value={value}>{roleLabel(value)}</option>
                       ))}
@@ -248,41 +249,43 @@ export default function SiteUsersClient({
                       value={editPassword}
                       onChange={(e) => setEditPassword(e.target.value)}
                       placeholder="新密碼（留空不變更）"
-                      className="mt-1 w-full px-2 py-1 border rounded text-sm"
+                       className="mt-1 min-h-11 w-full rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                     />
                   </td>
-                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                  <td className="px-4 py-2">
+                    <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
                     <button
                       onClick={() => handleEdit(m.userId)}
                       disabled={editSaving}
-                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                      className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
                     >
                       {editSaving ? '儲存中...' : '儲存'}
                     </button>
-                    <button onClick={cancelEdit} className="ml-2 text-gray-600 hover:underline text-sm">
+                    <button onClick={cancelEdit} className="inline-flex min-h-11 items-center text-sm text-gray-600 hover:underline">
                       取消
                     </button>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 <tr key={m.userId}>
-                  <td className="px-4 py-2">{m.name}</td>
-                  <td className="px-4 py-2 text-gray-500">{m.email}</td>
-                  <td className="px-4 py-2 text-gray-500">{m.phone}</td>
+                   <td className="max-w-[14rem] break-words px-4 py-2">{m.name}</td>
+                   <td className="max-w-[18rem] break-all px-4 py-2 text-gray-500">{m.email}</td>
+                   <td className="break-all px-4 py-2 text-gray-500">{m.phone}</td>
                   <td className="px-4 py-2">{roleLabel(m.siteRole)}</td>
                   {canManage && (
-                    <td className="px-4 py-2 text-right">
+                   <td className="px-4 py-2">
                       {m.siteRole === 'admin' && !canManageAdmins ? (
                         <span className="text-gray-400 text-sm">僅站點管理員可變更</span>
                       ) : (
-                        <>
-                          <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline text-sm">
+                        <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
+                           <button onClick={() => startEdit(m)} className="inline-flex min-h-11 items-center text-sm text-blue-600 hover:underline">
                             修改
                           </button>
-                          <button onClick={() => handleRemove(m.userId)} className="ml-3 text-red-600 hover:underline text-sm">
+                           <button onClick={() => handleRemove(m.userId)} className="inline-flex min-h-11 items-center text-sm text-red-600 hover:underline">
                             移除
                           </button>
-                        </>
+                        </div>
                       )}
                     </td>
                   )}
@@ -291,6 +294,7 @@ export default function SiteUsersClient({
             )}
           </tbody>
         </table>
+        </div>
         {members.length === 0 && <div className="p-4 text-center text-gray-500">尚無成員</div>}
       </div>
 
@@ -306,7 +310,7 @@ export default function SiteUsersClient({
           <div className="flex flex-wrap items-center gap-3">
             <a
               href={`/api/${siteSlug}/admin/users/import/template`}
-              className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm hover:bg-blue-50"
+               className="inline-flex min-h-11 items-center rounded-lg border border-blue-600 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
             >
               下載範本
             </a>
@@ -315,12 +319,12 @@ export default function SiteUsersClient({
               type="file"
               accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
-              className="text-sm"
+               className="min-h-11 min-w-0 max-w-full text-base sm:text-sm"
             />
             <button
               onClick={handleImport}
               disabled={importing || !importFile}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+               className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {importing ? '匯入中...' : '匯入'}
             </button>
@@ -414,7 +418,7 @@ export default function SiteUsersClient({
               <button
                 onClick={downloadImportResult}
                 disabled={downloadingResult}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 disabled:opacity-50"
+                 className="inline-flex min-h-11 items-center rounded-lg bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700 disabled:opacity-50"
               >
                 {downloadingResult ? '產生中...' : '下載結果檔（含密碼）'}
               </button>
@@ -428,22 +432,22 @@ export default function SiteUsersClient({
           <h3 className="font-medium">新增成員</h3>
           {error && <div className="p-2 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
           {msg && <div className="p-2 bg-green-100 text-green-700 rounded text-sm">{msg}</div>}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium mb-1">姓名</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+               <input value={name} onChange={(e) => setName(e.target.value)} required className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-3 py-2 border rounded-lg" />
+               <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">手機 (選填)</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="09xxxxxxxx" />
+               <input value={phone} onChange={(e) => setPhone(e.target.value)} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" placeholder="09xxxxxxxx" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">站內角色</label>
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full px-3 py-2 border rounded-lg">
+               <select value={role} onChange={(e) => setRole(e.target.value)} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
                 {assignableRoles.map((value) => (
                   <option key={value} value={value}>{roleLabel(value)}</option>
                 ))}
@@ -451,10 +455,10 @@ export default function SiteUsersClient({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">密碼 (選填，自動產生)</label>
-              <input value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border rounded-lg" placeholder="留空自動產生" />
+               <input value={password} onChange={(e) => setPassword(e.target.value)} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" placeholder="留空自動產生" />
             </div>
           </div>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+           <button type="submit" className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
             新增
           </button>
         </form>

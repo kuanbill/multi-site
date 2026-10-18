@@ -117,7 +117,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           <select
             value={values.meetingType}
             onChange={(event) => update('meetingType', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <option value="board">理監事會</option>
             <option value="general">會員大會</option>
@@ -129,7 +129,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           <input
             value={values.meetingNo}
             onChange={(event) => update('meetingNo', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
         <label className="block text-sm font-medium">
@@ -139,7 +139,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
             value={values.meetingDate}
             onChange={(event) => update('meetingDate', event.target.value)}
             required
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
       </div>
@@ -150,7 +150,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           value={values.title}
           onChange={(event) => update('title', event.target.value)}
           required
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
 
@@ -160,7 +160,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           value={values.summary}
           onChange={(event) => update('summary', event.target.value)}
           rows={2}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
 
@@ -170,7 +170,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           <select
             value={values.status}
             onChange={(event) => update('status', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <option value="draft">草稿</option>
             <option value="published">已發布</option>
@@ -183,7 +183,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
             type="number"
             value={values.sortOrder}
             onChange={(event) => update('sortOrder', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
         <div />
@@ -212,11 +212,11 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
         </label>
       </div>
 
-      <div className="flex items-center gap-4">
+       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+           className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? '儲存中...' : initial ? '更新會議' : '建立會議'}
         </button>

@@ -14,14 +14,15 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   const fieldId = id ?? props.name;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex min-h-11 items-center gap-3">
       <input
         ref={ref}
         id={fieldId}
         type="checkbox"
         className={`
-          h-4 w-4 rounded border-gray-300 text-blue-600
-          focus:ring-2 focus:ring-blue-500 focus:ring-offset-0
+           h-5 w-5 rounded border-gray-300 text-blue-600
+           focus:ring-2 focus:ring-blue-500 focus:ring-offset-0
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600
           ${props.disabled ? 'cursor-not-allowed opacity-50' : ''}
           ${className ?? ''}
         `}

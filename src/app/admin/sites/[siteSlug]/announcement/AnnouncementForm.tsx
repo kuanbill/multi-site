@@ -140,7 +140,7 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
         placeholder="公告詳細內容"
       />
 
-      <div className="flex items-center gap-4">
+       <div className="flex flex-wrap items-center gap-3">
         <Checkbox
           label="置頂"
           checked={values.pinned}
@@ -167,18 +167,18 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
         </p>
       )}
 
-      <div className="flex items-center gap-4">
+       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+           className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? '儲存中...' : initial ? '更新公告' : '建立公告'}
         </button>
         <button
           type="button"
           onClick={() => router.push(`/admin/sites/${siteSlug}/announcement`)}
-          className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+           className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2 hover:bg-gray-50"
         >
           返回列表
         </button>

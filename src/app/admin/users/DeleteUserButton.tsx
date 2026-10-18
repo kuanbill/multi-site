@@ -26,7 +26,7 @@ export default function DeleteUserButton({ id }: { id: number }) {
 
   return (
     <span className="inline-flex items-center gap-2">
-      <button type="button" onClick={handleDelete} disabled={loading} className="text-red-600 hover:underline disabled:opacity-50">
+       <button type="button" onClick={handleDelete} disabled={loading} className="inline-flex min-h-11 items-center text-red-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-50">
         {loading ? '刪除中...' : '刪除'}
       </button>
       {error && <span className="text-xs text-red-600">{error}</span>}

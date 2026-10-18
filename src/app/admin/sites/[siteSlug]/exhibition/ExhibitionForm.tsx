@@ -113,7 +113,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
             value={values.title}
             onChange={(event) => update('title', event.target.value)}
             required
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
         <label className="block text-sm font-medium">
@@ -123,7 +123,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
             onChange={(event) => update('slug', event.target.value)}
             required
             pattern="[a-z0-9-]+"
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
           <span className="text-xs text-gray-400">僅小寫英文、數字與連字號</span>
         </label>
@@ -136,7 +136,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
             type="date"
             value={values.startDate}
             onChange={(event) => update('startDate', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
         <label className="block text-sm font-medium">
@@ -145,7 +145,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
             type="date"
             value={values.endDate}
             onChange={(event) => update('endDate', event.target.value)}
-            className="mt-1 w-full px-3 py-2 border rounded-lg"
+             className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           />
         </label>
       </div>
@@ -155,7 +155,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
         <input
           value={values.location}
           onChange={(event) => update('location', event.target.value)}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
 
@@ -165,7 +165,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
           value={values.description}
           onChange={(event) => update('description', event.target.value)}
           rows={3}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
 
@@ -175,7 +175,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
           value={values.feedbackSummary}
           onChange={(event) => update('feedbackSummary', event.target.value)}
           rows={2}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
 
@@ -213,11 +213,11 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
         </label>
       </div>
 
-      <div className="flex items-center gap-4">
+       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+           className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? '儲存中...' : initial ? '更新展覽' : '建立展覽'}
         </button>

@@ -86,7 +86,7 @@ export default function FeatureEntryForm({
     <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-5 max-w-3xl">
       <label className="block text-sm font-medium">
         標題
-        <input value={title} onChange={(event) => setTitle(event.target.value)} required className="mt-1 w-full px-3 py-2 border rounded-lg" />
+           <input value={title} onChange={(event) => setTitle(event.target.value)} required className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
       </label>
 
       <label className="block text-sm font-medium">
@@ -94,7 +94,7 @@ export default function FeatureEntryForm({
         <select
           value={contentType}
           onChange={(event) => setContentType(event.target.value as FeatureEntryFormValue['contentType'])}
-          className="mt-1 w-full px-3 py-2 border rounded-lg"
+           className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
           <option value="text">文字</option>
           <option value="youtube">YouTube</option>
@@ -105,7 +105,7 @@ export default function FeatureEntryForm({
       {contentType === 'text' && (
         <label className="block text-sm font-medium">
           內文
-          <textarea value={content} onChange={(event) => setContent(event.target.value)} required rows={7} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+           <textarea value={content} onChange={(event) => setContent(event.target.value)} required rows={7} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </label>
       )}
 
@@ -113,11 +113,11 @@ export default function FeatureEntryForm({
         <>
           <label className="block text-sm font-medium">
             YouTube 網址
-            <input type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} required className="mt-1 w-full px-3 py-2 border rounded-lg" placeholder="https://youtu.be/..." />
+             <input type="url" value={youtubeUrl} onChange={(event) => setYoutubeUrl(event.target.value)} required className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" placeholder="https://youtu.be/..." />
           </label>
           <label className="block text-sm font-medium">
             說明（選填）
-            <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
         </>
       )}
@@ -126,21 +126,21 @@ export default function FeatureEntryForm({
         <>
           <label className="block text-sm font-medium">
             圖片
-            <input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} className="mt-1 block w-full" />
+             <input type="file" accept="image/*" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} className="mt-1 block min-h-11 w-full text-sm" />
           </label>
           {mediaUrl && <Image src={mediaUrl} alt={title} width={640} height={360} unoptimized className="max-h-64 rounded border object-contain" />}
           <label className="block text-sm font-medium">
             說明（選填）
-            <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
         </>
       )}
 
-      <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
+       <div className="flex flex-wrap items-center gap-3">
+         <button type="submit" disabled={saving} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50">
           {saving ? '儲存中...' : initial ? '更新資料' : '新增資料'}
         </button>
-        <button type="button" onClick={() => router.push(`/admin/sites/${siteSlug}/${featurePath}`)} className="px-4 py-2 border rounded-lg">
+         <button type="button" onClick={() => router.push(`/admin/sites/${siteSlug}/${featurePath}`)} className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2">
           取消
         </button>
         {message && <span role="status" className="text-sm text-red-600">{message}</span>}

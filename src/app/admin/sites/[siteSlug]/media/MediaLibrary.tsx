@@ -128,15 +128,15 @@ export default function MediaLibrary({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="rounded-lg bg-white p-4 shadow sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setFilter(option.value)}
-              className={`px-3 py-1.5 text-sm rounded-lg border ${
+              className={`inline-flex min-h-11 items-center rounded-lg border px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                 filter === option.value
                   ? 'bg-blue-600 border-blue-600 text-white'
                   : 'border-gray-300 hover:bg-gray-50'
@@ -157,7 +157,7 @@ export default function MediaLibrary({
                 void handleUpload(event.target.files);
                 event.target.value = '';
               }}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+             className="block w-full text-base text-gray-500 file:mr-4 file:min-h-11 file:rounded-lg file:border-0 file:px-4 file:py-2 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 sm:text-sm"
             />
             {uploading && <span className="text-blue-600">上傳中...</span>}
           </label>
@@ -216,9 +216,9 @@ export default function MediaLibrary({
                         </a>
                       )}
                     </td>
-                    <td className="px-4 py-3 max-w-xs">
-                      <p className="font-medium break-all">{item.altText ?? item.filename}</p>
-                      <p className="text-xs text-gray-400 break-all">{item.filename}</p>
+                     <td className="max-w-xs px-4 py-3">
+                       <p className="break-all font-medium">{item.altText ?? item.filename}</p>
+                       <p className="break-all text-xs text-gray-400">{item.filename}</p>
                       <p className="text-xs text-gray-400">{item.mimeType ?? '-'}</p>
                     </td>
                     <td className="px-4 py-3">{item.type === 'pdf' ? 'PDF' : '圖片'}</td>
@@ -244,31 +244,31 @@ export default function MediaLibrary({
                               setEditingValue(item.altText ?? '');
                               setError('');
                             }}
-                            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 w-fit"
+                               className="inline-flex min-h-11 items-center rounded border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
                           >
                             編輯說明
                           </button>
                         )}
                         {canWrite && editing && (
                           <div className="flex items-center gap-2">
-                            <input
+                             <input
                               value={editingValue}
                               onChange={(event) => setEditingValue(event.target.value)}
                               placeholder="說明文字"
-                              className="w-40 px-2 py-1 border rounded text-sm"
+                              className="min-h-11 w-40 rounded border px-2 py-1 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                             />
                             <button
                               type="button"
                               onClick={() => saveAltText(item)}
                               disabled={savingEdit}
-                              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                               className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
                             >
                               {savingEdit ? '儲存中...' : '儲存'}
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingId(null)}
-                              className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+                               className="inline-flex min-h-11 items-center rounded border px-3 py-1 text-sm hover:bg-gray-50"
                             >
                               取消
                             </button>
@@ -278,7 +278,7 @@ export default function MediaLibrary({
                           <button
                             type="button"
                             onClick={() => remove(item)}
-                            className="px-3 py-1 text-sm text-red-600 border border-red-200 rounded hover:bg-red-50 w-fit"
+                             className="inline-flex min-h-11 items-center rounded border border-red-200 px-3 py-1 text-sm text-red-600 hover:bg-red-50"
                           >
                             刪除
                           </button>

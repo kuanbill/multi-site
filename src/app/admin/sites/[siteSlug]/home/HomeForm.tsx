@@ -95,16 +95,16 @@ export default function HomeForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block text-sm font-medium">
           首頁標語
-          <input value={values.tagline ?? ''} onChange={(event) => update('tagline', event.target.value)} required className="mt-1 w-full px-3 py-2 border rounded-lg" />
+           <input value={values.tagline ?? ''} onChange={(event) => update('tagline', event.target.value)} required className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </label>
         <label className="block text-sm font-medium">
           目前階段
-          <input value={values.currentStage ?? ''} onChange={(event) => update('currentStage', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+           <input value={values.currentStage ?? ''} onChange={(event) => update('currentStage', event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </label>
       </div>
       <label className="block text-sm font-medium">
         專案簡介
-        <textarea value={values.intro ?? ''} onChange={(event) => update('intro', event.target.value)} rows={5} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+         <textarea value={values.intro ?? ''} onChange={(event) => update('intro', event.target.value)} rows={5} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
       </label>
       <div className="space-y-2">
         <MediaPicker
@@ -127,7 +127,7 @@ export default function HomeForm({
           <button
             type="button"
             onClick={() => setValues((current) => ({ ...current, heroMediaId: null }))}
-            className="text-sm text-gray-600 hover:underline"
+             className="inline-flex min-h-11 items-center text-sm text-gray-600 hover:underline"
           >
             清除主圖
           </button>
@@ -138,24 +138,24 @@ export default function HomeForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block text-sm font-medium">
             聯絡人
-            <input value={values.contactName ?? ''} onChange={(event) => update('contactName', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <input value={values.contactName ?? ''} onChange={(event) => update('contactName', event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
           <label className="block text-sm font-medium">
             聯絡電話
-            <input value={values.contactPhone ?? ''} onChange={(event) => update('contactPhone', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <input value={values.contactPhone ?? ''} onChange={(event) => update('contactPhone', event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
           <label className="block text-sm font-medium">
             聯絡電子郵件
-            <input type="email" value={values.contactEmail ?? ''} onChange={(event) => update('contactEmail', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <input type="email" value={values.contactEmail ?? ''} onChange={(event) => update('contactEmail', event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
           <label className="block text-sm font-medium">
             聯絡地址
-            <input value={values.contactAddress ?? ''} onChange={(event) => update('contactAddress', event.target.value)} className="mt-1 w-full px-3 py-2 border rounded-lg" />
+             <input value={values.contactAddress ?? ''} onChange={(event) => update('contactAddress', event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
           </label>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <button type="submit" disabled={saving || !dirty} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+         <button type="submit" disabled={saving || !dirty} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50">
           {saving ? '儲存中...' : '儲存首頁設定'}
         </button>
         {dirty && !saving && (

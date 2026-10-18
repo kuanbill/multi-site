@@ -31,15 +31,16 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold">使用者管理</h2>
-        <Link href="/admin/users/new" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-balance text-2xl font-bold">使用者管理</h2>
+        <Link href="/admin/users/new" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           新增使用者
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
+      <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-x-auto">
+        <table className="min-w-[900px] w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">姓名</th>
@@ -53,8 +54,8 @@ export default async function UsersPage() {
           <tbody className="divide-y">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-6 py-4">{user.name}</td>
-                <td className="px-6 py-4 text-gray-500">{user.email}</td>
+                <td className="max-w-[14rem] break-words px-6 py-4">{user.name}</td>
+                <td className="max-w-[18rem] break-all px-6 py-4 text-gray-500">{user.email}</td>
                 <td className="px-6 py-4">
                   <RoleSelect
                     id={user.id}
@@ -88,9 +89,9 @@ export default async function UsersPage() {
                 <td className="px-6 py-4 text-gray-500">
                   {new Date(user.createdAt).toLocaleDateString('zh-TW')}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end items-center gap-4">
-                    <Link href={`/admin/users/${user.id}/edit`} className="text-blue-600 hover:underline">
+                <td className="px-6 py-4">
+                  <div className="flex flex-wrap items-center justify-start gap-3 sm:justify-end">
+                    <Link href={`/admin/users/${user.id}/edit`} className="inline-flex min-h-11 items-center text-blue-600 hover:underline">
                       編輯
                     </Link>
                     <DeleteUserButton id={user.id} />
@@ -100,6 +101,7 @@ export default async function UsersPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

@@ -21,7 +21,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
   return (
     <div>
       {label && (
-        <label htmlFor={fieldId} className="block text-sm font-medium">
+        <label htmlFor={fieldId} className="mb-1 block text-sm font-medium">
           {label}
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
@@ -34,10 +34,11 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(functi
         max={max}
         step={step}
         className={`
-          w-full px-3 py-2 border rounded-lg text-sm
+           min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm
           bg-white
           border-gray-300
-          focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+           focus:border-blue-500 focus:ring-1 focus:ring-blue-500
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600
           ${error ? 'border-red-400' : ''}
           ${props.disabled ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''}
           ${className ?? ''}

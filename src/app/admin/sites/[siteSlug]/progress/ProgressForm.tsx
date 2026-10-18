@@ -187,18 +187,18 @@ export default function ProgressForm({ siteSlug, initial, onSuccess }: Props) {
         </p>
       )}
 
-      <div className="flex items-center gap-4">
+       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+           className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {saving ? '儲存中...' : initial ? '更新進度' : '建立進度'}
         </button>
         <button
           type="button"
           onClick={() => router.push(`/admin/sites/${siteSlug}/progress`)}
-          className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+           className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2 hover:bg-gray-50"
         >
           返回列表
         </button>

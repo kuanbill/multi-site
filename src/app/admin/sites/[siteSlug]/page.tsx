@@ -70,7 +70,8 @@ export default async function SiteDashboardPage({
           {stats.recentLogins.length === 0 ? (
             <p className="p-4 text-sm text-gray-500">尚無此子網站的登入紀錄。</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="min-w-[560px] w-full text-sm">
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th className="px-4 py-3">使用者</th>
@@ -82,13 +83,14 @@ export default async function SiteDashboardPage({
                   <tr key={record.id} className="border-t">
                     <td className="px-4 py-3">
                       {record.user.name}
-                      <span className="text-gray-400 ml-2">{record.user.email}</span>
+                       <span className="ml-2 break-all text-gray-400">{record.user.email}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{record.createdAt.toLocaleString('zh-TW')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
@@ -100,7 +102,8 @@ export default async function SiteDashboardPage({
           {stats.recentBrowses.length === 0 ? (
             <p className="p-4 text-sm text-gray-500">尚無已登入使用者的瀏覽記錄。</p>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="min-w-[640px] w-full text-sm">
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th className="px-4 py-3">使用者</th>
@@ -113,25 +116,26 @@ export default async function SiteDashboardPage({
                   <tr key={record.id} className="border-t">
                     <td className="px-4 py-3">{record.user?.name ?? '已刪除帳號'}</td>
                     <td className="px-4 py-3 text-gray-600">
-                      {stats.labelByKey.get(record.feature) ?? record.feature}
-                      <span className="text-gray-400 ml-2">{record.path}</span>
+                       {stats.labelByKey.get(record.feature) ?? record.feature}
+                       <span className="ml-2 break-all text-gray-400">{record.path}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{record.createdAt.toLocaleString('zh-TW')}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow">
         <h3 className="font-medium mb-4">快速操作</h3>
-        <div className="flex gap-4 flex-wrap">
-          <Link href={`/admin/sites/${siteSlug}/users`} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+          <div className="flex flex-wrap gap-3">
+          <Link href={`/admin/sites/${siteSlug}/users`} className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2 hover:bg-gray-50">
             成員管理
           </Link>
-          <Link href={`/${siteSlug}`} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+          <Link href={`/${siteSlug}`} className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2 hover:bg-gray-50">
             預覽前台
           </Link>
         </div>

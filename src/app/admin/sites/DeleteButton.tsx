@@ -15,7 +15,7 @@ export default function DeleteButton({ id }: { id: number }) {
   return (
     <button
       onClick={handleDelete}
-      className="text-red-600 hover:underline"
+       className="inline-flex min-h-11 items-center text-red-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
     >
       刪除
     </button>

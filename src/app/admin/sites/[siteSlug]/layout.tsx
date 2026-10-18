@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
 import { requireSiteAccess } from '@/lib/siteAuth';
 import { getSiteBySlug, getEnabledFeatures } from '@/lib/site';
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
+import AdminShell from '@/components/AdminShell';
 
 export default async function SiteAdminLayout({
   children,
@@ -18,12 +17,13 @@ export default async function SiteAdminLayout({
   const features = await getEnabledFeatures(site.id);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Sidebar siteSlug={siteSlug} features={features} siteName={site.name} />
-      <div className="ml-64">
-        {session && <Header user={session.user} siteName={site.name} />}
-        <main className="p-6">{children}</main>
-      </div>
-    </div>
+    <AdminShell
+      user={session.user}
+      siteSlug={siteSlug}
+      siteName={site.name}
+      features={features}
+    >
+      {children}
+    </AdminShell>
   );
 }

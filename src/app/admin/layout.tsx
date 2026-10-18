@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getAdminSession } from '@/lib/adminAuth'
-import Sidebar from '@/components/Sidebar'
-import Header from '@/components/Header'
 import AdminSessionProvider from '@/components/auth/AdminSessionProvider'
+import AdminShell from '@/components/AdminShell'
 
 export default async function DashboardLayout({
   children
@@ -17,13 +16,7 @@ export default async function DashboardLayout({
 
   return (
     <AdminSessionProvider session={session}>
-      <div className="min-h-screen bg-gray-100">
-        <Sidebar />
-        <div className="ml-64">
-          <Header user={session.user} />
-          <main className="p-6">{children}</main>
-        </div>
-      </div>
+      <AdminShell user={session.user}>{children}</AdminShell>
     </AdminSessionProvider>
   )
 }

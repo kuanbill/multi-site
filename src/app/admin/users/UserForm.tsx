@@ -84,17 +84,17 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
       <form onSubmit={onSubmit} className="bg-white p-6 rounded-lg shadow space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">姓名</label>
-          <input name="name" required defaultValue={user?.name} className="w-full px-3 py-2 border rounded-lg" />
+           <input name="name" required defaultValue={user?.name} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">電子郵件</label>
-          <input name="email" type="email" required defaultValue={user?.email} className="w-full px-3 py-2 border rounded-lg" />
+           <input name="email" type="email" required defaultValue={user?.email} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </div>
 
         <div>
           <label className="block text-sm font-medium mb-1">密碼{user ? '（留空代表不修改）' : ''}</label>
-          <input name="password" type="password" minLength={6} required={!user} className="w-full px-3 py-2 border rounded-lg" />
+           <input name="password" type="password" minLength={6} required={!user} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" />
         </div>
 
         <div>
@@ -103,7 +103,7 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
             name="role"
             value={role}
             onChange={(event) => changeRole(event.target.value)}
-            className="w-full px-3 py-2 border rounded-lg"
+             className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             {ROLE_VALUES.map((value) => (
               <option key={value} value={value}>{roleLabel(value)}</option>
@@ -114,13 +114,13 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
         {role === 'admin' ? (
           <p className="text-sm text-gray-500">全域管理員可管理所有子網站，不需指定單一子網站。</p>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium mb-1">管理子網站</label>
               <select
                 value={siteScope}
                 onChange={(event) => setSiteScope(event.target.value)}
-                className="w-full px-3 py-2 border rounded-lg"
+                 className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 <option value="">不指定</option>
                 {canBeUnlimited && <option value={ALL_SITES_SCOPE}>不設限（所有子網站）</option>}
@@ -136,7 +136,7 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
                 value={siteRole}
                 disabled={!siteScope || isUnlimited}
                 onChange={(event) => setSiteRole(event.target.value)}
-                className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100 disabled:text-gray-400"
+                 className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-100 disabled:text-gray-400"
               >
                 {ROLE_VALUES.map((value) => (
                   <option key={value} value={value}>{roleLabel(value)}</option>
@@ -154,11 +154,11 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
           </div>
         )}
 
-        <div className="flex gap-4">
-          <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50">
+         <div className="flex flex-wrap gap-3">
+           <button type="submit" disabled={loading} className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50">
             {loading ? '儲存中...' : '儲存'}
           </button>
-          <button type="button" onClick={() => router.push('/admin/users')} className="px-4 py-2 border rounded-lg">
+           <button type="button" onClick={() => router.push('/admin/users')} className="inline-flex min-h-11 items-center rounded-lg border px-4 py-2">
             取消
           </button>
         </div>

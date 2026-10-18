@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 interface MediaItem {
@@ -40,6 +40,9 @@ export default function MediaPicker({
   const [showModal, setShowModal] = useState(false);
   const [newFile, setNewFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const acceptedTypes = {
     image: 'image/*',
@@ -99,7 +102,7 @@ export default function MediaPicker({
       } else {
         onSelectionChange([newId]);
       }
-      setShowModal(false);
+       closeModal();
       setNewFile(null);
     } catch {
       setError('上傳發生錯誤');
@@ -124,6 +127,41 @@ export default function MediaPicker({
 
   const selectedPreview = filteredMedia.find((m) => m.id === selectedIds[0]);
 
+  useEffect(() => {
+    if (!showModal) return;
+    closeButtonRef.current?.focus();
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeModal();
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+        ),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [showModal]);
+
+  function closeModal() {
+    setShowModal(false);
+    window.requestAnimationFrame(() => triggerRef.current?.focus());
+  }
+
   return (
     <div>
       {label && (
@@ -133,12 +171,14 @@ export default function MediaPicker({
         </label>
       )}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setShowModal(true)}
         className={`
-          w-full px-3 py-2 border rounded-lg text-sm
-          bg-white border-dashed border-gray-400
-          hover:border-blue-500 hover:text-blue-600
+           min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm
+           bg-white border-dashed border-gray-400
+           hover:border-blue-500 hover:text-blue-600
+           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600
           ${selectedIds.length > 0 ? 'border-blue-500 bg-blue-50' : ''}
         `}
       >
@@ -172,13 +212,20 @@ export default function MediaPicker({
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] flex flex-col">
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="media-picker-title"
+            className="max-h-[90vh] w-full max-w-2xl rounded-lg bg-white p-4 sm:p-6 flex flex-col"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">媒體選擇</h3>
+              <h3 id="media-picker-title" className="text-lg font-medium">媒體選擇</h3>
               <button
+                ref={closeButtonRef}
                 type="button"
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={closeModal}
+                 className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 ✕
               </button>
@@ -194,15 +241,15 @@ export default function MediaPicker({
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
               {newFile && (
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{newFile.name} ({(newFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+                 <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                   <span className="min-w-0 break-all text-sm text-gray-600">{newFile.name} ({(newFile.size / 1024 / 1024).toFixed(2)} MB)</span>
                   {uploadingFile ? (
                     <span className="text-sm text-blue-600">上傳中...</span>
                   ) : (
                     <button
                       type="button"
                       onClick={handleUpload}
-                      className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                       className="min-h-11 rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                     >
                       上傳
                     </button>
@@ -218,7 +265,7 @@ export default function MediaPicker({
               ) : filteredMedia.length === 0 ? (
                 <p className="text-sm text-gray-500">尚無媒體，請上傳或啟用媒體管理功能</p>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                 <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3">
                   {filteredMedia.map((media) => {
                     const isSelected = selectedSet.has(media.id);
                     const isImage = media.type === 'image';
@@ -240,7 +287,8 @@ export default function MediaPicker({
                           }
                         }}
                         className={`
-                          relative p-2 rounded-lg border-2 text-left
+                           relative min-h-11 rounded-lg border-2 p-2 text-left
+                           focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600
                           ${isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}
                         `}
                       >
@@ -282,8 +330,8 @@ export default function MediaPicker({
             <div className="flex justify-end mt-4 pt-4 border-t">
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+                onClick={closeModal}
+                 className="min-h-11 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 關閉
               </button>
