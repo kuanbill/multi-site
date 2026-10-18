@@ -100,7 +100,7 @@ export default function SiteLoginForm({ siteSlug, siteName, notice, autoSignOut,
             返回專案首頁
           </Link>
           <span className="mx-2 text-gray-300">|</span>
-          <Link href="/login" className="text-primary hover:underline">
+           <Link href="/admin/login" className="text-primary hover:underline">
             全域管理員登入
           </Link>
         </p>
