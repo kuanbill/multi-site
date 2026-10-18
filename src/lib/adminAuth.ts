@@ -68,5 +68,10 @@ export const adminAuthOptions: NextAuthOptions = {
 
 export async function getAdminSession() {
   const session = await getServerSession(adminAuthOptions);
-  return session?.user.authType === 'admin' && session.user.role === 'admin' ? session : null;
+  if (!session || session.user.authType !== 'admin' || session.user.role !== 'admin') return null;
+
+  const userId = Number(session.user.id);
+  if (!Number.isInteger(userId)) return null;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  return user?.role === 'admin' ? session : null;
 }

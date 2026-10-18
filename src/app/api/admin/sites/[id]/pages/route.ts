@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminSession } from '@/lib/auth'
+
+function forbiddenResponse() {
+  return NextResponse.json({ error: '只有管理員可以管理頁面' }, { status: 403 })
+}
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!await getAdminSession()) return forbiddenResponse()
   const { id } = await params
   const pages = await prisma.page.findMany({
     where: { siteId: parseInt(id) },
@@ -17,6 +23,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!await getAdminSession()) return forbiddenResponse()
   try {
     const { id } = await params
     const { title, slug, content } = await req.json()

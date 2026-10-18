@@ -3,6 +3,7 @@ import path from 'node:path';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
+import { getAdminSession } from '@/lib/adminAuth';
 import { resolveMediaVisibility } from '@/lib/mediaAccess';
 import { isUnlimitedEditor } from '@/lib/roles';
 import { prisma } from '@/lib/prisma';
@@ -33,16 +34,20 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
   // A shared asset is protected if any published member-only feature references it.
   if (visibility.memberReference) {
     const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.redirect(new URL(`/${media.site.slug}/login`, _request.url));
+    const adminSession = await getAdminSession();
+    if (!session && !adminSession) return NextResponse.redirect(new URL(`/${media.site.slug}/login`, _request.url));
     // 與 isSiteMember 相同語意：全域管理員與不設限編輯者視為本站成員，
     // 後者沒有 siteUser 成員列，若只查成員列會把他們擋成 403 破圖。
-    const memberAuthorized =
-      session.user.role === 'admin' ||
-      isUnlimitedEditor(session.user) ||
-      Boolean(await prisma.siteUser.findFirst({
-        where: { userId: Number(session.user.id), siteId: media.siteId },
-        select: { id: true },
-      }));
+    let memberAuthorized = Boolean(adminSession);
+    if (!memberAuthorized && session) {
+      memberAuthorized =
+        session.user.role === 'admin' ||
+        isUnlimitedEditor(session.user) ||
+        Boolean(await prisma.siteUser.findFirst({
+          where: { userId: Number(session.user.id), siteId: media.siteId },
+          select: { id: true },
+        }));
+    }
     if (!memberAuthorized) {
       return new NextResponse('無權限', { status: 403, headers: { 'Cache-Control': UNCACHEABLE } });
     }

@@ -145,4 +145,3 @@ export function canManageSiteMembers(role: SiteRole): boolean {
 export function canAssignSiteAdmin(role: SiteRole): boolean {
   return role === 'global-admin' || role === 'admin';
 }
-

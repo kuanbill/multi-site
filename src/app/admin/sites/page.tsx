@@ -52,7 +52,7 @@ export default async function SitesPage() {
                   <Link href={`/${site.slug}`} className="text-gray-600 hover:underline mr-3">
                     前台
                   </Link>
-                  <Link href={`/${site.slug}/admin`} className="text-blue-600 hover:underline mr-3">
+                  <Link href={`/admin/sites/${site.slug}`} className="text-blue-600 hover:underline mr-3">
                     管理
                   </Link>
                   <Link

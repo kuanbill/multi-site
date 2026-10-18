@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import SiteLoginForm from '@/components/auth/SiteLoginForm';
+import SiteSessionProvider from '@/components/auth/SiteSessionProvider';
 import { authOptions } from '@/lib/auth';
 import { getSiteBySlug } from '@/lib/site';
 import { resolveSiteLoginState, resolveSiteLoginTarget } from '@/lib/siteLogin';
@@ -33,12 +34,14 @@ export default async function SiteLoginPage({ params, searchParams }: PageProps)
   const site = await getSiteBySlug(siteSlug);
 
   return (
-    <SiteLoginForm
-      siteSlug={siteSlug}
-      siteName={site?.name ?? siteSlug}
-      notice={state.notice}
-      autoSignOut={state.mode === 'needs-signout'}
-      targetUrl={resolveSiteLoginTarget(state, siteSlug)}
-    />
+    <SiteSessionProvider session={session}>
+      <SiteLoginForm
+        siteSlug={siteSlug}
+        siteName={site?.name ?? siteSlug}
+        notice={state.notice}
+        autoSignOut={state.mode === 'needs-signout'}
+        targetUrl={resolveSiteLoginTarget(state, siteSlug)}
+      />
+    </SiteSessionProvider>
   );
 }

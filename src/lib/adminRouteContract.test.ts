@@ -34,4 +34,14 @@ describe('admin route contract', () => {
     expect(loginPage).toContain('/admin/login');
     expect(registerPage).toContain('/admin/login');
   });
+
+  it('keeps site and admin client session providers on separate auth base paths', () => {
+    const siteProvider = readFileSync(join(root, 'src/components/auth/SiteSessionProvider.tsx'), 'utf8');
+    const adminProvider = readFileSync(join(root, 'src/components/auth/AdminSessionProvider.tsx'), 'utf8');
+    const siteLogin = readFileSync(join(root, 'src/app/(auth)/[siteSlug]/login/page.tsx'), 'utf8');
+
+    expect(siteProvider).toContain("'/api/auth'");
+    expect(adminProvider).toContain("'/api/admin/auth'");
+    expect(siteLogin).toContain('SiteSessionProvider');
+  });
 });

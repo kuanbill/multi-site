@@ -28,6 +28,10 @@ function isAdminApi(pathname: string): boolean {
   return pathname.startsWith('/api/admin/');
 }
 
+function isSiteAdminApi(pathname: string): boolean {
+  return /^\/api\/[^/]+\/admin(?:\/|$)/.test(pathname);
+}
+
 function getLegacySiteAdminTarget(pathname: string): string | null {
   const match = pathname.match(/^\/([^/]+)\/admin(?:\/(.*))?$/);
   if (!match || RESERVED.has(match[1])) return null;
@@ -60,7 +64,17 @@ export function decideProxyRoute(
     return { action: 'allow' };
   }
 
+  if (pathname === '/') {
+    return isAdminToken(adminToken)
+      ? { action: 'redirect', location: '/admin' }
+      : { action: 'redirect', location: '/admin/login' };
+  }
+
   if (isAdminApi(pathname)) {
+    return isAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
+  }
+
+  if (isSiteAdminApi(pathname)) {
     return isAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
   }
 
