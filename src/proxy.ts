@@ -45,6 +45,9 @@ export function decideProxyRoute(
   adminToken: ProxyToken,
   siteToken: ProxyToken,
 ): ProxyDecision {
+  // Site tokens may access public frontend routes, but never satisfy an admin check.
+  void siteToken;
+
   if (pathname === '/login' || pathname === '/register') {
     return { action: 'redirect', location: '/admin/login' };
   }
