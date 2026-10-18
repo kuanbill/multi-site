@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 export default function EditSitePage() {
   const router = useRouter()
   const params = useParams()
-  const id = params.id as string
+  const id = params.siteSlug as string
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

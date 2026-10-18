@@ -24,6 +24,8 @@ describe('admin route contract', () => {
   it('keeps site management pages under the admin namespace', () => {
     expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/page.tsx'))).toBe(true);
     expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/layout.tsx'))).toBe(true);
+    expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/edit/page.tsx'))).toBe(true);
+    expect(existsSync(join(root, 'src/app/admin/sites/[id]'))).toBe(false);
     expect(existsSync(join(root, 'src/app/[siteSlug]/admin/page.tsx'))).toBe(false);
   });
 
