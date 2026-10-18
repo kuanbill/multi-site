@@ -1,8 +1,9 @@
-import { getServerSession, NextAuthOptions, DefaultSession } from 'next-auth'
+import { type NextAuthOptions, DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
 import { isUnlimitedEditor } from './roles'
+import { siteAuthCookies } from './authCookies'
 
 export type SiteRole = { siteId: number; slug: string; role: string }
 
@@ -13,6 +14,7 @@ declare module 'next-auth' {
     allSites?: boolean
     siteRoles?: SiteRole[]
     loginSiteId?: number | null
+    authType?: 'site' | 'admin'
   }
 
   interface Session {
@@ -21,6 +23,7 @@ declare module 'next-auth' {
       role: string
       allSites?: boolean
       siteRoles: SiteRole[]
+      authType?: 'site' | 'admin'
     } & DefaultSession['user']
   }
 }
@@ -31,10 +34,11 @@ declare module 'next-auth/jwt' {
     role: string
     allSites?: boolean
     siteRoles: SiteRole[]
+    authType?: 'site' | 'admin'
   }
 }
 
-export const authOptions: NextAuthOptions = {
+export const siteAuthOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -99,6 +103,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          authType: 'site' as const,
           allSites: user.allSites === true,
           siteRoles,
           loginSiteId,
@@ -116,6 +121,7 @@ export const authOptions: NextAuthOptions = {
         token.id = (user as unknown as { id: string }).id
         token.allSites = (user as unknown as { allSites?: boolean }).allSites === true
         token.siteRoles = ((user as unknown as { siteRoles: SiteRole[] }).siteRoles ?? []) as SiteRole[]
+        token.authType = 'site'
       }
       return token
     },
@@ -125,6 +131,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.allSites = token.allSites === true
         session.user.siteRoles = (token.siteRoles as SiteRole[]) ?? []
+        session.user.authType = token.authType
       }
       return session
     }
@@ -147,7 +154,10 @@ export const authOptions: NextAuthOptions = {
   }
 }
 
-export async function getAdminSession() {
-  const session = await getServerSession(authOptions)
-  return session?.user.role === 'admin' ? session : null
-}
+siteAuthOptions.cookies = siteAuthCookies
+
+// Existing frontend imports keep working while making the authentication boundary explicit.
+export const authOptions = siteAuthOptions
+
+// Compatibility export while global admin routes are moved to the admin namespace.
+export { getAdminSession } from './adminAuth'

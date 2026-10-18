@@ -149,9 +149,9 @@ describe('resolveSiteLoginTarget', () => {
     expect(resolveSiteLoginTarget(state, 'site-a')).toBe('/site-a/meeting');
   });
 
-  it('falls back to the site admin when there is no callback', () => {
+  it('falls back to the site homepage when there is no callback', () => {
     const state = resolveSiteLoginState({ ...base, session: null });
 
-    expect(resolveSiteLoginTarget(state, 'site-a')).toBe('/site-a/admin');
+    expect(resolveSiteLoginTarget(state, 'site-a')).toBe('/site-a');
   });
 });

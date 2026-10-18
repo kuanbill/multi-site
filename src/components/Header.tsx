@@ -27,7 +27,7 @@ export default function Header({ user, siteName }: HeaderProps) {
         </div>
 
         <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          onClick={() => signOut({ callbackUrl: '/admin/login' })}
           className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
         >
           登出

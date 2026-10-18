@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation'
 import { getSiteAdminFeatureLinks } from '@/lib/features'
 
 const globalMenuItems = [
-  { href: '/', label: '儀表板', icon: '📊' },
-  { href: '/sites', label: '子網站管理', icon: '🌐' },
-  { href: '/users', label: '使用者管理', icon: '👥' },
+  { href: '/admin', label: '儀表板', icon: '📊' },
+  { href: '/admin/sites', label: '子網站管理', icon: '🌐' },
+  { href: '/admin/users', label: '使用者管理', icon: '👥' },
   { href: '/admin/features', label: '功能選單', icon: '🧩' },
 ]
 
@@ -29,16 +29,16 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
 
   if (siteSlug && features) {
     const featureItems = [
-      { href: `/${siteSlug}/admin/home`, label: '首頁設定', icon: '🏠' },
+      { href: `/admin/sites/${siteSlug}/home`, label: '首頁設定', icon: '🏠' },
       ...getSiteAdminFeatureLinks(siteSlug, features),
     ]
     const siteMenu = [
-      { href: `/${siteSlug}/admin`, label: '站點儀表板', icon: '📊' },
+      { href: `/admin/sites/${siteSlug}`, label: '站點儀表板', icon: '📊' },
       ...featureItems,
-      { href: `/${siteSlug}/admin/media`, label: '媒體庫', icon: '📁' },
-      { href: `/${siteSlug}/admin/users`, label: '成員管理', icon: '👥' },
-      { href: `/${siteSlug}/admin/settings/features`, label: '功能設定', icon: '⚙️' },
-      { href: `/${siteSlug}/admin/settings/appearance`, label: '外觀設定', icon: '🎨' },
+      { href: `/admin/sites/${siteSlug}/media`, label: '媒體庫', icon: '📁' },
+      { href: `/admin/sites/${siteSlug}/users`, label: '成員管理', icon: '👥' },
+      { href: `/admin/sites/${siteSlug}/settings/features`, label: '功能設定', icon: '⚙️' },
+      { href: `/admin/sites/${siteSlug}/settings/appearance`, label: '外觀設定', icon: '🎨' },
     ]
 
     return (
@@ -46,7 +46,7 @@ export default function Sidebar({ siteSlug, siteName, features }: SidebarProps) 
         <div className="p-4 border-b border-gray-800">
           <h1 className="text-xl font-bold truncate">{siteName || siteSlug}</h1>
           <p className="text-sm text-gray-400">專案後台</p>
-          <Link href="/sites" className="text-xs text-blue-400 hover:underline">
+          <Link href="/admin/sites" className="text-xs text-blue-400 hover:underline">
             ← 返回站點清單
           </Link>
         </div>

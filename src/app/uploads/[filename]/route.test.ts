@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { readFile, getServerSession, resolveMediaVisibility, mediaFindFirst, siteUserFindFirst } = vi.hoisted(() => ({
+const { readFile, getServerSession, getAdminSession, resolveMediaVisibility, mediaFindFirst, siteUserFindFirst } = vi.hoisted(() => ({
   readFile: vi.fn(),
   getServerSession: vi.fn(),
+  getAdminSession: vi.fn(),
   resolveMediaVisibility: vi.fn(),
   mediaFindFirst: vi.fn(),
   siteUserFindFirst: vi.fn(),
@@ -12,6 +13,7 @@ vi.mock('node:fs/promises', () => ({ readFile }));
 vi.mock('next-auth', () => ({ getServerSession }));
 vi.mock('@/lib/mediaAccess', () => ({ resolveMediaVisibility }));
 vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+vi.mock('@/lib/adminAuth', () => ({ getAdminSession }));
 vi.mock('@/lib/prisma', () => ({ prisma: { media: { findFirst: mediaFindFirst }, siteUser: { findFirst: siteUserFindFirst } } }));
 
 import { GET } from './route';
@@ -20,6 +22,7 @@ describe('uploaded feature media route', () => {
   beforeEach(() => {
     readFile.mockReset().mockResolvedValue(Buffer.from('image-bytes'));
     getServerSession.mockReset().mockResolvedValue(null);
+    getAdminSession.mockReset().mockResolvedValue(null);
     resolveMediaVisibility.mockReset().mockResolvedValue({ publicReference: false, memberReference: true });
     mediaFindFirst.mockReset().mockResolvedValue({
       id: 44,
@@ -52,6 +55,17 @@ describe('uploaded feature media route', () => {
     expect(response.status).toBe(200);
     expect(resolveMediaVisibility).toHaveBeenCalledWith(7, 44);
     expect(await response.arrayBuffer()).toEqual(Uint8Array.from(Buffer.from('image-bytes')).buffer);
+  });
+
+  it('returns the image to a global admin using the admin session cookie', async () => {
+    getAdminSession.mockResolvedValue({ user: { id: '1', role: 'admin', authType: 'admin' } });
+
+    const response = await GET(new Request('https://example.test/uploads/image.jpg'), {
+      params: Promise.resolve({ filename: 'image.jpg' }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(siteUserFindFirst).not.toHaveBeenCalled();
   });
 
   // 不設限編輯者（allSites）沒有 siteUser 成員列，但所有站點權限判定都視為本站成員，

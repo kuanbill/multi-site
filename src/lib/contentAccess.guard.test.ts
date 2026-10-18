@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getSiteBySlug = vi.hoisted(() => vi.fn());
 const getSiteFeature = vi.hoisted(() => vi.fn());
 const getServerSession = vi.hoisted(() => vi.fn());
+const getAdminSession = vi.hoisted(() => vi.fn());
 const headers = vi.hoisted(() => vi.fn());
 
 vi.mock('./site', () => ({ getSiteBySlug, getSiteFeature }));
 vi.mock('./auth', () => ({ authOptions: {} }));
+vi.mock('./adminAuth', () => ({ adminAuthOptions: {}, getAdminSession }));
 vi.mock('next-auth', () => ({ getServerSession }));
 vi.mock('next/headers', () => ({ headers }));
 vi.mock('next/navigation', () => ({
@@ -47,6 +49,7 @@ describe('public feature access', () => {
     getSiteBySlug.mockReset();
     getSiteFeature.mockReset();
     getServerSession.mockReset();
+    getAdminSession.mockReset();
     headers.mockReset();
     getSiteBySlug.mockResolvedValue(activeSite);
     mockPathname('/site-a/meeting');
@@ -163,44 +166,30 @@ describe('public feature access', () => {
   });
 });
 
-describe('site context for unlimited editors', () => {
+describe('admin-only site context', () => {
   beforeEach(() => {
     getSiteBySlug.mockReset().mockResolvedValue(activeSite);
     getServerSession.mockReset();
+    getAdminSession.mockReset();
     headers.mockReset();
     mockPathname('/site-a');
   });
 
-  it('treats an unlimited editor as an editor on any site', async () => {
+  it.each(['admin', 'editor', 'viewer'])('rejects a site member with the %s site role', async (role) => {
+    getAdminSession.mockResolvedValue(null);
     getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: true, siteRoles: [] },
+      user: { authType: 'site', role: 'editor', siteRoles: [{ slug: 'site-a', role }] },
     });
 
-    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'editor' });
+    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/admin/login');
   });
 
-  it('keeps the explicit site membership role for an unlimited editor', async () => {
-    getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: true, siteRoles: [{ slug: 'site-a', role: 'viewer' }] },
+  it('allows a global admin session to manage a site', async () => {
+    getAdminSession.mockResolvedValue({
+      user: { authType: 'admin', role: 'admin', siteRoles: [] },
     });
 
-    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'viewer' });
-  });
-
-  it('rejects an editor without any site membership', async () => {
-    getServerSession.mockResolvedValue({
-      user: { role: 'editor', allSites: false, siteRoles: [{ slug: 'site-b', role: 'editor' }] },
-    });
-
-    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
-  });
-
-  it('rejects a viewer even when the unlimited flag is set', async () => {
-    getServerSession.mockResolvedValue({
-      user: { role: 'viewer', allSites: true, siteRoles: [] },
-    });
-
-    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
+    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'global-admin' });
   });
 });
 
@@ -229,6 +218,7 @@ describe('public home access', () => {
 
   it('rejects signed-in non-members when the home page is members-only', async () => {
     getSiteBySlug.mockResolvedValue({ ...activeSite, homeVisibility: 'members' });
+    getAdminSession.mockResolvedValue(null);
     getServerSession.mockResolvedValue({
       user: { role: 'editor', siteRoles: [{ slug: 'site-b', role: 'viewer' }] },
     });

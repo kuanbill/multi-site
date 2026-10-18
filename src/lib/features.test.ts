@@ -14,8 +14,8 @@ describe('site feature settings', () => {
       { key: 'announcements', path: 'announcement', label: '公告欄', icon: '📢' },
       { key: 'custom', path: 'faq-center', label: '常見問題', icon: '❓' },
     ])).toEqual([
-      { href: '/site-a/admin/announcement', label: '公告欄', icon: '📢' },
-      { href: '/site-a/admin/faq-center', label: '常見問題', icon: '❓' },
+      { href: '/admin/sites/site-a/announcement', label: '公告欄', icon: '📢' },
+      { href: '/admin/sites/site-a/faq-center', label: '常見問題', icon: '❓' },
     ]);
   });
 

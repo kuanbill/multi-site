@@ -1,8 +1,8 @@
 import NextAuth from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { siteAuthOptions } from '@/lib/auth'
 import { makeSessionCookieBrowserSession } from '@/lib/sessionCookie'
 
-const handler = NextAuth(authOptions)
+const handler = NextAuth(siteAuthOptions)
 
 async function authHandler(...args: Parameters<typeof handler>) {
   const response = await handler(...args)
