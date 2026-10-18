@@ -38,6 +38,7 @@ function isSectionSource(value: string): value is HomeSectionSource {
 /** 一個區塊的呈現資料：可見性決定要不要查資料，標題與登入提示不依賴查詢結果。 */
 type ResolvedSection = {
   id: number;
+  source: HomeSectionSource;
   title: string;
   items: ReturnType<typeof toSectionItems>;
   listHref: string | null;
@@ -80,6 +81,7 @@ export async function buildHomeSections(
 
     visible.push({
       id: section.id,
+      source,
       title: buildSectionTitle(section.title, label ?? DEFAULT_LABELS[source]),
       items: [],
       listHref: resolveSectionListPath(source, siteSlug, feature),
@@ -147,6 +149,9 @@ export default async function HomeSections({
                       <img src={item.imageUrl} alt="" className="w-20 h-20 object-cover rounded shrink-0" />
                     )}
                     <div className="min-w-0">
+                      {section.source === 'announcement' && item.meta && (
+                        <p className="text-xs text-gray-500 mb-1">{item.meta}</p>
+                      )}
                       <div className="flex items-center gap-2 flex-wrap">
                         {item.badge && (
                           <span className="text-xs bg-primary/10 text-accent px-1.5 py-0.5 rounded">{item.badge}</span>
@@ -159,7 +164,9 @@ export default async function HomeSections({
                           <span className="font-medium">{item.title}</span>
                         )}
                       </div>
-                      {item.meta && <p className="text-xs text-gray-500 mt-0.5">{item.meta}</p>}
+                      {section.source !== 'announcement' && item.meta && (
+                        <p className="text-xs text-gray-500 mt-0.5">{item.meta}</p>
+                      )}
                       {item.excerpt && <p className="text-sm text-gray-600 mt-1">{item.excerpt}</p>}
                     </div>
                   </div>

@@ -44,11 +44,11 @@ export default async function AnnouncementListPage({ params }: { params: Promise
         </Link>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
         {items.length === 0 ? (
           <p className="p-6 text-gray-500">尚無公告</p>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 text-left">
               <tr>
                 <th className="px-4 py-3">標題</th>
