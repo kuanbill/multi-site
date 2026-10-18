@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getSiteBySlug = vi.hoisted(() => vi.fn());
 const getSiteFeature = vi.hoisted(() => vi.fn());
 const getServerSession = vi.hoisted(() => vi.fn());
+const getAdminSession = vi.hoisted(() => vi.fn());
 const headers = vi.hoisted(() => vi.fn());
 
 vi.mock('./site', () => ({ getSiteBySlug, getSiteFeature }));
 vi.mock('./auth', () => ({ authOptions: {} }));
-vi.mock('./adminAuth', () => ({ adminAuthOptions: {} }));
+vi.mock('./adminAuth', () => ({ adminAuthOptions: {}, getAdminSession }));
 vi.mock('next-auth', () => ({ getServerSession }));
 vi.mock('next/headers', () => ({ headers }));
 vi.mock('next/navigation', () => ({
@@ -48,6 +49,7 @@ describe('public feature access', () => {
     getSiteBySlug.mockReset();
     getSiteFeature.mockReset();
     getServerSession.mockReset();
+    getAdminSession.mockReset();
     headers.mockReset();
     getSiteBySlug.mockResolvedValue(activeSite);
     mockPathname('/site-a/meeting');
@@ -168,11 +170,13 @@ describe('admin-only site context', () => {
   beforeEach(() => {
     getSiteBySlug.mockReset().mockResolvedValue(activeSite);
     getServerSession.mockReset();
+    getAdminSession.mockReset();
     headers.mockReset();
     mockPathname('/site-a');
   });
 
   it.each(['admin', 'editor', 'viewer'])('rejects a site member with the %s site role', async (role) => {
+    getAdminSession.mockResolvedValue(null);
     getServerSession.mockResolvedValue({
       user: { authType: 'site', role: 'editor', siteRoles: [{ slug: 'site-a', role }] },
     });
@@ -181,7 +185,7 @@ describe('admin-only site context', () => {
   });
 
   it('allows a global admin session to manage a site', async () => {
-    getServerSession.mockResolvedValue({
+    getAdminSession.mockResolvedValue({
       user: { authType: 'admin', role: 'admin', siteRoles: [] },
     });
 
@@ -214,6 +218,7 @@ describe('public home access', () => {
 
   it('rejects signed-in non-members when the home page is members-only', async () => {
     getSiteBySlug.mockResolvedValue({ ...activeSite, homeVisibility: 'members' });
+    getAdminSession.mockResolvedValue(null);
     getServerSession.mockResolvedValue({
       user: { role: 'editor', siteRoles: [{ slug: 'site-b', role: 'viewer' }] },
     });

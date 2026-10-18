@@ -32,6 +32,10 @@ function isSiteAdminApi(pathname: string): boolean {
   return /^\/api\/[^/]+\/admin(?:\/|$)/.test(pathname);
 }
 
+function isPublicSiteApi(pathname: string): boolean {
+  return /^\/api\/[^/]+\/maps(?:\/|$)/.test(pathname);
+}
+
 function getLegacySiteAdminTarget(pathname: string): string | null {
   const match = pathname.match(/^\/([^/]+)\/admin(?:\/(.*))?$/);
   if (!match || RESERVED.has(match[1])) return null;
@@ -76,6 +80,10 @@ export function decideProxyRoute(
 
   if (isSiteAdminApi(pathname)) {
     return isAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
+  }
+
+  if (isPublicSiteApi(pathname)) {
+    return { action: 'allow' };
   }
 
   if (isAdminPage(pathname)) {

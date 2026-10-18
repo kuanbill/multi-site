@@ -29,6 +29,11 @@ describe('authentication boundary proxy decisions', () => {
     expect(decideProxyRoute('/api/site-a/admin/pages', adminToken, null)).toEqual({ action: 'allow' });
   });
 
+  it('lets public site APIs perform their own visibility checks', () => {
+    expect(decideProxyRoute('/api/site-a/maps/3/download', null, null)).toEqual({ action: 'allow' });
+    expect(decideProxyRoute('/api/site-a/maps/3/download', null, siteToken)).toEqual({ action: 'allow' });
+  });
+
   it('redirects legacy admin paths without rendering their old UI', () => {
     expect(decideProxyRoute('/site-a/admin/users', adminToken, null)).toEqual({
       action: 'redirect',

@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { authOptions } from './auth';
-import { adminAuthOptions } from './adminAuth';
+import { getAdminSession } from './adminAuth';
 import { resolveSafeCallbackUrl } from './callbackUrl';
 import { getSiteBySlug, getSiteFeature } from './site';
 import { isSiteMember } from './siteLogin';
@@ -25,16 +25,9 @@ export async function requireSiteContext(siteSlug: string): Promise<SiteContext>
   const site = await getSiteBySlug(siteSlug);
   if (!site || site.status === 'archived') notFound();
 
-  const session = await getServerSession(adminAuthOptions);
-  if (!session || session.user.authType !== 'admin' || session.user.role !== 'admin') {
-    redirect('/admin/login');
-  }
-
-  if (session.user.role === 'admin') {
-    return { site, session, siteRole: 'global-admin' };
-  }
-
-  redirect('/admin/login');
+  const session = await getAdminSession();
+  if (!session) redirect('/admin/login');
+  return { site, session, siteRole: 'global-admin' };
 }
 
 export async function requireContentPermission(
