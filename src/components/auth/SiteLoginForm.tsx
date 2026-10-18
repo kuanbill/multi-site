@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 interface Props {
   siteSlug: string;
@@ -54,8 +53,7 @@ export default function SiteLoginForm({ siteSlug, siteName, notice, autoSignOut,
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-center mb-2">專案登入</h1>
-        <p className="text-center text-sm text-gray-500 mb-6">{siteName}</p>
+        <h1 className="text-3xl font-bold text-center mb-6 text-balance">{siteName}</h1>
 
         {notice && (
           <div className="mb-4 p-3 bg-amber-100 text-amber-800 rounded text-sm">{notice}</div>
@@ -95,15 +93,6 @@ export default function SiteLoginForm({ siteSlug, siteName, notice, autoSignOut,
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-600">
-          <Link href={`/${siteSlug}`} className="text-primary hover:underline">
-            返回專案首頁
-          </Link>
-          <span className="mx-2 text-gray-300">|</span>
-           <Link href="/admin/login" className="text-primary hover:underline">
-            全域管理員登入
-          </Link>
-        </p>
       </div>
     </div>
   );

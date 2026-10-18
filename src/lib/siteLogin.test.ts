@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Session } from 'next-auth';
 import {
-  MEMBERS_ONLY_NOTICE,
   NOT_MEMBER_NOTICE,
   resolveSiteLoginState,
   resolveSiteLoginTarget,
@@ -28,7 +29,7 @@ function unlimitedEditorSession(): Session {
 const base = { siteSlug: 'site-a', callbackUrl: null, reason: null, error: null };
 
 describe('resolveSiteLoginState', () => {
-  it('shows the members-only notice for anonymous visitors', () => {
+  it('does not show the members-only notice for anonymous visitors', () => {
     const state = resolveSiteLoginState({
       ...base,
       session: null,
@@ -37,8 +38,17 @@ describe('resolveSiteLoginState', () => {
     });
 
     expect(state.mode).toBe('form');
-    expect(state.notice).toBe(MEMBERS_ONLY_NOTICE);
+    expect(state.notice).toBeNull();
     expect(state.safeCallbackUrl).toBe('/site-a/meeting');
+  });
+
+  it('keeps site login free of cross-site navigation links', () => {
+    const source = readFileSync(join(process.cwd(), 'src/components/auth/SiteLoginForm.tsx'), 'utf8');
+
+    expect(source).not.toContain('專案登入');
+    expect(source).not.toContain('返回專案首頁');
+    expect(source).not.toContain('全域管理員登入');
+    expect(source).toMatch(/<h1[^>]*text-3xl[^>]*>\{siteName\}<\/h1>/);
   });
 
   it('shows the not-member notice after the automatic sign-out', () => {

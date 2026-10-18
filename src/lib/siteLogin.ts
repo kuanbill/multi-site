@@ -10,7 +10,6 @@ export type SiteLoginState = {
   safeCallbackUrl: string | null;
 };
 
-export const MEMBERS_ONLY_NOTICE = '此功能僅限本站成員瀏覽，請先登入後繼續。';
 export const NOT_MEMBER_NOTICE = '目前帳號不屬於本站，請以本站成員帳號重新登入。';
 
 export function isSiteMember(session: Session | null, siteSlug: string): boolean {
@@ -47,8 +46,6 @@ export function resolveSiteLoginState(input: {
   let notice: string | null = null;
   if (input.error === 'not-member') {
     notice = NOT_MEMBER_NOTICE;
-  } else if (input.reason === 'members-only') {
-    notice = MEMBERS_ONLY_NOTICE;
   }
   return { mode: 'form', notice, safeCallbackUrl };
 }
