@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { getAdminSession } from '@/lib/auth'
 import { roleLabel } from '@/lib/roles'
-import RoleSelect from './RoleSelect'
 import DeleteUserButton from './DeleteUserButton'
 import { buildUserWhere, normalizeUserFilters, type SearchParamValue } from './userSearch'
 
@@ -16,7 +15,6 @@ export default async function UsersPage({
 }) {
   const session = await getAdminSession()
   if (!session) redirect('/')
-  const currentUserId = session.user.id
   const query = await searchParams
   const sites = await prisma.site.findMany({
     select: { id: true, name: true },
@@ -111,13 +109,7 @@ export default async function UsersPage({
               <tr key={user.id}>
                 <td className="max-w-[14rem] break-words px-6 py-4">{user.name}</td>
                 <td className="max-w-[18rem] break-all px-6 py-4 text-gray-500">{user.email}</td>
-                <td className="px-6 py-4">
-                  <RoleSelect
-                    id={user.id}
-                    currentRole={user.role}
-                    disabled={String(user.id) === currentUserId}
-                  />
-                </td>
+                <td className="px-6 py-4">{roleLabel(user.role)}</td>
                 <td className="px-6 py-4">
                   {user.role === 'admin' ? (
                     <span className="text-gray-400 text-sm">—</span>

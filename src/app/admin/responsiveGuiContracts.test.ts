@@ -17,6 +17,9 @@ describe('admin responsive list contracts', () => {
     expect(sites).toContain('overflow-x-auto');
     expect(sites).toContain('min-w-[760px]');
     expect(sites).toContain('min-h-11');
+    expect(sites).toContain('href={`/${site.slug}`}');
+    expect(sites).toContain('target="_blank"');
+    expect(sites).toContain('rel="noopener noreferrer"');
     expect(users).toContain('overflow-x-auto');
     expect(users).toContain('min-w-[900px]');
     expect(users).toContain('min-h-11');
@@ -26,6 +29,11 @@ describe('admin responsive list contracts', () => {
     expect(users).toContain('搜尋姓名、Email 或專案名稱');
     expect(users).toContain('清除');
     expect(users).toContain('找不到符合條件的使用者');
+    expect(users).not.toContain("from './RoleSelect'");
+    expect(users).not.toContain('<RoleSelect');
+    expect(sites).not.toContain('頁面數');
+    expect(sites).not.toContain('文章數');
+    expect(sites).not.toContain('_count');
   });
 
   it('keeps site members and dashboard records usable on narrow screens', () => {
