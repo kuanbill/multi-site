@@ -52,7 +52,7 @@ export function parseYouTubeVideoId(value: unknown): string {
   } else if (url.pathname === '/watch') {
     videoId = url.searchParams.get('v');
   } else {
-    videoId = url.pathname.match(/^\/(?:embed|shorts)\/([^/]+)\/?$/)?.[1] ?? null;
+    videoId = url.pathname.match(/^\/(?:embed|live|shorts)\/([^/]+)\/?$/)?.[1] ?? null;
   }
 
   if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) throw new Error('YouTube 網址無效');

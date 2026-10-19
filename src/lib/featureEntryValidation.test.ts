@@ -21,6 +21,7 @@ describe('feature entry validation', () => {
     expect(parseYouTubeVideoId(`https://youtu.be/${videoId}`)).toBe(videoId);
     expect(parseYouTubeVideoId(`https://www.youtube.com/watch?v=${videoId}`)).toBe(videoId);
     expect(parseYouTubeVideoId(`https://m.youtube.com/shorts/${videoId}`)).toBe(videoId);
+    expect(parseYouTubeVideoId(`https://youtube.com/live/${videoId}`)).toBe(videoId);
     expect(buildYouTubeEmbedUrl(videoId)).toBe(`https://www.youtube-nocookie.com/embed/${videoId}`);
     expect(() => parseYouTubeVideoId('https://youtube.com.evil.example/watch?v=bad')).toThrow('YouTube 網址無效');
     expect(() => parseYouTubeVideoId('javascript:alert(1)')).toThrow('YouTube 網址無效');
