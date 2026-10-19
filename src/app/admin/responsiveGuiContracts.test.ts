@@ -62,15 +62,19 @@ describe('admin responsive list contracts', () => {
     const login = readAdminFile('..', '..', 'app', '(auth)', 'admin', 'login', 'page.tsx');
     const publicLayout = readAdminFile('..', '..', 'app', '(public)', '[siteSlug]', 'layout.tsx');
 
-    expect(sidebar).toContain('/icons/icon-512.png');
+    expect(sidebar).not.toContain('/icons/icon-512.png');
     expect(login).toContain('/icons/icon-512.png');
     expect(publicLayout).toContain('/site-icons/icon-512.png');
     expect(publicLayout).toContain('/site-icons/apple-icon.png');
   });
 
-  it('uses the requested admin login title', () => {
+  it('uses the requested admin branding copy', () => {
+    const sidebar = readAdminFile('..', '..', 'components', 'Sidebar.tsx');
     const login = readAdminFile('..', '..', 'app', '(auth)', 'admin', 'login', 'page.tsx');
 
-    expect(login).toContain('都更案件後台管理登入');
+    expect(sidebar).toContain('>子網站管理</h1>');
+    expect(sidebar).toContain('都更案件管理後台');
+    expect(sidebar).not.toContain('/icons/icon-512.png');
+    expect(login).toContain('更新案子網站管理後台登入');
   });
 });
