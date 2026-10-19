@@ -20,6 +20,12 @@ describe('admin responsive list contracts', () => {
     expect(users).toContain('overflow-x-auto');
     expect(users).toContain('min-w-[900px]');
     expect(users).toContain('min-h-11');
+    expect(users).toContain('method="GET"');
+    expect(users).toContain('name="q"');
+    expect(users).toContain('name="site"');
+    expect(users).toContain('搜尋姓名、Email 或專案名稱');
+    expect(users).toContain('清除');
+    expect(users).toContain('找不到符合條件的使用者');
   });
 
   it('keeps site members and dashboard records usable on narrow screens', () => {

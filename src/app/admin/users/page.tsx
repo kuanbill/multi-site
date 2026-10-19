@@ -5,15 +5,27 @@ import { getAdminSession } from '@/lib/auth'
 import { roleLabel } from '@/lib/roles'
 import RoleSelect from './RoleSelect'
 import DeleteUserButton from './DeleteUserButton'
+import { buildUserWhere, normalizeUserFilters, type SearchParamValue } from './userSearch'
 
 export const dynamic = 'force-dynamic'
 
-export default async function UsersPage() {
+export default async function UsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, SearchParamValue>>
+}) {
   const session = await getAdminSession()
   if (!session) redirect('/')
   const currentUserId = session.user.id
+  const query = await searchParams
+  const sites = await prisma.site.findMany({
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+  const filters = normalizeUserFilters(query, sites)
 
   const users = await prisma.user.findMany({
+    where: buildUserWhere(filters),
     select: {
       id: true,
       name: true,
@@ -38,6 +50,45 @@ export default async function UsersPage() {
         </Link>
       </div>
 
+      <form method="GET" className="mb-6 rounded-lg bg-white p-4 shadow">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="user-search" className="mb-1 block text-sm font-medium text-gray-700">搜尋</label>
+            <input
+              id="user-search"
+              name="q"
+              defaultValue={filters.q}
+              placeholder="搜尋姓名、Email 或專案名稱"
+              className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            />
+          </div>
+          <div className="min-w-0 md:w-64">
+            <label htmlFor="user-site" className="mb-1 block text-sm font-medium text-gray-700">所屬專案</label>
+            <select
+              id="user-site"
+              name="site"
+              defaultValue={filters.siteId?.toString() ?? ''}
+              className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              <option value="">全部專案</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>{site.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+              搜尋
+            </button>
+            {(filters.q || filters.siteId !== null) && (
+              <Link href="/admin/users" className="inline-flex min-h-11 items-center text-gray-600 hover:underline">
+                清除
+              </Link>
+            )}
+          </div>
+        </div>
+      </form>
+
       <div className="overflow-hidden rounded-lg bg-white shadow">
         <div className="overflow-x-auto">
         <table className="min-w-[900px] w-full">
@@ -52,7 +103,11 @@ export default async function UsersPage() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {users.map((user) => (
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">找不到符合條件的使用者</td>
+              </tr>
+            ) : users.map((user) => (
               <tr key={user.id}>
                 <td className="max-w-[14rem] break-words px-6 py-4">{user.name}</td>
                 <td className="max-w-[18rem] break-all px-6 py-4 text-gray-500">{user.email}</td>
