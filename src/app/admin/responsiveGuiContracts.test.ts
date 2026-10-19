@@ -67,4 +67,10 @@ describe('admin responsive list contracts', () => {
     expect(publicLayout).toContain('/site-icons/icon-512.png');
     expect(publicLayout).toContain('/site-icons/apple-icon.png');
   });
+
+  it('uses the requested admin login title', () => {
+    const login = readAdminFile('..', '..', 'app', '(auth)', 'admin', 'login', 'page.tsx');
+
+    expect(login).toContain('都更案件後台管理登入');
+  });
 });
