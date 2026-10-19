@@ -61,13 +61,13 @@ describe('site member invite API', () => {
     siteUserCreate.mockReset().mockResolvedValue({ id: 501, role: 'editor' });
   });
 
-  it('lets an editor invite an editor member', async () => {
+  it('forces a requested editor member to viewer', async () => {
     requireSiteContext.mockResolvedValue(siteContextOf('editor'));
 
     const response = await invite(validBody);
 
     expect(response.status).toBe(201);
-    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'editor' } });
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'viewer' } });
   });
 
   it('lets an editor invite a viewer member', async () => {
@@ -79,21 +79,20 @@ describe('site member invite API', () => {
     expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'viewer' } });
   });
 
-  it('stops an editor from inviting a site admin', async () => {
+  it('forces an editor request for a site admin to viewer', async () => {
     requireSiteContext.mockResolvedValue(siteContextOf('editor'));
 
     const response = await invite({ ...validBody, role: 'admin' });
 
-    expect(response.status).toBe(403);
-    expect(userCreate).not.toHaveBeenCalled();
-    expect(siteUserCreate).not.toHaveBeenCalled();
+    expect(response.status).toBe(201);
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'viewer' } });
   });
 
-  it('lets a site admin invite a site admin', async () => {
+  it('forces a site admin request for a site admin to viewer', async () => {
     const response = await invite({ ...validBody, role: 'admin' });
 
     expect(response.status).toBe(201);
-    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'admin' } });
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 11, siteId: 7, role: 'viewer' } });
   });
 
   it('rejects a viewer', async () => {
@@ -127,7 +126,7 @@ describe('site member invite API', () => {
 
     expect(response.status).toBe(201);
     expect(userCreate).not.toHaveBeenCalled();
-    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 12, siteId: 7, role: 'editor' } });
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 12, siteId: 7, role: 'viewer' } });
   });
 
   it('rejects an account that already belongs to another site', async () => {
@@ -208,6 +207,6 @@ describe('site member invite API', () => {
 
     expect(response.status).toBe(201);
     expect(userUpdate).not.toHaveBeenCalled();
-    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 12, siteId: 7, role: 'editor' } });
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 12, siteId: 7, role: 'viewer' } });
   });
 });

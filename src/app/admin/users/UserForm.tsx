@@ -34,7 +34,7 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
   const [siteScope, setSiteScope] = useState(
     initialAllSites ? ALL_SITES_SCOPE : initialSite?.siteId ? String(initialSite.siteId) : ''
   )
-  const [siteRole, setSiteRole] = useState(initialSite?.siteRole || 'editor')
+  const siteRole = 'viewer'
 
   const isUnlimited = role === 'editor' && siteScope === ALL_SITES_SCOPE
   const canBeUnlimited = role === 'editor'
@@ -134,17 +134,17 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
               <label className="block text-sm font-medium mb-1">子網站角色</label>
               <select
                 value={siteRole}
-                disabled={!siteScope || isUnlimited}
-                onChange={(event) => setSiteRole(event.target.value)}
+                 disabled
                  className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-100 disabled:text-gray-400"
               >
-                {ROLE_VALUES.map((value) => (
-                  <option key={value} value={value}>{roleLabel(value)}</option>
-                ))}
+                 <option value="viewer">檢視者</option>
               </select>
             </div>
 
-            <p className="col-span-2 text-xs text-gray-500">
+             <p className="col-span-2 text-xs text-gray-500">
+               子網站角色固定為檢視者。
+             </p>
+             <p className="col-span-2 text-xs text-gray-500">
               {isUnlimited
                 ? '此帳號可在所有子網站編輯內容與調整功能設定，但仍無法使用外層後台的使用者管理。'
                 : canBeUnlimited

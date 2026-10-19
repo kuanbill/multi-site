@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '密碼至少需要 6 個字元' }, { status: 400 })
     }
 
-    const siteRole = isRoleValue(body.siteRole) ? body.siteRole : 'editor'
+    const siteRole = 'viewer'
     let siteId: number | null = null
     if (body.siteId !== null && body.siteId !== undefined && body.siteId !== '') {
       const parsed = Number(body.siteId)

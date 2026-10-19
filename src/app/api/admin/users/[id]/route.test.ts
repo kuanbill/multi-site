@@ -101,6 +101,16 @@ describe('updating a user profile', () => {
     expect(siteUserDeleteMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 9 } }));
   });
 
+  it('forces a global user form site membership to viewer', async () => {
+    const response = await PUT(
+      putRequest(validUser({ role: 'editor', siteId: 3, siteRole: 'admin' })),
+      routeContext,
+    );
+
+    expect(response.status).toBe(200);
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 9, siteId: 3, role: 'viewer' } });
+  });
+
   it('rejects combining the unlimited flag with a single site', async () => {
     const response = await PUT(putRequest(validUser({ allSites: true, siteId: 3 })), routeContext);
 

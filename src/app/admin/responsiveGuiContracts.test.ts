@@ -40,4 +40,12 @@ describe('admin responsive list contracts', () => {
     expect(dashboard).toContain('min-w-[560px]');
     expect(media).toContain('overflow-x-auto');
   });
+
+  it('keeps site roles fixed for new members and global user forms', () => {
+    const userForm = readAdminFile('users', 'UserForm.tsx');
+    const members = readAdminFile('sites', '[siteSlug]', 'users', 'SiteUsersClient.tsx');
+
+    expect(userForm).toContain('子網站角色固定為檢視者');
+    expect(members).toContain('站內角色：檢視者（固定）');
+  });
 });

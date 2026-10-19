@@ -139,7 +139,7 @@ export async function PUT(
       return NextResponse.json({ error: '無法降低最後一位管理員的權限' }, { status: 400 })
     }
 
-    const siteRole = isRoleValue(body.siteRole) ? body.siteRole : 'editor'
+    const siteRole = 'viewer'
     let siteId: number | null = null
     if (body.siteId !== null && body.siteId !== undefined && body.siteId !== '') {
       const parsed = Number(body.siteId)

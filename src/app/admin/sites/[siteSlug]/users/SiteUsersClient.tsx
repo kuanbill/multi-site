@@ -36,7 +36,6 @@ export default function SiteUsersClient({
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('editor');
   const [password, setPassword] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
@@ -79,7 +78,7 @@ export default function SiteUsersClient({
     const res = await fetch(`/api/${siteSlug}/admin/users/invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, phone, role, password: password || undefined }),
+      body: JSON.stringify({ email, name, phone, role: 'viewer', password: password || undefined }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -446,12 +445,7 @@ export default function SiteUsersClient({
                <input value={phone} onChange={(e) => setPhone(e.target.value)} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" placeholder="09xxxxxxxx" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">站內角色</label>
-               <select value={role} onChange={(e) => setRole(e.target.value)} className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                {assignableRoles.map((value) => (
-                  <option key={value} value={value}>{roleLabel(value)}</option>
-                ))}
-              </select>
+              <p className="text-sm font-medium">站內角色：檢視者（固定）</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">密碼 (選填，自動產生)</label>

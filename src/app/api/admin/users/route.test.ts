@@ -94,13 +94,13 @@ describe('creating a user', () => {
   });
 
   it('stores the unlimited flag as false when it is not requested', async () => {
-    await POST(jsonRequest('http://localhost/api/admin/users', validUser({ siteId: 3 })));
+    await POST(jsonRequest('http://localhost/api/admin/users', validUser({ siteId: 3, siteRole: 'admin' })));
 
     expect(userCreate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ allSites: false }) }),
     );
     expect(siteUserCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { userId: 9, siteId: 3, role: 'editor' } }),
+      expect.objectContaining({ data: { userId: 9, siteId: 3, role: 'viewer' } }),
     );
   });
 });

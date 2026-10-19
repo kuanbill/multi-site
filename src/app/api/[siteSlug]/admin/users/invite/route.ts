@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import {
-  canAssignSiteAdmin,
   canManageSiteMembers,
   requireSiteContext,
 } from '@/lib/contentAccess';
@@ -19,16 +18,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
     const body = await req.json();
     const emailRaw = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const name = typeof body.name === 'string' ? body.name.trim() : '';
-    const role = ['admin', 'editor', 'viewer'].includes(body.role) ? body.role : 'editor';
+    const role = 'viewer';
     const passwordRaw = typeof body.password === 'string' ? body.password : '';
     const parsedPhone = parsePhoneInput(body.phone);
 
     if (!emailRaw || !name) return NextResponse.json({ error: 'email 與姓名為必填' }, { status: 400 });
     if (parsedPhone.error) return NextResponse.json({ error: parsedPhone.error }, { status: 400 });
-    if (role === 'admin' && !canAssignSiteAdmin(siteRole)) {
-      return NextResponse.json({ error: '只有站點管理員可指派站點管理員' }, { status: 403 });
-    }
-
     // 一人一站約束 (全域 admin 例外)
     let user = await prisma.user.findUnique({ where: { email: emailRaw } });
     if (user) {
@@ -61,7 +56,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ siteSlu
         email: emailRaw,
         name,
         password: hashed,
-        role: role === 'admin' ? 'editor' : 'editor',
+        role: 'editor',
         phone: parsedPhone.phone || null,
       },
     });
