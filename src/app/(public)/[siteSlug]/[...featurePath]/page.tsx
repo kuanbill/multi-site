@@ -5,7 +5,11 @@ import { requirePublicFeature } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
 import { getEnabledFeatureByPath, getSiteBySlug } from '@/lib/site';
 import { buildYouTubeEmbedUrl, parseYouTubeVideoId } from '@/lib/featureEntryValidation';
-import { getFeatureEntryLayoutClass, resolveFeatureEntryRouteSegments } from '@/lib/featureEntryDisplay';
+import {
+  getFeatureEntryLayoutClass,
+  resolveFeatureEntryRouteSegments,
+  resolveFeatureEntryThumbnailUrl,
+} from '@/lib/featureEntryDisplay';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,16 +51,34 @@ export default async function CustomFeaturePage({
           <p className="bg-white p-6 rounded-lg shadow text-gray-500">尚無資料</p>
         ) : (
           <div className={getFeatureEntryLayoutClass(feature.displayMode)}>
-            {entries.map((entry) => (
-              <Link key={entry.id} href={`/${siteSlug}/${route.featurePath}/${entry.id}`} className="block bg-white p-5 rounded-lg shadow hover:shadow-md">
-                {entry.contentType === 'image' && entry.media?.url && (
-                  <Image src={entry.media.url} alt={entry.media.altText ?? entry.title} width={1200} height={800} unoptimized className="w-full max-h-72 object-contain rounded mb-3" />
-                )}
-                <h2 className="text-lg font-semibold text-accent">{entry.title}</h2>
-                {entry.content && <p className="mt-2 text-gray-600 whitespace-pre-wrap line-clamp-3">{entry.content}</p>}
-                {entry.contentType === 'youtube' && <span className="mt-2 inline-block text-sm text-gray-500">YouTube 影片</span>}
-              </Link>
-            ))}
+            {entries.map((entry) => {
+              const thumbnailUrl = resolveFeatureEntryThumbnailUrl(
+                feature.displayMode,
+                entry.contentType,
+                entry.youtubeUrl,
+              );
+
+              return (
+                <Link key={entry.id} href={`/${siteSlug}/${route.featurePath}/${entry.id}`} className="block bg-white p-5 rounded-lg shadow hover:shadow-md">
+                  {entry.contentType === 'image' && entry.media?.url && (
+                    <Image src={entry.media.url} alt={entry.media.altText ?? entry.title} width={1200} height={800} unoptimized className="w-full max-h-72 object-contain rounded mb-3" />
+                  )}
+                  {thumbnailUrl && (
+                    <Image
+                      src={thumbnailUrl}
+                      alt={`${entry.title} YouTube 縮圖`}
+                      width={1200}
+                      height={675}
+                      unoptimized
+                      className="aspect-video w-full object-cover rounded mb-3 outline outline-1 outline-black/10"
+                    />
+                  )}
+                  <h2 className="text-lg font-semibold text-accent">{entry.title}</h2>
+                  {entry.content && <p className="mt-2 text-gray-600 whitespace-pre-wrap line-clamp-3">{entry.content}</p>}
+                  {entry.contentType === 'youtube' && <span className="mt-2 inline-block text-sm text-gray-500">YouTube 影片</span>}
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

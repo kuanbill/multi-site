@@ -1,7 +1,26 @@
+import { parseYouTubeVideoId } from './featureEntryValidation';
+
 export type FeatureEntryRouteSegments = {
   featurePath: string;
   entryId: number | null;
 };
+
+export function buildYouTubeThumbnailUrl(value: unknown): string | null {
+  try {
+    return `https://img.youtube.com/vi/${parseYouTubeVideoId(value)}/hqdefault.jpg`;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveFeatureEntryThumbnailUrl(
+  displayMode: string,
+  contentType: string,
+  youtubeUrl: string | null,
+): string | null {
+  if (displayMode !== 'card' || contentType !== 'youtube') return null;
+  return buildYouTubeThumbnailUrl(youtubeUrl);
+}
 
 export function getFeatureEntryLayoutClass(displayMode: string): string {
   if (displayMode === 'list') return 'space-y-4';

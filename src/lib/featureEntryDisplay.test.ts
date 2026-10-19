@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { buildYouTubeEmbedUrl } from './featureEntryValidation';
-import { getFeatureEntryLayoutClass, resolveFeatureEntryRouteSegments } from './featureEntryDisplay';
+import {
+  buildYouTubeThumbnailUrl,
+  getFeatureEntryLayoutClass,
+  resolveFeatureEntryRouteSegments,
+  resolveFeatureEntryThumbnailUrl,
+} from './featureEntryDisplay';
 
 describe('feature entry public display', () => {
   it('resolves the feature list route', () => {
@@ -20,6 +25,20 @@ describe('feature entry public display', () => {
   it('renders YouTube through a validated privacy-enhanced embed URL', () => {
     const videoId = 'dQw4w9WgXcQ';
     expect(buildYouTubeEmbedUrl(videoId)).toBe(`https://www.youtube-nocookie.com/embed/${videoId}`);
+  });
+
+  it('builds a YouTube thumbnail URL for card previews', () => {
+    expect(buildYouTubeThumbnailUrl('https://youtube.com/live/jIexLM3QyeE')).toBe(
+      'https://img.youtube.com/vi/jIexLM3QyeE/hqdefault.jpg',
+    );
+  });
+
+  it('only adds YouTube thumbnails in card mode', () => {
+    const youtubeUrl = 'https://youtube.com/live/jIexLM3QyeE';
+    expect(resolveFeatureEntryThumbnailUrl('card', 'youtube', youtubeUrl)).toBe(
+      'https://img.youtube.com/vi/jIexLM3QyeE/hqdefault.jpg',
+    );
+    expect(resolveFeatureEntryThumbnailUrl('list', 'youtube', youtubeUrl)).toBeNull();
   });
 
   it('provides distinct list, card, and grid layouts', () => {
