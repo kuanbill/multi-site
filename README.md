@@ -55,13 +55,18 @@ NEXTAUTH_URL="http://localhost:3000"
 
 ## 網站圖示
 
-全站共用同一組網站圖示（favicon 與 iOS 主畫面圖示），來源圖為 `assets/icon-source.png`：
+後台與前台子網站使用分開的網站圖示（favicon 與 iOS 主畫面圖示）。來源圖分別為 `assets/branding/admin-icon-source.png` 與 `assets/branding/site-icon-source.png`：
 
 ```bash
 npm run icons
 ```
 
-腳本會自動偵測來源圖的非白範圍、套用圓角遮罩（保留白底），並產出 `src/app/icon.png`（512×512）與 `src/app/apple-icon.png`（180×180，不含透明）。更換圖示時替換 `assets/icon-source.png` 後重新執行即可，不需手動調整尺寸。
+腳本會自動偵測兩張來源圖的非白範圍、套用圓角遮罩（保留白底），並產出：
+
+- 後台：`src/app/icon.png`、`src/app/apple-icon.png` 與 `public/icons/`。
+- 前台子網站：`public/site-icons/`。
+
+更換前台或後台圖示時，替換對應的 `assets/branding/` 來源圖後重新執行即可，不需手動調整尺寸。
 
 ## 驗證
 

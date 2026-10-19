@@ -22,7 +22,16 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
     <header className="sticky top-0 z-50 bg-primary text-white shadow-sm">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href={`/${siteSlug}`} className="font-bold text-lg text-white">
-          {siteName}
+          <span className="inline-flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/site-icons/icon-512.png"
+              alt=""
+              aria-hidden="true"
+              className="h-9 w-9 rounded-md bg-white object-contain"
+            />
+            <span>{siteName}</span>
+          </span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-3">
           <nav className="hidden md:flex gap-4">

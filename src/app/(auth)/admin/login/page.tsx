@@ -44,6 +44,8 @@ function AdminLoginForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/icon-512.png" alt="都更後台" className="mx-auto mb-4 h-24 w-24 rounded-2xl object-contain" />
         <h1 className="text-2xl font-bold text-center mb-2">後台管理登入</h1>
         <p className="text-center text-sm text-gray-500 mb-6">僅限全域管理員使用</p>
         {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}

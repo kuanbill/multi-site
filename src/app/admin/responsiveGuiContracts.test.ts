@@ -56,4 +56,15 @@ describe('admin responsive list contracts', () => {
     expect(userForm).toContain('子網站角色固定為檢視者');
     expect(members).toContain('站內角色：檢視者（固定）');
   });
+
+  it('keeps frontend and backend branding assets separate', () => {
+    const sidebar = readAdminFile('..', '..', 'components', 'Sidebar.tsx');
+    const login = readAdminFile('..', '..', 'app', '(auth)', 'admin', 'login', 'page.tsx');
+    const publicLayout = readAdminFile('..', '..', 'app', '(public)', '[siteSlug]', 'layout.tsx');
+
+    expect(sidebar).toContain('/icons/icon-512.png');
+    expect(login).toContain('/icons/icon-512.png');
+    expect(publicLayout).toContain('/site-icons/icon-512.png');
+    expect(publicLayout).toContain('/site-icons/apple-icon.png');
+  });
 });

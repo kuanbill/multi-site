@@ -43,12 +43,19 @@ describe('site web manifest route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('application/manifest+json; charset=utf-8');
     expect(response.headers.get('cache-control')).toBe('public, max-age=300');
-    expect(await response.json()).toMatchObject({
+    const manifest = await response.json();
+
+    expect(manifest).toMatchObject({
       name: '中和都更案',
       start_url: '/zhonghe-renewal',
       scope: '/zhonghe-renewal',
       theme_color: '#0f766e',
       display: 'standalone',
     });
+    expect(manifest.icons).toEqual([
+      { src: '/site-icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/site-icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/site-icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ]);
   });
 });

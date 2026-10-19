@@ -13,6 +13,10 @@ export async function generateMetadata({ params }: { params: Promise<{ siteSlug:
     description: site.description || '',
     // 站點專屬 manifest 覆蓋根 manifest，安裝後使用站名、站色並限定本站範圍。
     manifest: `/${siteSlug}/manifest.webmanifest`,
+    icons: {
+      icon: '/site-icons/icon-512.png',
+      apple: '/site-icons/apple-icon.png',
+    },
     appleWebApp: { capable: true, title: site.name, statusBarStyle: 'default' },
   };
 }

@@ -21,4 +21,8 @@ describe('root manifest', () => {
       { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ]);
   });
+
+  it('uses the admin icon paths', () => {
+    expect(value.icons?.every((icon) => icon.src?.startsWith('/icons/'))).toBe(true);
+  });
 });

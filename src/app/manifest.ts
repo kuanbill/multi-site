@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { PWA_ICONS } from '@/lib/pwa';
+import { ADMIN_PWA_ICONS } from '@/lib/pwa';
 
 /** 管理平台本身的 manifest；各子網站前台另有 /{siteSlug}/manifest.webmanifest 覆蓋。 */
 export default function manifest(): MetadataRoute.Manifest {
@@ -12,6 +12,6 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#f3f4f6',
     theme_color: '#ffffff',
-    icons: PWA_ICONS,
+    icons: ADMIN_PWA_ICONS,
   };
 }

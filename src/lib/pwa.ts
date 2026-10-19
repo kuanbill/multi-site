@@ -1,10 +1,17 @@
 import type { MetadataRoute } from 'next';
 
-/** 後台與各站前台共用的 PWA 圖示，由 scripts/generate-icons.mjs 產出到 public/icons。 */
-export const PWA_ICONS: MetadataRoute.Manifest['icons'] = [
+/** 全域後台 PWA 圖示，由 scripts/generate-icons.mjs 以都更後台來源圖產出。 */
+export const ADMIN_PWA_ICONS: MetadataRoute.Manifest['icons'] = [
   { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
   { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
   { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+];
+
+/** 所有子網站前台 PWA 圖示，由 scripts/generate-icons.mjs 以都市更新來源圖產出。 */
+export const SITE_PWA_ICONS: MetadataRoute.Manifest['icons'] = [
+  { src: '/site-icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+  { src: '/site-icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+  { src: '/site-icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
 ];
 
 export type SiteManifestInput = {
@@ -32,6 +39,6 @@ export function buildSiteManifest(site: SiteManifestInput): MetadataRoute.Manife
     display: 'standalone',
     background_color: '#f9fafb',
     theme_color: site.primaryColor,
-    icons: PWA_ICONS,
+    icons: SITE_PWA_ICONS,
   };
 }

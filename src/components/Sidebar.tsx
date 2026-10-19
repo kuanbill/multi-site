@@ -207,7 +207,16 @@ export default function Sidebar({
       >
       <div className={`border-b border-gray-800 ${collapsed ? 'p-3' : 'p-4'}`}>
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between gap-2'}`}>
-          <h1 className={collapsed ? 'sr-only' : 'text-xl font-bold'}>多子站管理系統</h1>
+          <div className="flex min-w-0 items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icons/icon-512.png"
+              alt=""
+              aria-hidden="true"
+              className="h-10 w-10 rounded-lg bg-white object-contain"
+            />
+            <h1 className={collapsed ? 'sr-only' : 'text-xl font-bold'}>多子站管理系統</h1>
+          </div>
           {renderToggle()}
           {renderMobileClose()}
         </div>

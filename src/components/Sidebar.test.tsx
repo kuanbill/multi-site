@@ -22,6 +22,7 @@ describe('Sidebar', () => {
     expect(html).toContain('aria-label="收合側邊欄"');
     expect(html).toContain('w-64');
     expect(html).toContain('>儀表板</span>');
+    expect(html).toContain('src="/icons/icon-512.png"');
   });
 
   it('renders a mobile drawer with a closeable backdrop', () => {

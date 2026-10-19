@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSiteManifest, PWA_ICONS, siteShortName } from './pwa';
+import { ADMIN_PWA_ICONS, buildSiteManifest, SITE_PWA_ICONS, siteShortName } from './pwa';
 
 describe('buildSiteManifest', () => {
   it('scopes the app to the site with its own name and theme colour', () => {
@@ -18,7 +18,7 @@ describe('buildSiteManifest', () => {
       theme_color: '#0f766e',
       description: '中和都更案專屬網站',
     });
-    expect(manifest.icons).toBe(PWA_ICONS);
+    expect(manifest.icons).toBe(SITE_PWA_ICONS);
   });
 
   it('falls back to a generated description when the site has none', () => {
@@ -33,11 +33,20 @@ describe('buildSiteManifest', () => {
   });
 
   it('keeps install icons covering 192, 512 and maskable', () => {
-    expect(PWA_ICONS).toEqual([
+    expect(SITE_PWA_ICONS).toEqual([
+      { src: '/site-icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: '/site-icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { src: '/site-icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ]);
+  });
+
+  it('keeps admin and site install icons separate', () => {
+    expect(ADMIN_PWA_ICONS).toEqual([
       { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
       { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ]);
+    expect(ADMIN_PWA_ICONS).not.toBe(SITE_PWA_ICONS);
   });
 });
 
