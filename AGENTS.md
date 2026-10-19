@@ -27,3 +27,10 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - 部署後確認 `multi-site-app` 為 `running` 且健康狀態為 `healthy`、Prisma migrations 為最新，並以正式 HTTPS 網址檢查首頁回應。
 - 不得將密碼、SSH 金鑰、`.env.production` 內容或任何部署秘密寫入 `AGENTS.md`、程式碼或 Git。
+
+## 部署紀錄
+
+- 2026-10-19：`bd0b11d` 已推送並部署至正式環境。
+- 本次內容：全域使用者列表角色改為唯讀文字、移除子網站列表頁面數／文章數欄位、子網站列表「前台」按鈕改為新分頁開啟。
+- 部署前建立 `data/prod.db.pre-deploy-20261019-123527.bak`，SQLite `quick_check` 為 `ok`。
+- `prisma migrate deploy` 完成且無待執行 migration；`multi-site-app` 為 `healthy`；正式 HTTPS 首頁回應 `200`。
