@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Exhibition } from '@prisma/client';
+import { GoogleDriveLinksField } from '@/components/admin';
 
 type ExhibitionFormValues = {
   title: string;
@@ -15,11 +16,12 @@ type ExhibitionFormValues = {
   status: string;
   sortOrder: string;
   attachmentIds: string;
+  driveUrls: string[];
 };
 
 type Props = {
   siteSlug: string;
-  initial: Exhibition | null;
+  initial: (Exhibition & { driveUrls?: string[] }) | null;
   onSuccess?: () => void;
 };
 
@@ -43,6 +45,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
     status: initial?.status ?? 'draft',
     sortOrder: initial ? String(initial.sortOrder) : '0',
     attachmentIds: '',
+    driveUrls: initial?.driveUrls ?? [],
   }));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -73,6 +76,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
         feedbackSummary: values.feedbackSummary || null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
+        driveUrls: values.driveUrls,
       };
       if (values.attachmentIds.trim() !== '') {
         payload.attachmentIds = attachmentIds;
@@ -95,7 +99,7 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
       if (onSuccess) onSuccess();
       router.refresh();
       if (!initial) {
-        setValues((c) => ({ ...c, title: '', slug: '', attachmentIds: '' }));
+         setValues((c) => ({ ...c, title: '', slug: '', attachmentIds: '', driveUrls: [] }));
       }
     } catch {
       setMessage('無法連線至伺服器');
@@ -212,6 +216,12 @@ export default function ExhibitionForm({ siteSlug, initial, onSuccess }: Props) 
           <span className="text-xs text-gray-400">以 ContentAttachment 關聯，需同站點媒體</span>
         </label>
       </div>
+
+      <GoogleDriveLinksField
+        value={values.driveUrls}
+        onChange={(driveUrls) => setValues((current) => ({ ...current, driveUrls }))}
+        disabled={saving}
+      />
 
        <div className="flex flex-wrap items-center gap-3">
         <button

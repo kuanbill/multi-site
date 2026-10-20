@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateDateRange, validateRequiredText, validateSlug } from '@/lib/contentValidation';
+import { GOOGLE_DRIVE_LINK_ERROR, parseGoogleDriveUrls, syncContentExternalLinks } from '@/lib/contentExternalLinks';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
@@ -51,6 +52,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   let startDate: Date | null;
   let endDate: Date | null;
   let attachmentIds: number[] | undefined;
+  let driveUrls: string[] | undefined;
   try {
     title = validateRequiredText(record.title, 'title');
     slug = validateSlug(record.slug);
@@ -61,6 +63,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     startDate = range.startDate;
     endDate = range.endDate;
     attachmentIds = parseAttachmentIds(record.attachmentIds ?? record.attachments ?? record.mediaIds);
+    if (record.driveUrls !== undefined) driveUrls = parseGoogleDriveUrls(record.driveUrls);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
@@ -122,10 +125,21 @@ export async function POST(request: Request, { params }: RouteContext) {
           })),
         });
       }
+      if (driveUrls !== undefined) {
+        await syncContentExternalLinks(tx, {
+          siteId: context.site.id,
+          ownerType: 'exhibition',
+          ownerId: exhibition.id,
+          urls: driveUrls,
+        });
+      }
       return exhibition;
     });
     return NextResponse.json(created, { status: 201 });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === GOOGLE_DRIVE_LINK_ERROR) {
+      return NextResponse.json({ error: GOOGLE_DRIVE_LINK_ERROR }, { status: 400 });
+    }
     return NextResponse.json({ error: '建立失敗' }, { status: 500 });
   }
 }

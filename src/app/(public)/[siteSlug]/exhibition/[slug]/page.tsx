@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
+import { readContentExternalLinks } from '@/lib/contentExternalLinks';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,7 @@ export default async function PublicExhibitionDetailPage({
     include: { media: true },
     orderBy: { sortOrder: 'asc' },
   });
+  const links = await readContentExternalLinks(prisma, { siteId: site.id, ownerType: 'exhibition', ownerId: item.id });
 
   return (
     <div>
@@ -66,6 +68,20 @@ export default async function PublicExhibitionDetailPage({
               ))}
             </div>
           </div>
+        )}
+        {links.length > 0 && (
+          <section className="mt-6 border-t pt-6">
+            <h3 className="font-medium mb-3">相關 PDF</h3>
+            <ul className="space-y-2">
+              {links.map((link, index) => (
+                <li key={link.id}>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    PDF 檔案 {index + 1}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </article>
     </div>

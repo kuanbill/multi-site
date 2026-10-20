@@ -31,6 +31,18 @@ export default async function ExhibitionAdminPage({ params }: { params: Promise<
     where: { siteId: context.site.id },
     orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
   });
+  const externalLinks = items.length
+    ? await prisma.contentExternalLink.findMany({
+        where: { siteId: context.site.id, ownerType: 'exhibition', ownerId: { in: items.map((item) => item.id) } },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      })
+    : [];
+  const linksByItem = new Map<number, string[]>();
+  for (const link of externalLinks) {
+    const current = linksByItem.get(link.ownerId) ?? [];
+    current.push(link.url);
+    linksByItem.set(link.ownerId, current);
+  }
 
   const canWrite = canPerformContentAction(context.siteRole, 'write');
 
@@ -76,7 +88,7 @@ export default async function ExhibitionAdminPage({ params }: { params: Promise<
                     <details className="text-sm">
                       <summary className="text-blue-600 cursor-pointer hover:underline">編輯</summary>
                       <div className="mt-2">
-                        <ExhibitionForm siteSlug={siteSlug} initial={item} />
+                   <ExhibitionForm siteSlug={siteSlug} initial={{ ...item, driveUrls: linksByItem.get(item.id) ?? [] }} />
                       </div>
                     </details>
                     <DeleteExhibitionButton siteSlug={siteSlug} id={item.id} />
