@@ -32,6 +32,18 @@ export default async function VendorAdminPage({ params }: { params: Promise<{ si
     orderBy: [{ sortOrder: 'asc' }, { updatedAt: 'desc' }],
     include: { logoMedia: true },
   });
+  const externalLinks = items.length
+    ? await prisma.contentExternalLink.findMany({
+        where: { siteId: context.site.id, ownerType: 'vendor', ownerId: { in: items.map((item) => item.id) } },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      })
+    : [];
+  const linksByItem = new Map<number, string[]>();
+  for (const link of externalLinks) {
+    const current = linksByItem.get(link.ownerId) ?? [];
+    current.push(link.url);
+    linksByItem.set(link.ownerId, current);
+  }
 
   const canWrite = canPerformContentAction(context.siteRole, 'write');
 
@@ -85,7 +97,7 @@ export default async function VendorAdminPage({ params }: { params: Promise<{ si
                     <details className="text-sm">
                       <summary className="text-blue-600 cursor-pointer hover:underline">編輯</summary>
                       <div className="mt-2">
-                        <VendorForm siteSlug={siteSlug} initial={item} />
+                         <VendorForm siteSlug={siteSlug} initial={{ ...item, driveUrls: linksByItem.get(item.id) ?? [] }} />
                       </div>
                     </details>
                     <DeleteVendorButton siteSlug={siteSlug} id={item.id} />

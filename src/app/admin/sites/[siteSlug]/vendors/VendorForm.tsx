@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Vendor } from '@prisma/client';
+import { GoogleDriveLinksField } from '@/components/admin';
 
 type VendorFormValues = {
   name: string;
@@ -17,11 +18,12 @@ type VendorFormValues = {
   status: string;
   sortOrder: string;
   attachmentIds: string;
+  driveUrls: string[];
 };
 
 type Props = {
   siteSlug: string;
-  initial: Vendor | null;
+  initial: (Vendor & { driveUrls?: string[] }) | null;
   onSuccess?: () => void;
 };
 
@@ -40,6 +42,7 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
     status: initial?.status ?? 'draft',
     sortOrder: initial ? String(initial.sortOrder) : '0',
     attachmentIds: '',
+    driveUrls: initial?.driveUrls ?? [],
   }));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -72,6 +75,7 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
         logoMediaId: values.logoMediaId ? Number(values.logoMediaId) : null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
+        driveUrls: values.driveUrls,
       };
       if (values.attachmentIds.trim() !== '') {
         payload.attachmentIds = attachmentIds;
@@ -94,7 +98,7 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
       if (onSuccess) onSuccess();
       router.refresh();
       if (!initial) {
-        setValues((c) => ({ ...c, name: '', category: '', attachmentIds: '' }));
+         setValues((c) => ({ ...c, name: '', category: '', attachmentIds: '', driveUrls: [] }));
       }
     } catch {
       setMessage('無法連線至伺服器');
@@ -135,6 +139,12 @@ export default function VendorForm({ siteSlug, initial, onSuccess }: Props) {
            className="mt-1 min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         />
       </label>
+
+      <GoogleDriveLinksField
+        value={values.driveUrls}
+        onChange={(driveUrls) => setValues((current) => ({ ...current, driveUrls }))}
+        disabled={saving}
+      />
 
       <label className="block text-sm font-medium">
         介紹
