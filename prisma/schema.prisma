@@ -47,6 +47,7 @@ model Site {
   selection    SelectionInfo[]
   maps         MapAsset[]
   attachments  ContentAttachment[]
+  externalLinks ContentExternalLink[]
   homeSections SiteHomeSection[]
   featureViews FeatureView[]
   loginRecords LoginRecord[]
@@ -346,6 +347,19 @@ model ContentAttachment {
 
   @@index([siteId])
   @@index([ownerType, ownerId])
+}
+
+model ContentExternalLink {
+  id        Int      @id @default(autoincrement())
+  siteId    Int
+  ownerType String
+  ownerId   Int
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, ownerType, ownerId, sortOrder])
 }
 
 // 前台功能頁瀏覽記錄：feature 存 FeatureDefinition.key（冗餘），userId 為 null 代表未登入訪客
