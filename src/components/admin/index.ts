@@ -8,3 +8,4 @@ export { StatusBadge, ProgressStatusBadge } from './StatusBadge';
 export { default as MediaPicker } from './MediaPicker';
 export { default as HomeSectionForm, type FeatureOption, type HomeSectionFormValue } from './HomeSectionForm';
 export { default as HomeSectionsManager, type HomeSectionRow } from './HomeSectionsManager';
+export { default as GoogleDriveLinksField, type GoogleDriveLinksFieldProps } from './GoogleDriveLinksField';
