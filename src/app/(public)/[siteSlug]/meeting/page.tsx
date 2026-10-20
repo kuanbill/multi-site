@@ -29,6 +29,18 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
     include: { media: true },
     orderBy: { sortOrder: 'asc' },
   });
+  const externalLinks = items.length
+    ? await prisma.contentExternalLink.findMany({
+        where: { siteId: site.id, ownerType: 'meeting', ownerId: { in: items.map((item) => item.id) } },
+        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      })
+    : [];
+  const externalLinkMap = new Map<number, typeof externalLinks>();
+  for (const link of externalLinks) {
+    const list = externalLinkMap.get(link.ownerId) ?? [];
+    list.push(link);
+    externalLinkMap.set(link.ownerId, list);
+  }
 
   const attachmentMap = new Map<number, typeof attachments>();
   for (const att of attachments) {
@@ -71,6 +83,7 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
                 <div className={getFeatureEntryLayoutClass(displayMode)}>
                   {group.map((item) => {
                     const atts = attachmentMap.get(item.id) ?? [];
+                    const driveLinks = externalLinkMap.get(item.id) ?? [];
                     return (
                       <div key={item.id} className={`${displayMode === 'list' ? 'py-4 border-b last:border-0' : 'rounded-lg border p-4'} flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4`}>
                         <div className="sm:flex-1 min-w-0">
@@ -79,22 +92,24 @@ export default async function PublicMeetingPage({ params }: { params: Promise<{ 
                           {item.meetingNo && <p className="text-xs text-gray-500 break-words">編號：{item.meetingNo}</p>}
                           {item.summary && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap break-words">{item.summary}</p>}
                         </div>
-                        <div className="shrink-0 flex flex-col gap-1 text-sm min-w-0 break-all">
-                          {atts.length === 0 ? (
-                            <span className="text-gray-400">無附件</span>
-                          ) : (
-                            atts.map((att) => (
-                              <a
-                                key={att.id}
-                                href={att.media.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                              >
-                                {att.label === 'image' ? '圖片' : 'PDF'}：{att.media.filename}
-                              </a>
-                            ))
-                          )}
+                          <div className="shrink-0 flex flex-col gap-1 text-sm min-w-0 break-all">
+                           {atts.length === 0 && driveLinks.length === 0 ? (
+                             <span className="text-gray-400">無附件</span>
+                           ) : (
+                             <>
+                               {atts.map((att) => (
+                                 <a key={att.id} href={att.media.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                   {att.label === 'image' ? '圖片' : 'PDF'}：{att.media.filename}
+                                 </a>
+                               ))}
+                               {driveLinks.length > 0 && <span className="mt-2 font-medium text-gray-700">相關 PDF</span>}
+                               {driveLinks.map((link, index) => (
+                                 <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                   PDF 檔案 {index + 1}
+                                 </a>
+                               ))}
+                             </>
+                           )}
                         </div>
                       </div>
                     );

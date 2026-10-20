@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MeetingRecord } from '@prisma/client';
+import { GoogleDriveLinksField } from '@/components/admin';
 
 type MeetingFormValues = {
   meetingType: string;
@@ -14,11 +15,12 @@ type MeetingFormValues = {
   sortOrder: string;
   attachmentIds: string;
   imageAttachmentIds: string;
+  driveUrls: string[];
 };
 
 type Props = {
   siteSlug: string;
-  initial: MeetingRecord | null;
+  initial: (MeetingRecord & { driveUrls?: string[] }) | null;
   onSuccess?: () => void;
 };
 
@@ -41,6 +43,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
     sortOrder: initial ? String(initial.sortOrder) : '0',
     attachmentIds: '',
     imageAttachmentIds: '',
+    driveUrls: initial?.driveUrls ?? [],
   }));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -75,6 +78,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
         summary: values.summary || null,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
+        driveUrls: values.driveUrls,
       };
       if (values.attachmentIds.trim() !== '') {
         payload.attachmentIds = attachmentIds;
@@ -100,7 +104,7 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
       if (onSuccess) onSuccess();
       router.refresh();
       if (!initial) {
-        setValues((c) => ({ ...c, title: '', meetingNo: '', summary: '', attachmentIds: '', imageAttachmentIds: '' }));
+         setValues((c) => ({ ...c, title: '', meetingNo: '', summary: '', attachmentIds: '', imageAttachmentIds: '', driveUrls: [] }));
       }
     } catch {
       setMessage('無法連線至伺服器');
@@ -211,6 +215,12 @@ export default function MeetingForm({ siteSlug, initial, onSuccess }: Props) {
           <span className="text-xs text-gray-400">標記為額外圖片才允許圖片類型</span>
         </label>
       </div>
+
+      <GoogleDriveLinksField
+        value={values.driveUrls}
+        onChange={(driveUrls) => setValues((current) => ({ ...current, driveUrls }))}
+        disabled={saving}
+      />
 
        <div className="flex flex-wrap items-center gap-3">
         <button
