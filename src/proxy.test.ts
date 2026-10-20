@@ -5,6 +5,10 @@ const adminToken: ProxyToken = { authType: 'admin', role: 'admin' };
 const siteToken: ProxyToken = { authType: 'site', role: 'editor' };
 
 describe('authentication boundary proxy decisions', () => {
+  it('leaves the independent charge tool subpath to its own login', () => {
+    expect(decideProxyRoute('/common_charge_tool', null, null)).toEqual({ action: 'allow' });
+    expect(decideProxyRoute('/common_charge_tool/admin/users', null, null)).toEqual({ action: 'allow' });
+  });
   it('allows only the admin session into admin routes', () => {
     expect(decideProxyRoute('/admin', adminToken, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/admin', siteToken, null)).toEqual({ action: 'redirect', location: '/admin/login' });
