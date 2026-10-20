@@ -34,3 +34,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 本次內容：全域使用者列表角色改為唯讀文字、移除子網站列表頁面數／文章數欄位、子網站列表「前台」按鈕改為新分頁開啟。
 - 部署前建立 `data/prod.db.pre-deploy-20261019-123527.bak`，SQLite `quick_check` 為 `ok`。
 - `prisma migrate deploy` 完成且無待執行 migration；`multi-site-app` 為 `healthy`；正式 HTTPS 首頁回應 `200`。
+- 2026-10-20：`2ada51a` 已推送並部署至正式環境。
+- 本次內容：公告、公開展覽、會議記錄、協力廠商與選配作業新增多筆 Google Drive PDF 連結管理及前台檢視入口。
+- 部署前建立 `data/prod.db.pre-deploy-20261020-101900.bak`，SQLite `quick_check` 為 `ok`。
+- `prisma migrate deploy` 套用 `20261020020000_add_content_external_links`；`multi-site-app` 為 `healthy`；正式 HTTPS 首頁跟隨登入導向後回應 `200`。
