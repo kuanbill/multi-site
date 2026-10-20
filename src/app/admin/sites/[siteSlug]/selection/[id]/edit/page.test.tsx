@@ -42,5 +42,10 @@ describe('edit selection page', () => {
     const html = renderToStaticMarkup(page);
 
     expect(html).toContain('https://drive.google.com/file/d/existing/view');
+    expect(findManyExternalLinks).toHaveBeenCalledWith({
+      where: { siteId: 7, ownerType: 'selection', ownerId: 12 },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      select: { id: true, url: true, sortOrder: true },
+    });
   });
 });

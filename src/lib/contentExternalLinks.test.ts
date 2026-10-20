@@ -9,6 +9,11 @@ const firstUrl = 'https://drive.google.com/file/d/abc/view?usp=sharing';
 const secondUrl = 'https://www.drive.google.com/open?id=xyz';
 
 describe('parseGoogleDriveUrls', () => {
+  it('returns an empty list for an omitted value or empty array', () => {
+    expect(parseGoogleDriveUrls(undefined)).toEqual([]);
+    expect(parseGoogleDriveUrls([])).toEqual([]);
+  });
+
   it('accepts Google Drive URLs and preserves their query strings', () => {
     expect(parseGoogleDriveUrls([`  ${firstUrl}  `, secondUrl])).toEqual([firstUrl, secondUrl]);
   });
