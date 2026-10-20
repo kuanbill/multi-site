@@ -28,11 +28,21 @@ export default async function PublicSelectionPage({ params }: { params: Promise<
     include: { media: true },
     orderBy: { sortOrder: 'asc' },
   });
+  const externalLinks = await prisma.contentExternalLink.findMany({
+    where: { siteId: site.id, ownerType: 'selection', ownerId: { in: items.map((item) => item.id) } },
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+  });
   const attachmentsByItem = new Map<number, typeof attachments>();
   for (const attachment of attachments) {
     const current = attachmentsByItem.get(attachment.ownerId) ?? [];
     current.push(attachment);
     attachmentsByItem.set(attachment.ownerId, current);
+  }
+  const externalLinksByItem = new Map<number, typeof externalLinks>();
+  for (const link of externalLinks) {
+    const current = externalLinksByItem.get(link.ownerId) ?? [];
+    current.push(link);
+    externalLinksByItem.set(link.ownerId, current);
   }
 
   return (
@@ -65,6 +75,18 @@ export default async function PublicSelectionPage({ params }: { params: Promise<
                     ) : (
                       <a href={media.url} download className="text-blue-700 underline">下載：{label || media.filename}</a>
                     )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {(externalLinksByItem.get(item.id)?.length ?? 0) > 0 && (
+            <section className="space-y-3 border-t pt-4">
+              <h3 className="font-semibold">相關 PDF</h3>
+              <ul className="space-y-2">
+                {externalLinksByItem.get(item.id)!.map((link, index) => (
+                  <li key={link.id}>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">PDF 檔案 {index + 1}</a>
                   </li>
                 ))}
               </ul>

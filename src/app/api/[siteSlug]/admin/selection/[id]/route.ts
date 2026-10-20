@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateExternalUrl, validateRequiredText } from '@/lib/contentValidation';
 import { prisma } from '@/lib/prisma';
+import { GOOGLE_DRIVE_LINK_ERROR, parseGoogleDriveUrls, readContentExternalLinks, syncContentExternalLinks } from '@/lib/contentExternalLinks';
 
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
 type AttachmentInput = { mediaId: number; label: string | null };
@@ -51,7 +52,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
     include: { media: true },
     orderBy: { sortOrder: 'asc' },
   });
-  return NextResponse.json({ ...selection, attachments });
+  const links = await readContentExternalLinks(prisma, { siteId: context.site.id, ownerType: 'selection', ownerId: id });
+  return NextResponse.json({ ...selection, attachments, driveUrls: links.map((link) => link.url) });
 }
 
 export async function PATCH(request: Request, { params }: RouteContext) {
@@ -72,6 +74,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   const data: Record<string, unknown> = {};
   let attachments: AttachmentInput[] | undefined;
+  let driveUrls: string[] | undefined;
   try {
     if (body.title !== undefined) data.title = validateRequiredText(body.title, 'title');
     for (const key of ['description', 'applicableStage', 'rules', 'notice'] as const) {
@@ -85,7 +88,11 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       data.publishedAt = status === 'published' ? existing.publishedAt ?? new Date() : null;
     }
     if (body.attachments !== undefined) attachments = parseAttachments(body.attachments);
+    if (body.driveUrls !== undefined) driveUrls = parseGoogleDriveUrls(body.driveUrls);
   } catch (error) {
+    if (error instanceof Error && error.message === GOOGLE_DRIVE_LINK_ERROR) {
+      return NextResponse.json({ error: GOOGLE_DRIVE_LINK_ERROR }, { status: 400 });
+    }
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
 
@@ -117,6 +124,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
           });
         }
       }
+      if (driveUrls !== undefined) {
+        await syncContentExternalLinks(tx, { siteId: context.site.id, ownerType: 'selection', ownerId: id, urls: driveUrls });
+      }
       return selection;
     });
     return NextResponse.json(updated);
@@ -137,6 +147,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
     await prisma.$transaction(async (tx) => {
       await tx.contentAttachment.deleteMany({ where: { siteId: context.site.id, ownerType: 'selection', ownerId: id } });
+      await tx.contentExternalLink.deleteMany({ where: { siteId: context.site.id, ownerType: 'selection', ownerId: id } });
       await tx.selectionInfo.delete({ where: { id } });
     });
     return NextResponse.json({ message: '已刪除' });

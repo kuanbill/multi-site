@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { parseContentStatus, validateExternalUrl, validateRequiredText } from '@/lib/contentValidation';
 import { prisma } from '@/lib/prisma';
+import { GOOGLE_DRIVE_LINK_ERROR, parseGoogleDriveUrls, syncContentExternalLinks } from '@/lib/contentExternalLinks';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 type AttachmentInput = { mediaId: number; label: string | null };
@@ -45,13 +46,19 @@ export async function GET(_request: Request, { params }: RouteContext) {
     include: { media: true },
     orderBy: { sortOrder: 'asc' },
   });
+  const externalLinks = await prisma.contentExternalLink.findMany({
+    where: { siteId: context.site.id, ownerType: 'selection', ownerId: { in: items.map((item) => item.id) } },
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+  });
   const byOwner = new Map<number, typeof attachments>();
   for (const attachment of attachments) {
     const ownerAttachments = byOwner.get(attachment.ownerId) ?? [];
     ownerAttachments.push(attachment);
     byOwner.set(attachment.ownerId, ownerAttachments);
   }
-  return NextResponse.json(items.map((item) => ({ ...item, attachments: byOwner.get(item.id) ?? [] })));
+  const linksByOwner = new Map<number, string[]>();
+  for (const link of externalLinks) linksByOwner.set(link.ownerId, [...(linksByOwner.get(link.ownerId) ?? []), link.url]);
+  return NextResponse.json(items.map((item) => ({ ...item, attachments: byOwner.get(item.id) ?? [], driveUrls: linksByOwner.get(item.id) ?? [] })));
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
@@ -69,13 +76,18 @@ export async function POST(request: Request, { params }: RouteContext) {
   let externalUrl: string | null;
   let deadline: Date | null;
   let attachments: AttachmentInput[];
+  let driveUrls: string[] | undefined;
   try {
     title = validateRequiredText(body.title, 'title');
     status = body.status === undefined || body.status === '' ? 'draft' : parseContentStatus(body.status);
     externalUrl = validateExternalUrl(body.externalUrl);
     deadline = parseDeadline(body.deadline);
     attachments = parseAttachments(body.attachments);
+    if (body.driveUrls !== undefined) driveUrls = parseGoogleDriveUrls(body.driveUrls);
   } catch (error) {
+    if (error instanceof Error && error.message === GOOGLE_DRIVE_LINK_ERROR) {
+      return NextResponse.json({ error: GOOGLE_DRIVE_LINK_ERROR }, { status: 400 });
+    }
     return NextResponse.json({ error: error instanceof Error ? error.message : '參數錯誤' }, { status: 400 });
   }
 
@@ -117,6 +129,9 @@ export async function POST(request: Request, { params }: RouteContext) {
             sortOrder,
           })),
         });
+      }
+      if (driveUrls !== undefined) {
+        await syncContentExternalLinks(tx, { siteId: context.site.id, ownerType: 'selection', ownerId: selection.id, urls: driveUrls });
       }
       return selection;
     });

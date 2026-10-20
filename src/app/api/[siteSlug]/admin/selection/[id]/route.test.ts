@@ -6,6 +6,7 @@ const deleteSelection = vi.hoisted(() => vi.fn());
 const attachmentDeleteMany = vi.hoisted(() => vi.fn());
 const mediaFindMany = vi.hoisted(() => vi.fn());
 const attachmentCreateMany = vi.hoisted(() => vi.fn());
+const externalDeleteMany = vi.hoisted(() => vi.fn());
 const transaction = vi.hoisted(() => vi.fn());
 const requireContentPermission = vi.hoisted(() => vi.fn());
 
@@ -13,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     selectionInfo: { findFirst, update, delete: deleteSelection },
     contentAttachment: { findMany: vi.fn() },
+    contentExternalLink: { findMany: vi.fn() },
     media: { findMany: mediaFindMany },
     $transaction: transaction,
   },
@@ -46,6 +48,7 @@ describe('selection item API', () => {
     attachmentDeleteMany.mockReset();
     mediaFindMany.mockReset();
     attachmentCreateMany.mockReset();
+    externalDeleteMany.mockReset().mockResolvedValue({ count: 1 });
     transaction.mockReset();
     requireContentPermission.mockReset();
     requireContentPermission.mockResolvedValue({ site: { id: 8 } });
@@ -55,6 +58,7 @@ describe('selection item API', () => {
     transaction.mockImplementation((callback: (tx: unknown) => unknown) => callback({
       selectionInfo: { update, delete: deleteSelection },
       contentAttachment: { deleteMany: attachmentDeleteMany, createMany: attachmentCreateMany },
+      contentExternalLink: { deleteMany: externalDeleteMany, createMany: vi.fn() },
     }));
   });
 
@@ -129,5 +133,21 @@ describe('selection item API', () => {
 
     expect(response.status).toBe(404);
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('clears Google Drive links when an empty list is submitted', async () => {
+    const response = await PATCH(new Request('http://localhost/api/site/admin/selection/20', {
+      method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ driveUrls: [] }),
+    }), params);
+
+    expect(response.status).toBe(200);
+    expect(externalDeleteMany).toHaveBeenCalledWith({ where: { siteId: 8, ownerType: 'selection', ownerId: 20 } });
+  });
+
+  it('cleans Google Drive links when deleting the selection item', async () => {
+    const response = await DELETE(new Request('http://localhost/api/site/admin/selection/20', { method: 'DELETE' }), params);
+
+    expect(response.status).toBe(200);
+    expect(externalDeleteMany).toHaveBeenCalledWith({ where: { siteId: 8, ownerType: 'selection', ownerId: 20 } });
   });
 });

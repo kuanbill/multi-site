@@ -5,6 +5,8 @@ const create = vi.hoisted(() => vi.fn());
 const mediaFindMany = vi.hoisted(() => vi.fn());
 const attachmentFindMany = vi.hoisted(() => vi.fn());
 const attachmentCreateMany = vi.hoisted(() => vi.fn());
+const externalCreateMany = vi.hoisted(() => vi.fn());
+const externalFindMany = vi.hoisted(() => vi.fn());
 const transaction = vi.hoisted(() => vi.fn());
 const requireContentPermission = vi.hoisted(() => vi.fn());
 
@@ -12,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
   prisma: {
     selectionInfo: { findMany, create },
     contentAttachment: { findMany: attachmentFindMany },
+    contentExternalLink: { findMany: externalFindMany },
     media: { findMany: mediaFindMany },
     $transaction: transaction,
   },
@@ -28,7 +31,9 @@ describe('selection collection API', () => {
     create.mockReset();
     mediaFindMany.mockReset();
     attachmentFindMany.mockReset();
+    externalFindMany.mockReset().mockResolvedValue([]);
     attachmentCreateMany.mockReset();
+    externalCreateMany.mockReset().mockResolvedValue({ count: 2 });
     transaction.mockReset();
     requireContentPermission.mockReset();
     requireContentPermission.mockResolvedValue({ site: { id: 8 } });
@@ -39,6 +44,7 @@ describe('selection collection API', () => {
     transaction.mockImplementation((callback: (tx: unknown) => unknown) => callback({
       selectionInfo: { create },
       contentAttachment: { createMany: attachmentCreateMany },
+      contentExternalLink: { deleteMany: vi.fn(), createMany: externalCreateMany },
     }));
   });
 
@@ -104,6 +110,27 @@ describe('selection collection API', () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({ error: '附件不存在或不屬於此站點' });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('persists multiple Google Drive links with existing media attachments', async () => {
+    const urls = ['https://drive.google.com/file/d/one/view', 'https://drive.google.com/file/d/two/view'];
+    const response = await POST(new Request('http://localhost/api/site/admin/selection', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '選配說明', driveUrls: urls }),
+    }), params);
+
+    expect(response.status).toBe(201);
+    expect(externalCreateMany).toHaveBeenCalledWith({ data: urls.map((url, sortOrder) => ({ siteId: 8, ownerType: 'selection', ownerId: 20, url, sortOrder })) });
+  });
+
+  it('rejects invalid Google Drive links', async () => {
+    const response = await POST(new Request('http://localhost/api/site/admin/selection', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '選配說明', driveUrls: ['http://drive.google.com/file'] }),
+    }), params);
+
+    expect(response.status).toBe(400);
     expect(transaction).not.toHaveBeenCalled();
   });
 });

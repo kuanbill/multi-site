@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Media, SelectionInfo } from '@prisma/client';
 import { moveSelectionAttachment } from '@/lib/selectionFormState';
+import { GoogleDriveLinksField } from '@/components/admin';
 
 type MediaItem = Pick<Media, 'id' | 'filename' | 'url' | 'type' | 'mimeType' | 'sizeBytes' | 'altText'>;
 type SelectionAttachment = {
@@ -12,7 +13,7 @@ type SelectionAttachment = {
   label: string | null;
   media: MediaItem;
 };
-type SelectionWithAttachments = SelectionInfo & { attachments: SelectionAttachment[] };
+type SelectionWithAttachments = SelectionInfo & { attachments: SelectionAttachment[]; driveUrls?: string[] };
 
 export default function SelectionForm({
   siteSlug,
@@ -31,6 +32,7 @@ export default function SelectionForm({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [driveUrls, setDriveUrls] = useState<string[]>(initial?.driveUrls ?? []);
 
   function addMedia(item: MediaItem) {
     setAttachments((current) => current.some((attachment) => attachment.mediaId === item.id)
@@ -105,7 +107,7 @@ export default function SelectionForm({
         : `/api/${siteSlug}/admin/selection`, {
         method: initial ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, attachments: attachments.map(({ mediaId, label }) => ({ mediaId, label })) }),
+         body: JSON.stringify({ ...payload, driveUrls, attachments: attachments.map(({ mediaId, label }) => ({ mediaId, label })) }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -133,6 +135,8 @@ export default function SelectionForm({
       <label className="block">截止日期<input name="deadline" type="datetime-local" defaultValue={initial?.deadline ? new Date(initial.deadline.getTime() - initial.deadline.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''} className={input} /></label>
       <label className="block">外部連結<input name="externalUrl" type="url" defaultValue={initial?.externalUrl ?? ''} className={input} /></label>
       <label className="block">狀態<select name="status" defaultValue={initial?.status ?? 'draft'} className={input}><option value="draft">草稿</option><option value="published">已發布</option><option value="archived">已封存</option></select></label>
+
+      <GoogleDriveLinksField value={driveUrls} onChange={setDriveUrls} disabled={saving || uploading} />
 
       <fieldset className="space-y-3 border-t pt-4">
         <legend className="font-semibold">檔案與圖片</legend>
