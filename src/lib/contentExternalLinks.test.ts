@@ -29,6 +29,10 @@ describe('parseGoogleDriveUrls', () => {
   ])('rejects invalid value %j', (value) => {
     expect(() => parseGoogleDriveUrls(value)).toThrow('Google Drive 連結格式無效');
   });
+
+  it('rejects null instead of treating it as a request to clear links', () => {
+    expect(() => parseGoogleDriveUrls(null)).toThrow('Google Drive 連結格式無效');
+  });
 });
 
 describe('content external link persistence helpers', () => {

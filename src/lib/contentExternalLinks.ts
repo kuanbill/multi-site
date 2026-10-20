@@ -43,7 +43,8 @@ function isGoogleDriveUrl(value: string): boolean {
 }
 
 export function parseGoogleDriveUrls(value: unknown): string[] {
-  if (value === undefined || value === null) return [];
+  if (value === undefined) return [];
+  if (value === null) throw new Error(GOOGLE_DRIVE_LINK_ERROR);
   if (!Array.isArray(value)) throw new Error(GOOGLE_DRIVE_LINK_ERROR);
 
   const seen = new Set<string>();
