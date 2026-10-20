@@ -8,12 +8,17 @@ type ContentExternalLinkWhere = {
   ownerId: number;
 };
 
-type ContentExternalLinkClient = {
+type ContentExternalLinkWriteClient = {
   contentExternalLink: {
     deleteMany(args: { where: ContentExternalLinkWhere }): Promise<unknown>;
     createMany(args: {
       data: Array<ContentExternalLinkWhere & { url: string; sortOrder: number }>;
     }): Promise<unknown>;
+  };
+};
+
+type ContentExternalLinkReadClient = {
+  contentExternalLink: {
     findMany(args: {
       where: ContentExternalLinkWhere;
       orderBy: Array<{ sortOrder: 'asc' | 'desc' } | { id: 'asc' | 'desc' }>;
@@ -58,7 +63,7 @@ export function parseGoogleDriveUrls(value: unknown): string[] {
 }
 
 export async function syncContentExternalLinks(
-  tx: ContentExternalLinkClient,
+  tx: ContentExternalLinkWriteClient,
   input: ContentExternalLinkWhere & { urls: string[] },
 ): Promise<void> {
   const { urls, ...where } = input;
@@ -71,7 +76,7 @@ export async function syncContentExternalLinks(
 }
 
 export function readContentExternalLinks(
-  client: ContentExternalLinkClient,
+  client: ContentExternalLinkReadClient,
   where: ContentExternalLinkWhere,
 ): Promise<ContentExternalLinkRecord[]> {
   return client.contentExternalLink.findMany({
