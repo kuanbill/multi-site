@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Announcement } from '@prisma/client';
-import { Input, Select, Checkbox, TextArea } from '@/components/admin';
+import { Input, Select, Checkbox, TextArea, GoogleDriveLinksField } from '@/components/admin';
 
 type AnnouncementFormValues = {
   title: string;
@@ -13,11 +13,12 @@ type AnnouncementFormValues = {
   pinned: boolean;
   status: 'draft' | 'published' | 'archived';
   sortOrder: number;
+  driveUrls: string[];
 };
 
 type Props = {
   siteSlug: string;
-  initial: Announcement | null;
+  initial: (Announcement & { driveUrls?: string[] }) | null;
   onSuccess?: () => void;
 };
 
@@ -37,11 +38,12 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
     pinned: initial?.pinned ?? false,
     status: (initial?.status as AnnouncementFormValues['status']) ?? 'draft',
     sortOrder: initial ? Number(initial.sortOrder) : 0,
+    driveUrls: initial?.driveUrls ?? [],
   }));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  function update(field: keyof AnnouncementFormValues, value: string | number | boolean) {
+  function update(field: keyof AnnouncementFormValues, value: string | number | boolean | string[]) {
     setValues((current) => ({ ...current, [field]: value }));
   }
 
@@ -58,6 +60,7 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
         pinned: values.pinned,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
+        driveUrls: values.driveUrls,
       };
       const url = initial
         ? `/api/${siteSlug}/admin/announcement/${initial.id}`
@@ -84,7 +87,8 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
           category: '',
           pinned: false,
           status: 'draft',
-          sortOrder: 0,
+           sortOrder: 0,
+           driveUrls: [],
         });
       }
     } catch {
@@ -156,6 +160,12 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
           options={STATUS_OPTIONS}
         />
       </div>
+
+      <GoogleDriveLinksField
+        value={values.driveUrls}
+        onChange={(driveUrls) => update('driveUrls', driveUrls)}
+        disabled={saving}
+      />
 
       {message && (
         <p className="text-sm">

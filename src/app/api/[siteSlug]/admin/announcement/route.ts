@@ -4,6 +4,7 @@ import { requireContentPermission } from '@/lib/contentAccess';
 import { readJsonBody, readSortOrder, readContentStatus } from '@/lib/adminValidation';
 import { validateRequiredText } from '@/lib/contentValidation';
 import { generateRandomSlug } from '@/lib/slug';
+import { GOOGLE_DRIVE_LINK_ERROR, parseGoogleDriveUrls, syncContentExternalLinks } from '@/lib/contentExternalLinks';
 
 type RouteContext = { params: Promise<{ siteSlug: string }> };
 
@@ -45,6 +46,15 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: '排序參數錯誤' }, { status: 400 });
   }
 
+  let driveUrls: string[] | undefined;
+  if (record.driveUrls !== undefined) {
+    try {
+      driveUrls = parseGoogleDriveUrls(record.driveUrls);
+    } catch {
+      return NextResponse.json({ error: GOOGLE_DRIVE_LINK_ERROR }, { status: 400 });
+    }
+  }
+
   let slug = '';
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const candidate = generateRandomSlug();
@@ -62,21 +72,32 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const publishedAt = status === 'published' ? new Date() : null;
 
+  const data = {
+    siteId: context.site.id,
+    title,
+    slug,
+    summary,
+    content,
+    category,
+    pinned,
+    status,
+    sortOrder,
+    publishedAt,
+  };
+
   try {
-    const created = await prisma.announcement.create({
-      data: {
-        siteId: context.site.id,
-        title,
-        slug,
-        summary,
-        content,
-        category,
-        pinned,
-        status,
-        sortOrder,
-        publishedAt,
-      },
-    });
+    const created = driveUrls === undefined
+      ? await prisma.announcement.create({ data })
+      : await prisma.$transaction(async (tx) => {
+          const item = await tx.announcement.create({ data });
+          await syncContentExternalLinks(tx, {
+            siteId: context.site.id,
+            ownerType: 'announcement',
+            ownerId: item.id,
+            urls: driveUrls,
+          });
+          return item;
+        });
     return NextResponse.json(created, { status: 201 });
   } catch {
     return NextResponse.json({ error: '建立失敗' }, { status: 500 });

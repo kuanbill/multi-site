@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireContentPermission, findFirst, update } = vi.hoisted(() => ({
+const { requireContentPermission, findFirst, update, transaction, externalDeleteMany, externalCreateMany } = vi.hoisted(() => ({
   requireContentPermission: vi.fn(),
   findFirst: vi.fn(),
   update: vi.fn(),
+  transaction: vi.fn(),
+  externalDeleteMany: vi.fn(),
+  externalCreateMany: vi.fn(),
 }));
 
 vi.mock('@/lib/contentAccess', () => ({ requireContentPermission }));
-vi.mock('@/lib/prisma', () => ({ prisma: { announcement: { findFirst, update } } }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: { announcement: { findFirst, update }, $transaction: transaction },
+}));
 
 import { PATCH } from './route';
 
@@ -39,6 +44,12 @@ describe('announcement item API', () => {
     requireContentPermission.mockReset().mockResolvedValue({ site: { id: 7 }, siteRole: 'editor' });
     findFirst.mockReset().mockResolvedValue(existing);
     update.mockReset().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ ...existing, ...data }));
+    transaction.mockReset().mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
+      announcement: { update },
+      contentExternalLink: { deleteMany: externalDeleteMany, createMany: externalCreateMany },
+    }));
+    externalDeleteMany.mockReset().mockResolvedValue({ count: 1 });
+    externalCreateMany.mockReset().mockResolvedValue({ count: 2 });
   });
 
   it('keeps the original slug even when the client sends one', async () => {
@@ -60,5 +71,24 @@ describe('announcement item API', () => {
     expect(response.status).toBe(404);
     expect(findFirst).toHaveBeenCalledWith({ where: { id: 12, siteId: 7 } });
     expect(update).not.toHaveBeenCalled();
+  });
+
+  it('clears existing Google Drive links when updated with an empty list', async () => {
+    const response = await patch({ driveUrls: [] });
+
+    expect(response.status).toBe(200);
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(externalDeleteMany).toHaveBeenCalledWith({
+      where: { siteId: 7, ownerType: 'announcement', ownerId: 12 },
+    });
+    expect(externalCreateMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid Google Drive link without updating the announcement', async () => {
+    const response = await patch({ driveUrls: ['http://drive.google.com/file/d/one/view'] });
+
+    expect(response.status).toBe(400);
+    expect(update).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
   });
 });

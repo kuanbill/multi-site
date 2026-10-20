@@ -1,14 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireContentPermission, findUnique, findMany, create } = vi.hoisted(() => ({
+const { requireContentPermission, findUnique, findMany, create, transaction, externalCreateMany } = vi.hoisted(() => ({
   requireContentPermission: vi.fn(),
   findUnique: vi.fn(),
   findMany: vi.fn(),
   create: vi.fn(),
+  transaction: vi.fn(),
+  externalCreateMany: vi.fn(),
 }));
 
 vi.mock('@/lib/contentAccess', () => ({ requireContentPermission }));
-vi.mock('@/lib/prisma', () => ({ prisma: { announcement: { findUnique, findMany, create } } }));
+vi.mock('@/lib/prisma', () => ({
+  prisma: { announcement: { findUnique, findMany, create }, $transaction: transaction },
+}));
 
 import { GET, POST } from './route';
 
@@ -28,6 +32,11 @@ describe('announcement collection API', () => {
     findMany.mockReset().mockResolvedValue([]);
     findUnique.mockReset().mockResolvedValue(null);
     create.mockReset().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: 1, ...data }));
+    transaction.mockReset().mockImplementation(async (callback: (tx: unknown) => unknown) => callback({
+      announcement: { create },
+      contentExternalLink: { deleteMany: vi.fn(), createMany: externalCreateMany },
+    }));
+    externalCreateMany.mockReset().mockResolvedValue({ count: 2 });
   });
 
   it('reads announcements only from the current site', async () => {
@@ -76,5 +85,28 @@ describe('announcement collection API', () => {
 
     expect(response.status).toBe(400);
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('persists valid Google Drive links in the submitted order', async () => {
+    const urls = [
+      'https://drive.google.com/file/d/one/view?usp=sharing',
+      'https://www.drive.google.com/file/d/two/view',
+    ];
+
+    const response = await post({ title: '含檔案公告', content: '內文', driveUrls: urls });
+
+    expect(response.status).toBe(201);
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(externalCreateMany).toHaveBeenCalledWith({
+      data: urls.map((url, sortOrder) => ({ siteId: 7, ownerType: 'announcement', ownerId: 1, url, sortOrder })),
+    });
+  });
+
+  it('rejects an invalid Google Drive link before creating an announcement', async () => {
+    const response = await post({ title: '錯誤連結', driveUrls: ['https://drive.google.com.evil.example/file'] });
+
+    expect(response.status).toBe(400);
+    expect(create).not.toHaveBeenCalled();
+    expect(transaction).not.toHaveBeenCalled();
   });
 });
