@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import InstallAppButton from '@/components/InstallAppButton';
 
 interface Props {
   siteSlug: string;
@@ -45,7 +44,6 @@ export default function SiteHeader({ siteSlug, siteName, features }: Props) {
               </Link>
             ))}
           </nav>
-          <InstallAppButton tone="light" />
           <button
             type="button"
             className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10"

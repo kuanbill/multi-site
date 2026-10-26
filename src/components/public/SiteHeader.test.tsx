@@ -19,4 +19,12 @@ describe('SiteHeader', () => {
     expect(html).toContain('alt=""');
     expect(html).toContain('>中和都更案</span>');
   });
+
+  it('does not render the install app button', () => {
+    const html = renderToStaticMarkup(
+      <SiteHeader siteSlug="zhonghe-renewal" siteName="中和都更案" features={[]} />,
+    );
+
+    expect(html).not.toContain('安裝到桌面');
+  });
 });

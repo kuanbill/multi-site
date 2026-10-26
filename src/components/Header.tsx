@@ -1,7 +1,6 @@
 'use client'
 
 import { signOut } from 'next-auth/react'
-import InstallAppButton from '@/components/InstallAppButton'
 import { roleLabel } from '@/lib/roles'
 
 interface HeaderProps {
@@ -38,8 +37,6 @@ export default function Header({ user, siteName, onMenuToggle, mobileOpen = fals
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4">
-        <InstallAppButton tone="dark" className="hidden sm:inline-flex" />
-
         <div className="hidden text-right sm:block">
           <p className="text-sm font-medium">{user.name}</p>
           <p className="text-xs text-gray-500">{user.role ? roleLabel(user.role) : ''}</p>
