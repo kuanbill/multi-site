@@ -54,7 +54,7 @@ export default async function SitesPage() {
                     管理
                   </Link>
                   <Link
-                    href={`/admin/sites/${site.id}/edit`}
+                    href={`/admin/sites/${site.slug}/edit`}
                     className="inline-flex min-h-11 items-center text-blue-600 hover:underline"
                   >
                     編輯
