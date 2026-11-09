@@ -25,7 +25,7 @@ describe('AnnouncementListPage', () => {
         id: 12,
         title: '公告標題',
         summary: null,
-        category: null,
+        category: '一般公告',
         status: 'draft',
         pinned: false,
         sortOrder: 0,
@@ -41,5 +41,14 @@ describe('AnnouncementListPage', () => {
 
     expect(html).toContain('overflow-x-auto');
     expect(html).toContain('/admin/sites/site-a/announcement/12/edit');
+  });
+
+  it('does not render the announcement category column', async () => {
+    const html = renderToStaticMarkup(
+      await AnnouncementListPage({ params: Promise.resolve({ siteSlug: 'site-a' }) }),
+    );
+
+    expect(html).not.toContain('一般公告');
+    expect(html).not.toContain('<th class="px-4 py-3">分類</th>');
   });
 });

@@ -84,9 +84,15 @@ export async function DELETE(
     const { id } = await params
     const siteId = parseInt(id)
     const site = await prisma.site.findUnique({ where: { id: siteId } })
-    await prisma.site.delete({
-      where: { id: siteId }
-    })
+    await prisma.$transaction([
+      // These legacy relations use RESTRICT and must be removed explicitly.
+      prisma.siteUser.deleteMany({ where: { siteId } }),
+      prisma.page.deleteMany({ where: { siteId } }),
+      prisma.post.deleteMany({ where: { siteId } }),
+      prisma.featureEntry.deleteMany({ where: { siteId } }),
+      prisma.media.deleteMany({ where: { siteId } }),
+      prisma.site.delete({ where: { id: siteId } }),
+    ])
     if (site) clearSiteCache(site.slug)
 
     return NextResponse.json({ message: '已刪除' })

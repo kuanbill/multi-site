@@ -1,17 +1,57 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { siteFindUnique, siteFindFirst, siteUpdate, siteDelete, clearSiteCache, getAdminSession } = vi.hoisted(() => {
+const {
+  siteFindUnique,
+  siteFindFirst,
+  siteUpdate,
+  siteDelete,
+  siteUserDeleteMany,
+  pageDeleteMany,
+  postDeleteMany,
+  featureEntryDeleteMany,
+  mediaDeleteMany,
+  transaction,
+  clearSiteCache,
+  getAdminSession,
+} = vi.hoisted(() => {
   const siteFindUnique = vi.fn();
   const siteFindFirst = vi.fn();
   const siteUpdate = vi.fn();
   const siteDelete = vi.fn();
+  const siteUserDeleteMany = vi.fn();
+  const pageDeleteMany = vi.fn();
+  const postDeleteMany = vi.fn();
+  const featureEntryDeleteMany = vi.fn();
+  const mediaDeleteMany = vi.fn();
+  const transaction = vi.fn();
   const clearSiteCache = vi.fn();
   const getAdminSession = vi.fn();
-  return { siteFindUnique, siteFindFirst, siteUpdate, siteDelete, clearSiteCache, getAdminSession };
+  return {
+    siteFindUnique,
+    siteFindFirst,
+    siteUpdate,
+    siteDelete,
+    siteUserDeleteMany,
+    pageDeleteMany,
+    postDeleteMany,
+    featureEntryDeleteMany,
+    mediaDeleteMany,
+    transaction,
+    clearSiteCache,
+    getAdminSession,
+  };
 });
 
 vi.mock('@/lib/prisma', () => ({
-  prisma: { site: { findUnique: siteFindUnique, findFirst: siteFindFirst, update: siteUpdate, delete: siteDelete } },
+  prisma: {
+    site: { findUnique: siteFindUnique, findFirst: siteFindFirst, update: siteUpdate, delete: siteDelete },
+    siteUser: { deleteMany: siteUserDeleteMany },
+    page: { deleteMany: pageDeleteMany },
+    post: { deleteMany: postDeleteMany },
+    featureEntry: { deleteMany: featureEntryDeleteMany },
+    media: { deleteMany: mediaDeleteMany },
+    $transaction: transaction,
+  },
 }));
 vi.mock('@/lib/site', () => ({ clearSiteCache }));
 vi.mock('@/lib/auth', () => ({ getAdminSession }));
@@ -34,6 +74,12 @@ describe('site update/delete cache invalidation', () => {
     siteFindFirst.mockReset().mockResolvedValue(null);
     siteUpdate.mockReset();
     siteDelete.mockReset();
+    siteUserDeleteMany.mockReset();
+    pageDeleteMany.mockReset();
+    postDeleteMany.mockReset();
+    featureEntryDeleteMany.mockReset();
+    mediaDeleteMany.mockReset();
+    transaction.mockReset().mockResolvedValue([]);
     clearSiteCache.mockReset();
     getAdminSession.mockReset().mockResolvedValue({ user: { role: 'admin' } });
   });
@@ -90,5 +136,20 @@ describe('site update/delete cache invalidation', () => {
     expect(response.status).toBe(200);
     expect(siteDelete).toHaveBeenCalledWith({ where: { id: 7 } });
     expect(clearSiteCache).toHaveBeenCalledWith('doomed');
+  });
+
+  it('removes restricted site relations in a transaction before deleting a site', async () => {
+    siteFindUnique.mockResolvedValue({ id: 7, slug: 'doomed' });
+    siteDelete.mockResolvedValue({ id: 7 });
+
+    await DELETE(new Request('http://localhost/api/admin/sites/7', { method: 'DELETE' }), routeContext);
+
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(siteUserDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
+    expect(pageDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
+    expect(postDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
+    expect(featureEntryDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
+    expect(mediaDeleteMany).toHaveBeenCalledWith({ where: { siteId: 7 } });
+    expect(siteDelete).toHaveBeenCalledWith({ where: { id: 7 } });
   });
 });

@@ -9,7 +9,6 @@ type AnnouncementFormValues = {
   title: string;
   summary: string;
   content: string;
-  category: string;
   pinned: boolean;
   status: 'draft' | 'published' | 'archived';
   sortOrder: number;
@@ -34,7 +33,6 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
     title: initial?.title ?? '',
     summary: initial?.summary ?? '',
     content: initial?.content ?? '',
-    category: initial?.category ?? '',
     pinned: initial?.pinned ?? false,
     status: (initial?.status as AnnouncementFormValues['status']) ?? 'draft',
     sortOrder: initial ? Number(initial.sortOrder) : 0,
@@ -56,7 +54,6 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
         title: values.title,
         summary: values.summary || null,
         content: values.content || null,
-        category: values.category || null,
         pinned: values.pinned,
         status: values.status,
         sortOrder: values.sortOrder ? Number(values.sortOrder) : 0,
@@ -84,11 +81,10 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
           title: '',
           summary: '',
           content: '',
-          category: '',
           pinned: false,
           status: 'draft',
-           sortOrder: 0,
-           driveUrls: [],
+          sortOrder: 0,
+          driveUrls: [],
         });
       }
     } catch {
@@ -110,13 +106,7 @@ export default function AnnouncementForm({ siteSlug, initial, onSuccess }: Props
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="分類"
-          value={values.category}
-          onChange={(e) => update('category', e.target.value)}
-          placeholder="例如：重要公告、活動公告"
-        />
+      <div className="grid grid-cols-1 gap-4">
         <Input
           label="排序"
           type="number"
