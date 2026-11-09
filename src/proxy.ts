@@ -2,7 +2,18 @@ import { getToken, type JWT } from 'next-auth/jwt';
 import { NextResponse, type NextFetchEvent, type NextRequest } from 'next/server';
 import { resolveFrontendView, trackFrontendView } from '@/lib/activity';
 
-const RESERVED = new Set(['login', 'register', 'api', 'sites', 'admin', 'users', '_next', 'favicon.ico', 'common_charge_tool']);
+const RESERVED = new Set([
+  'login',
+  'register',
+  'api',
+  'sites',
+  'admin',
+  'users',
+  '_next',
+  'favicon.ico',
+  'common_charge_tool',
+  'bardcode',
+]);
 const SITE_SESSION_COOKIE = 'site-session-token';
 const ADMIN_SESSION_COOKIE = 'admin-session-token';
 
@@ -57,6 +68,10 @@ export function decideProxyRoute(
   void siteToken;
 
   if (pathname === '/common_charge_tool' || pathname.startsWith('/common_charge_tool/')) {
+    return { action: 'allow' };
+  }
+
+  if (pathname === '/bardcode' || pathname.startsWith('/bardcode/')) {
     return { action: 'allow' };
   }
 
@@ -138,6 +153,9 @@ async function readToken(req: NextRequest, cookieName: string): Promise<ProxyTok
 export default async function proxy(req: NextRequest, event: NextFetchEvent) {
   const pathname = req.nextUrl.pathname;
   if (pathname === '/common_charge_tool' || pathname.startsWith('/common_charge_tool/')) {
+    return NextResponse.next();
+  }
+  if (pathname === '/bardcode' || pathname.startsWith('/bardcode/')) {
     return NextResponse.next();
   }
   const [adminToken, siteToken] = await Promise.all([

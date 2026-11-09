@@ -9,6 +9,11 @@ describe('authentication boundary proxy decisions', () => {
     expect(decideProxyRoute('/common_charge_tool', null, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/common_charge_tool/admin/users', null, null)).toEqual({ action: 'allow' });
   });
+
+  it('leaves the independent bardcode service subpath to its own login', () => {
+    expect(decideProxyRoute('/bardcode', null, null)).toEqual({ action: 'allow' });
+    expect(decideProxyRoute('/bardcode/admin', null, null)).toEqual({ action: 'allow' });
+  });
   it('allows only the admin session into admin routes', () => {
     expect(decideProxyRoute('/admin', adminToken, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/admin', siteToken, null)).toEqual({ action: 'redirect', location: '/admin/login' });

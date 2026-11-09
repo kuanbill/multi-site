@@ -50,8 +50,8 @@ function excerpt(text: string | null | undefined): string | null {
   return trimmed.length > EXCERPT_MAX_LENGTH ? `${trimmed.slice(0, EXCERPT_MAX_LENGTH)}...` : trimmed;
 }
 
-function formatDate(value: Date | null): string | null {
-  return value ? new Date(value).toLocaleDateString('zh-TW') : null;
+function formatDate(value: Date | null, prefix = ''): string | null {
+  return value ? `${prefix}${new Date(value).toLocaleDateString('zh-TW')}` : null;
 }
 
 const PROGRESS_STATUS_LABELS: Record<string, string> = {
@@ -112,8 +112,8 @@ export function resolveSectionItem(
         excerpt: excerpt(announcement.summary ?? announcement.content),
         href: `/${siteSlug}/announcement/${announcement.slug}`,
         imageUrl: null,
-        badge: announcement.pinned ? '置頂' : announcement.category,
-        meta: formatDate(announcement.publishedAt),
+        badge: announcement.pinned ? '置頂' : null,
+        meta: formatDate(announcement.publishedAt, '發布日期：'),
       };
     }
     case 'progress': {

@@ -39,7 +39,7 @@ describe('toSectionItems', () => {
     expect(items[0].excerpt).toBeNull();
   });
 
-  it('maps announcements with a pinned badge and publish date', () => {
+  it('maps announcements with a pinned badge and labeled publish date', () => {
     const items = toSectionItems('announcement', 'site-a', null, [
       {
         id: 2,
@@ -61,12 +61,12 @@ describe('toSectionItems', () => {
         href: '/site-a/announcement/notice',
         imageUrl: null,
         badge: '置頂',
-        meta: '2026/10/1',
+        meta: '發布日期：2026/10/1',
       },
     ]);
   });
 
-  it('falls back to content and shows the category when not pinned', () => {
+  it('falls back to content without showing the category when not pinned', () => {
     const items = toSectionItems('announcement', 'site-a', null, [
       {
         id: 2,
@@ -76,12 +76,12 @@ describe('toSectionItems', () => {
         content: '內文',
         category: '公告',
         pinned: false,
-        publishedAt: null,
+        publishedAt: new Date('2026-10-02T00:00:00Z'),
       },
     ]);
 
-    expect(items[0].badge).toBe('公告');
-    expect(items[0].meta).toBeNull();
+    expect(items[0].badge).toBeNull();
+    expect(items[0].meta).toBe('發布日期：2026/10/2');
     expect(items[0].excerpt).toBe('內文');
   });
 

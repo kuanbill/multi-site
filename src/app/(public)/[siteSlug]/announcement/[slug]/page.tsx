@@ -36,9 +36,8 @@ export default async function PublicAnnouncementDetailPage({
       <article className="bg-white p-6 sm:p-8 rounded-lg shadow">
         <div className="flex items-center gap-2 mb-2">
           {item.pinned && <span className="text-xs bg-primary/10 text-accent px-2 py-0.5 rounded">置頂</span>}
-          {item.category && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{item.category}</span>}
           <span className="text-sm text-gray-500">
-            {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('zh-TW') : ''}
+            {item.publishedAt ? `發布日期：${new Date(item.publishedAt).toLocaleDateString('zh-TW')}` : ''}
           </span>
         </div>
         <h1 className="text-3xl font-bold mb-4">{item.title}</h1>

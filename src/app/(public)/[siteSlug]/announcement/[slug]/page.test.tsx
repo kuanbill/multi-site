@@ -24,7 +24,7 @@ describe('public announcement detail page', () => {
       title: '已發布公告',
       summary: null,
       content: '公告內容',
-      category: null,
+      category: '一般公告',
       pinned: false,
       status: 'published',
       publishedAt: new Date('2026-10-20T00:00:00.000Z'),
@@ -46,5 +46,15 @@ describe('public announcement detail page', () => {
     expect(html).toContain('href="https://drive.google.com/file/d/one/view"');
     expect(html).toContain('target="_blank"');
     expect((html.match(/target="_blank"/g) ?? []).length).toBe(2);
+  });
+
+  it('labels the publish date and does not render the category', async () => {
+    const page = await PublicAnnouncementDetailPage({
+      params: Promise.resolve({ siteSlug: 'site-a', slug: 'announcement-abc123def456' }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('發布日期：2026/10/20');
+    expect(html).not.toContain('一般公告');
   });
 });

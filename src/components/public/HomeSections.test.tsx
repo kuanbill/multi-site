@@ -39,7 +39,7 @@ describe('HomeSections', () => {
         slug: 'notice',
         summary: null,
         content: null,
-        category: null,
+        category: '一般公告',
         pinned: false,
         publishedAt: new Date('2026-10-18T00:00:00Z'),
       },
@@ -55,6 +55,7 @@ describe('HomeSections', () => {
       }),
     );
 
-    expect(html.indexOf('2026/10/18')).toBeLessThan(html.indexOf('公告標題'));
+    expect(html.indexOf('發布日期：2026/10/18')).toBeLessThan(html.indexOf('公告標題'));
+    expect(html).not.toContain('一般公告');
   });
 });
