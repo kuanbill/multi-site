@@ -53,4 +53,26 @@ describe('responsive admin form contracts', () => {
       expect(source, segments.join('/')).toContain('min-h-11');
     }
   });
+
+  it('keeps the map form reference across async submission', () => {
+    const mapForm = readFileSync(
+      join(adminDirectory, '..', '..', 'app', 'admin', 'sites', '[siteSlug]', 'maps', 'MapForm.tsx'),
+      'utf8',
+    );
+
+    expect(mapForm).toContain('const formElement = event.currentTarget;');
+    expect(mapForm).toContain('const form = new FormData(formElement);');
+    expect(mapForm).toContain('formElement.reset();');
+    expect(mapForm).not.toContain('event.currentTarget.reset()');
+  });
+
+  it('exposes a delete action for each map asset', () => {
+    const mapsPage = readFileSync(
+      join(adminDirectory, '..', '..', 'app', 'admin', 'sites', '[siteSlug]', 'maps', 'page.tsx'),
+      'utf8',
+    );
+
+    expect(mapsPage).toContain("import DeleteMapButton from './DeleteMapButton';");
+    expect(mapsPage).toContain('<DeleteMapButton siteSlug={siteSlug} id={item.id} title={item.title} />');
+  });
 });

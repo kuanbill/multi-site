@@ -11,13 +11,13 @@ export default function MapForm({ siteSlug, item }: { siteSlug: string; item?: M
     const response = await fetch(`/api/${siteSlug}/admin/assets`, { method: 'POST', body: uploadData }); const result = await response.json(); if (!response.ok) throw new Error(result.error || '上傳失敗'); return result.id as number;
   }
   async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); const form = new FormData(event.currentTarget);
+    event.preventDefault(); setSaving(true); const formElement = event.currentTarget; const form = new FormData(formElement);
     try {
       const imageMediaId = await upload(form, 'imageFile'); const downloadMediaId = await upload(form, 'downloadFile');
       const payload: Record<string, unknown> = Object.fromEntries(['title', 'category', 'description', 'sortOrder', 'status'].map((key) => [key, form.get(key)]));
       payload.imageMediaId = imageMediaId ?? item?.imageMediaId ?? null; payload.downloadMediaId = downloadMediaId ?? item?.downloadMediaId ?? null;
       const response = await fetch(`/api/${siteSlug}/admin/maps${item ? `/${item.id}` : ''}`, { method: item ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const result = await response.json(); if (!response.ok) throw new Error(result.error || '儲存失敗'); setMessage('已儲存'); router.refresh(); if (!item) event.currentTarget.reset();
+      const result = await response.json(); if (!response.ok) throw new Error(result.error || '儲存失敗'); setMessage('已儲存'); router.refresh(); if (!item) formElement.reset();
     } catch (error) { setMessage(error instanceof Error ? error.message : '儲存失敗'); } finally { setSaving(false); }
   }
   const cls = 'mt-1 min-h-11 w-full rounded border px-2 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600';

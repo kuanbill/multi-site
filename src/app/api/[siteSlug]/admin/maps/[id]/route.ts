@@ -1,6 +1,9 @@
+import { unlink } from 'node:fs/promises';
+import path from 'node:path';
 import { NextResponse } from 'next/server';
 import { requireContentPermission } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
+export const runtime = 'nodejs';
 import { parseContentStatus, validateRequiredText } from '@/lib/contentValidation';
 type RouteContext = { params: Promise<{ siteSlug: string; id: string }> };
 function parseId(value: string) { const id = Number(value); return Number.isInteger(id) && id > 0 ? id : null; }
@@ -38,9 +41,39 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   if (!id) return NextResponse.json({ error: '參數錯誤' }, { status: 400 });
   const existing = await prisma.mapAsset.findFirst({ where: { id, siteId: context.site.id } });
   if (!existing) return NextResponse.json({ error: '找不到資料' }, { status: 404 });
+  const attachments = await prisma.contentAttachment.findMany({
+    where: { siteId: context.site.id, ownerType: 'map', ownerId: id },
+    select: { mediaId: true },
+  });
+  const mediaIds = [...new Set([
+    existing.imageMediaId,
+    existing.downloadMediaId,
+    ...attachments.map((attachment) => attachment.mediaId),
+  ].filter((mediaId): mediaId is number => typeof mediaId === 'number' && Number.isInteger(mediaId) && mediaId > 0))];
+  const media = mediaIds.length > 0
+    ? await prisma.media.findMany({
+      where: { siteId: context.site.id, id: { in: mediaIds } },
+      select: { id: true, filename: true },
+    })
+    : [];
+  const filesToDelete: string[] = [];
+  const uploadDir = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'data', 'uploads');
   await prisma.$transaction(async (tx) => {
     await tx.contentAttachment.deleteMany({ where: { siteId: context.site.id, ownerType: 'map', ownerId: id } });
     await tx.mapAsset.delete({ where: { id } });
+    for (const item of media) {
+      const [attachment, home, vendor, map, featureEntry] = await Promise.all([
+        tx.contentAttachment.findFirst({ where: { mediaId: item.id, siteId: context.site.id }, select: { id: true } }),
+        tx.siteHome.findFirst({ where: { heroMediaId: item.id, siteId: context.site.id }, select: { id: true } }),
+        tx.vendor.findFirst({ where: { logoMediaId: item.id, siteId: context.site.id }, select: { id: true } }),
+        tx.mapAsset.findFirst({ where: { OR: [{ imageMediaId: item.id }, { downloadMediaId: item.id }], siteId: context.site.id }, select: { id: true } }),
+        tx.featureEntry.findFirst({ where: { siteId: context.site.id, mediaId: item.id }, select: { id: true } }),
+      ]);
+      if (attachment || home || vendor || map || featureEntry) continue;
+      await tx.media.delete({ where: { id: item.id } });
+      filesToDelete.push(path.join(uploadDir, path.basename(item.filename)));
+    }
   });
+  await Promise.all(filesToDelete.map((filePath) => unlink(filePath).catch(() => undefined)));
   return NextResponse.json({ message: '已刪除' });
 }

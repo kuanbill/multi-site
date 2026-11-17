@@ -1,6 +1,7 @@
 import { canPerformContentAction, requireContentPermission } from '@/lib/contentAccess';
 import { prisma } from '@/lib/prisma';
 import MapForm from './MapForm';
+import DeleteMapButton from './DeleteMapButton';
 export const dynamic = 'force-dynamic';
 export default async function MapsAdminPage({ params }: { params: Promise<{ siteSlug: string }> }) {
   const { siteSlug } = await params; const context = await requireContentPermission(siteSlug, 'read');
@@ -14,6 +15,6 @@ export default async function MapsAdminPage({ params }: { params: Promise<{ site
       )}
         <h2 className="font-semibold">{item.title}</h2>{item.category && <p>{item.category}</p>}{item.description && <p className="text-gray-600">{item.description}</p>}
         {item.downloadMedia && <a className="text-blue-600 underline" href={item.downloadMedia.url} download>下載地圖檔案</a>}<p className="text-sm text-gray-500">{item.status}</p></div>
-      {canWrite && <MapForm siteSlug={siteSlug} item={item} />}</article>)}</div>
+       {canWrite && <div><MapForm siteSlug={siteSlug} item={item} /><div className="mt-3 text-right"><DeleteMapButton siteSlug={siteSlug} id={item.id} title={item.title} /></div></div>}</article>)}</div>
   </section>;
 }
