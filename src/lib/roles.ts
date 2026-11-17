@@ -4,7 +4,7 @@ export type RoleValue = (typeof ROLE_VALUES)[number]
 
 export const ROLE_LABELS: Record<RoleValue, string> = {
   admin: '管理員',
-  editor: '編輯者',
+  editor: '子網站管理者',
   viewer: '檢視者',
 }
 
@@ -17,9 +17,10 @@ export function isRoleValue(value: unknown): value is RoleValue {
   return typeof value === 'string' && (ROLE_VALUES as readonly string[]).includes(value);
 }
 
-/** 使用者帶有「管理子網站 = 不設限」旗標時，可編輯所有子網站。僅限編輯者。 */
+/** 舊資料相容函式；子網站權限現在一律以 SiteUser membership 判定。 */
 export function isUnlimitedEditor(
   user: { role?: string; allSites?: boolean } | null | undefined
 ): boolean {
-  return user?.role === 'editor' && user.allSites === true;
+  void user;
+  return false;
 }

@@ -27,7 +27,13 @@ export async function requireSiteContext(siteSlug: string): Promise<SiteContext>
 
   const session = await getAdminSession();
   if (!session) redirect('/admin/login');
-  return { site, session, siteRole: 'global-admin' };
+  if (session.user.role === 'admin') {
+    return { site, session, siteRole: 'global-admin' };
+  }
+
+  const membership = session.user.siteRoles?.find((siteRole) => siteRole.slug === siteSlug);
+  if (!membership) redirect('/403');
+  return { site, session, siteRole: membership.role as SiteRole };
 }
 
 export async function requireContentPermission(

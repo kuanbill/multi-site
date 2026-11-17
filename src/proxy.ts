@@ -21,14 +21,30 @@ export type ProxyToken = {
   id?: JWT['id'];
   authType?: JWT['authType'];
   role?: JWT['role'];
+  siteRoles?: Array<{ slug: string; role: string }>;
 } | null;
 export type ProxyDecision =
   | { action: 'allow' }
   | { action: 'forbidden' }
   | { action: 'redirect'; location: string };
 
-function isAdminToken(token: ProxyToken): boolean {
+function isAdminSessionToken(token: ProxyToken): boolean {
+  return token?.authType === 'admin' && (token.role === 'admin' || token.role === 'editor');
+}
+
+function isGlobalAdminToken(token: ProxyToken): boolean {
   return token?.authType === 'admin' && token.role === 'admin';
+}
+
+function isAssignedSiteManager(token: ProxyToken, siteSlug: string): boolean {
+  return token?.authType === 'admin' &&
+    token.role === 'editor' &&
+    Boolean(token.siteRoles?.some((siteRole) => siteRole.slug === siteSlug));
+}
+
+function getAdminSiteSlug(pathname: string, prefix: string): string | null {
+  const match = pathname.startsWith(prefix) ? pathname.slice(prefix.length).split('/')[0] : '';
+  return match || null;
 }
 
 function isAdminPage(pathname: string): boolean {
@@ -88,17 +104,20 @@ export function decideProxyRoute(
   }
 
   if (pathname === '/') {
-    return isAdminToken(adminToken)
+    return isAdminSessionToken(adminToken)
       ? { action: 'redirect', location: '/admin' }
       : { action: 'redirect', location: '/admin/login' };
   }
 
   if (isAdminApi(pathname)) {
-    return isAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
+    return isGlobalAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
   }
 
   if (isSiteAdminApi(pathname)) {
-    return isAdminToken(adminToken) ? { action: 'allow' } : { action: 'forbidden' };
+    const siteSlug = getAdminSiteSlug(pathname, '/api/');
+    return isGlobalAdminToken(adminToken) || (siteSlug ? isAssignedSiteManager(adminToken, siteSlug) : false)
+      ? { action: 'allow' }
+      : { action: 'forbidden' };
   }
 
   if (isPublicSiteApi(pathname)) {
@@ -106,26 +125,33 @@ export function decideProxyRoute(
   }
 
   if (isAdminPage(pathname)) {
-    return isAdminToken(adminToken)
-      ? { action: 'allow' }
-      : { action: 'redirect', location: '/admin/login' };
+    if (pathname === '/admin') {
+      return isAdminSessionToken(adminToken)
+        ? { action: 'allow' }
+        : { action: 'redirect', location: '/admin/login' };
+    }
+    if (isGlobalAdminToken(adminToken)) return { action: 'allow' };
+    const siteSlug = getAdminSiteSlug(pathname, '/admin/sites/');
+    if (siteSlug && isAssignedSiteManager(adminToken, siteSlug)) return { action: 'allow' };
+    return adminToken?.authType === 'admin' ? { action: 'forbidden' } : { action: 'redirect', location: '/admin/login' };
   }
 
   const legacySiteAdminTarget = getLegacySiteAdminTarget(pathname);
   if (legacySiteAdminTarget) {
-    return isAdminToken(adminToken)
+    const siteSlug = legacySiteAdminTarget.split('/')[3];
+    return isGlobalAdminToken(adminToken) || isAssignedSiteManager(adminToken, siteSlug)
       ? { action: 'redirect', location: legacySiteAdminTarget }
-      : { action: 'redirect', location: '/admin/login' };
+      : adminToken?.authType === 'admin' ? { action: 'forbidden' } : { action: 'redirect', location: '/admin/login' };
   }
 
   if (pathname === '/sites' || pathname.startsWith('/sites/')) {
-    return isAdminToken(adminToken)
+    return isGlobalAdminToken(adminToken)
       ? { action: 'redirect', location: pathname.replace(/^\/sites/, '/admin/sites') }
       : { action: 'redirect', location: '/admin/login' };
   }
 
   if (pathname === '/users' || pathname.startsWith('/users/')) {
-    return isAdminToken(adminToken)
+    return isGlobalAdminToken(adminToken)
       ? { action: 'redirect', location: pathname.replace(/^\/users/, '/admin/users') }
       : { action: 'redirect', location: '/admin/login' };
   }
@@ -134,7 +160,7 @@ export function decideProxyRoute(
     return { action: 'allow' };
   }
 
-  return isAdminToken(adminToken)
+  return isAdminSessionToken(adminToken)
     ? { action: 'allow' }
     : { action: 'redirect', location: '/admin/login' };
 }

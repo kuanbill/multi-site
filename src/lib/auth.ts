@@ -2,7 +2,6 @@ import { type NextAuthOptions, DefaultSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { compare } from 'bcryptjs'
 import { prisma } from './prisma'
-import { isUnlimitedEditor } from './roles'
 import { siteAuthCookies } from './authCookies'
 
 export type SiteRole = { siteId: number; slug: string; role: string }
@@ -76,8 +75,7 @@ export const siteAuthOptions: NextAuthOptions = {
             where: { userId: user.id, siteId: site.id }
           })
           const isAdmin = user.role === 'admin'
-          const isUnlimited = isUnlimitedEditor(user)
-          if (!membership && !isAdmin && !isUnlimited) throw new Error('此帳號不屬於該專案')
+           if (!membership && !isAdmin) throw new Error('此帳號不屬於該專案')
         }
 
         const siteUsers = await prisma.siteUser.findMany({
@@ -89,10 +87,12 @@ export const siteAuthOptions: NextAuthOptions = {
           slug: su.site.slug,
           role: su.role,
         }))
+        if (user.role === 'editor' && siteUsers.length === 0) {
+          throw new Error('此帳號尚未指定可管理的子網站')
+        }
         if (
           loginSiteId === null &&
           user.role !== 'admin' &&
-          !isUnlimitedEditor(user) &&
           siteUsers.length === 1
         ) {
           loginSiteId = siteUsers[0].siteId

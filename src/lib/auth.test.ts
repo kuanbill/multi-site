@@ -49,7 +49,7 @@ describe('site login authorization', () => {
     compare.mockReset().mockResolvedValue(true);
   });
 
-  it('admits an unlimited editor with no site membership', async () => {
+  it('rejects an unlimited editor with no site membership', async () => {
     mockUser({ allSites: true });
 
     await expect(
@@ -58,7 +58,7 @@ describe('site login authorization', () => {
         password: 'pw',
         siteSlug: 'site-a',
       }),
-    ).resolves.toMatchObject({ id: '9', role: 'editor', allSites: true });
+    ).rejects.toThrow();
   });
 
   it('rejects an editor with no site membership', async () => {
@@ -89,7 +89,7 @@ describe('site login authorization', () => {
     ).resolves.toMatchObject({ id: '9', loginSiteId: 3 });
   });
 
-  it('exposes the allSites flag on the authorized user', async () => {
+  it('exposes the allSites flag without granting site access', async () => {
     mockUser({ role: 'viewer', allSites: false });
 
     await expect(

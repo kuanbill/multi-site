@@ -49,7 +49,7 @@ describe('frontend and backend auth boundaries', () => {
     siteFindUnique.mockReset().mockResolvedValue({ id: 3, slug: 'site-a' });
     siteUserFindFirst.mockReset().mockResolvedValue({ userId: 9, siteId: 3, role: 'admin' });
     siteUserFindMany.mockReset().mockResolvedValue([
-      { role: 'admin', site: { id: 3, slug: 'site-a' } },
+      { siteId: 3, role: 'admin', site: { id: 3, slug: 'site-a' } },
     ]);
     compare.mockReset().mockResolvedValue(true);
   });
@@ -75,12 +75,17 @@ describe('frontend and backend auth boundaries', () => {
     ).resolves.toMatchObject({ id: '9', role: 'editor' });
   });
 
-  it('rejects a site-admin membership through the admin login provider', async () => {
+  it('allows an assigned site manager through the admin login provider', async () => {
     mockUser({ role: 'editor' });
 
     await expect(
       adminProvider.options.authorize({ email: 'member@example.com', password: 'pw' }),
-    ).rejects.toThrow();
+    ).resolves.toMatchObject({
+      id: '9',
+      role: 'editor',
+      authType: 'admin',
+      siteRoles: [{ siteId: 3, slug: 'site-a', role: 'admin' }],
+    });
   });
 
   it('allows only a global admin through the admin login provider', async () => {

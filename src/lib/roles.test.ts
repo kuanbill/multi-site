@@ -4,7 +4,7 @@ import { isRoleValue, roleLabel } from './roles'
 describe('role helpers', () => {
   it('maps role codes to unified Chinese labels', () => {
     expect(roleLabel('admin')).toBe('管理員')
-    expect(roleLabel('editor')).toBe('編輯者')
+    expect(roleLabel('editor')).toBe('子網站管理者')
     expect(roleLabel('viewer')).toBe('檢視者')
   })
 
