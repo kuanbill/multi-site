@@ -57,4 +57,27 @@ describe('public announcement detail page', () => {
     expect(html).toContain('發布日期：2026/10/20');
     expect(html).not.toContain('一般公告');
   });
+
+  it('renders URLs in the announcement content as clickable links', async () => {
+    findFirstAnnouncement.mockResolvedValueOnce({
+      id: 12,
+      siteId: 7,
+      slug: 'announcement-abc123def456',
+      title: '已發布公告',
+      summary: null,
+      content: '公告內容，請參閱 https://example.com/notice。',
+      category: '一般公告',
+      pinned: false,
+      status: 'published',
+      publishedAt: new Date('2026-10-20T00:00:00.000Z'),
+    });
+
+    const page = await PublicAnnouncementDetailPage({
+      params: Promise.resolve({ siteSlug: 'site-a', slug: 'announcement-abc123def456' }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('href="https://example.com/notice"');
+    expect(html).toContain('>https://example.com/notice</a>');
+  });
 });

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requirePublicFeature } from '@/lib/contentAccess';
 import { readContentExternalLinks } from '@/lib/contentExternalLinks';
+import AutoLinkText from '@/components/public/AutoLinkText';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,9 @@ export default async function PublicAnnouncementDetailPage({
         <h1 className="text-3xl font-bold mb-4">{item.title}</h1>
         {item.summary && <p className="text-gray-600 mb-6">{item.summary}</p>}
         {item.content ? (
-          <div className="prose max-w-none whitespace-pre-wrap break-words">{item.content}</div>
+          <div className="prose max-w-none whitespace-pre-wrap break-words">
+            <AutoLinkText text={item.content} />
+          </div>
         ) : (
           <p className="text-gray-500">無詳細內容</p>
         )}
