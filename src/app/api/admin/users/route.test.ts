@@ -65,13 +65,11 @@ describe('creating a user', () => {
     );
   });
 
-  it('creates an unlimited editor without any site membership', async () => {
+  it('rejects an editor without a selected site', async () => {
     const response = await POST(jsonRequest('http://localhost/api/admin/users', validUser({ allSites: true })));
 
-    expect(response.status).toBe(201);
-    expect(userCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ allSites: true }) }),
-    );
+    expect(response.status).toBe(400);
+    expect(userCreate).not.toHaveBeenCalled();
     expect(siteUserCreate).not.toHaveBeenCalled();
   });
 
@@ -93,6 +91,15 @@ describe('creating a user', () => {
     expect(userCreate).not.toHaveBeenCalled();
   });
 
+  it('rejects the legacy unlimited flag for an editor', async () => {
+    const response = await POST(
+      jsonRequest('http://localhost/api/admin/users', validUser({ allSites: true, siteId: null })),
+    );
+
+    expect(response.status).toBe(400);
+    expect(userCreate).not.toHaveBeenCalled();
+  });
+
   it('stores the unlimited flag as false when it is not requested', async () => {
     await POST(jsonRequest('http://localhost/api/admin/users', validUser({ siteId: 3, siteRole: 'admin' })));
 
@@ -100,7 +107,7 @@ describe('creating a user', () => {
       expect.objectContaining({ data: expect.objectContaining({ allSites: false }) }),
     );
     expect(siteUserCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { userId: 9, siteId: 3, role: 'viewer' } }),
+      expect.objectContaining({ data: { userId: 9, siteId: 3, role: 'admin' } }),
     );
   });
 });

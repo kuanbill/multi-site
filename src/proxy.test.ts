@@ -3,6 +3,11 @@ import { decideProxyRoute, type ProxyToken } from './proxy';
 
 const adminToken: ProxyToken = { authType: 'admin', role: 'admin' };
 const siteToken: ProxyToken = { authType: 'site', role: 'editor' };
+const managerToken: ProxyToken = {
+  authType: 'admin',
+  role: 'editor',
+  siteRoles: [{ slug: 'site-a', role: 'admin' }],
+};
 
 describe('authentication boundary proxy decisions', () => {
   it('leaves the independent charge tool subpath to its own login', () => {
@@ -14,9 +19,9 @@ describe('authentication boundary proxy decisions', () => {
     expect(decideProxyRoute('/bardcode', null, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/bardcode/admin', null, null)).toEqual({ action: 'allow' });
   });
-  it('allows only the admin session into admin routes', () => {
+  it('allows an admin session and assigned site manager into admin routes', () => {
     expect(decideProxyRoute('/admin', adminToken, null)).toEqual({ action: 'allow' });
-    expect(decideProxyRoute('/admin', siteToken, null)).toEqual({ action: 'redirect', location: '/admin/login' });
+    expect(decideProxyRoute('/admin', managerToken, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/admin', null, siteToken)).toEqual({ action: 'redirect', location: '/admin/login' });
   });
 
@@ -36,6 +41,14 @@ describe('authentication boundary proxy decisions', () => {
     expect(decideProxyRoute('/api/admin/sites', adminToken, null)).toEqual({ action: 'allow' });
     expect(decideProxyRoute('/api/site-a/admin/pages', null, siteToken)).toEqual({ action: 'forbidden' });
     expect(decideProxyRoute('/api/site-a/admin/pages', adminToken, null)).toEqual({ action: 'allow' });
+  });
+
+  it('limits site manager admin paths to assigned sites', () => {
+    expect(decideProxyRoute('/admin/sites/site-a/pages', managerToken, null)).toEqual({ action: 'allow' });
+    expect(decideProxyRoute('/admin/sites/site-b/pages', managerToken, null)).toEqual({ action: 'forbidden' });
+    expect(decideProxyRoute('/api/site-a/admin/pages', managerToken, null)).toEqual({ action: 'allow' });
+    expect(decideProxyRoute('/api/site-b/admin/pages', managerToken, null)).toEqual({ action: 'forbidden' });
+    expect(decideProxyRoute('/api/admin/users', managerToken, null)).toEqual({ action: 'forbidden' });
   });
 
   it('lets public site APIs perform their own visibility checks', () => {

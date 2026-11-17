@@ -93,15 +93,14 @@ describe('resolveSiteLoginState', () => {
     expect(state.safeCallbackUrl).toBe('/site-a');
   });
 
-  it('redirects an unlimited editor without showing the form', () => {
+  it('requires a sign-out for an unlimited editor without membership', () => {
     const state = resolveSiteLoginState({
       ...base,
       session: unlimitedEditorSession(),
       callbackUrl: '/site-a',
     });
 
-    expect(state.mode).toBe('redirect-member');
-    expect(state.safeCallbackUrl).toBe('/site-a');
+    expect(state.mode).toBe('needs-signout');
   });
 
   it('requires a sign-out for a viewer carrying the unlimited flag', () => {

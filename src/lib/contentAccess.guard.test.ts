@@ -113,15 +113,15 @@ describe('public feature access', () => {
     });
   });
 
-  it('allows an unlimited editor into a members-only feature', async () => {
+  it('rejects an unlimited editor without an explicit site membership', async () => {
     getSiteFeature.mockResolvedValue(membersFeature);
     getServerSession.mockResolvedValue({
       user: { role: 'editor', allSites: true, siteRoles: [] },
     });
 
-    await expect(requirePublicFeature('site-a', 'meetings')).resolves.toMatchObject({
-      site: { slug: 'site-a' },
-    });
+    await expect(requirePublicFeature('site-a', 'meetings')).rejects.toThrow(
+      'REDIRECT:/site-a/login?error=not-member&callbackUrl=%2Fsite-a%2Fmeeting',
+    );
   });
 
   it('sends a viewer with the unlimited flag to the site login', async () => {
@@ -191,6 +191,30 @@ describe('admin-only site context', () => {
 
     await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'global-admin' });
   });
+
+  it('returns the assigned site role for a site manager', async () => {
+    getAdminSession.mockResolvedValue({
+      user: {
+        authType: 'admin',
+        role: 'editor',
+        siteRoles: [{ siteId: 7, slug: 'site-a', role: 'admin' }],
+      },
+    });
+
+    await expect(requireSiteContext('site-a')).resolves.toMatchObject({ siteRole: 'admin' });
+  });
+
+  it('rejects a site manager from an unassigned site', async () => {
+    getAdminSession.mockResolvedValue({
+      user: {
+        authType: 'admin',
+        role: 'editor',
+        siteRoles: [{ siteId: 9, slug: 'site-b', role: 'admin' }],
+      },
+    });
+
+    await expect(requireSiteContext('site-a')).rejects.toThrow('REDIRECT:/403');
+  });
 });
 
 describe('public home access', () => {
@@ -228,12 +252,11 @@ describe('public home access', () => {
     );
   });
 
-  it('allows members, global admins, and unlimited editors to view a members-only home page', async () => {
+  it('allows members and global admins to view a members-only home page', async () => {
     getSiteBySlug.mockResolvedValue({ ...activeSite, homeVisibility: 'members' });
     for (const user of [
       { role: 'editor', siteRoles: [{ slug: 'site-a', role: 'viewer' }] },
       { role: 'admin', siteRoles: [] },
-      { role: 'editor', allSites: true, siteRoles: [] },
     ]) {
       getServerSession.mockResolvedValue({ user });
       await expect(requirePublicHome('site-a')).resolves.toMatchObject({ slug: 'site-a' });

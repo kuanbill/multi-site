@@ -1,6 +1,15 @@
 import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
+import { getAdminSession } from '@/lib/adminAuth'
 
 export default async function DashboardPage() {
+  const session = await getAdminSession()
+  if (session?.user.role === 'editor') {
+    const siteSlug = session.user.siteRoles?.[0]?.slug
+    if (siteSlug) redirect(`/admin/sites/${siteSlug}`)
+    redirect('/admin/login')
+  }
+
   const [siteCount, userCount, postCount] = await Promise.all([
     prisma.site.count(),
     prisma.user.count(),

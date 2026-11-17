@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 import { getAdminSession } from '@/lib/adminAuth';
 import { resolveMediaVisibility } from '@/lib/mediaAccess';
-import { isUnlimitedEditor } from '@/lib/roles';
 import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
@@ -36,13 +35,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ fil
     const session = await getServerSession(authOptions);
     const adminSession = await getAdminSession();
     if (!session && !adminSession) return NextResponse.redirect(new URL(`/${media.site.slug}/login`, _request.url));
-    // 與 isSiteMember 相同語意：全域管理員與不設限編輯者視為本站成員，
-    // 後者沒有 siteUser 成員列，若只查成員列會把他們擋成 403 破圖。
-    let memberAuthorized = Boolean(adminSession);
+    let memberAuthorized = adminSession?.user.role === 'admin' ||
+      Boolean(adminSession?.user.siteRoles?.some((siteRole) => siteRole.slug === media.site.slug));
     if (!memberAuthorized && session) {
       memberAuthorized =
         session.user.role === 'admin' ||
-        isUnlimitedEditor(session.user) ||
         Boolean(await prisma.siteUser.findFirst({
           where: { userId: Number(session.user.id), siteId: media.siteId },
           select: { id: true },

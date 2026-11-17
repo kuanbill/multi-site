@@ -113,11 +113,7 @@ export default async function UsersPage({
                 <td className="px-6 py-4">
                   {user.role === 'admin' ? (
                     <span className="text-gray-400 text-sm">—</span>
-                  ) : user.allSites && user.role === 'editor' ? (
-                    <span className="px-2 py-0.5 text-xs rounded-full bg-green-50 text-green-700">
-                      所有子網站（不設限）
-                    </span>
-                  ) : user.sites.length === 0 ? (
+                   ) : user.sites.length === 0 ? (
                     <span className="text-gray-400 text-sm">無</span>
                   ) : (
                     <div className="flex flex-wrap gap-1">
