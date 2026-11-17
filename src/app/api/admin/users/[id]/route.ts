@@ -60,7 +60,8 @@ export async function PATCH(
   try {
     const { id } = await params
     const userId = parseUserId(id)
-    const { role } = await req.json()
+    const body = await req.json()
+    const { role } = body
 
     if (!userId) {
       return NextResponse.json({ error: '無效的使用者編號' }, { status: 400 })
@@ -81,15 +82,31 @@ export async function PATCH(
       )
     }
 
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { role, allSites: false },
-      select: { id: true, name: true, email: true, role: true }
-    })
-
-    if (role !== 'editor') {
-      await prisma.siteUser.deleteMany({ where: { userId } })
+    let siteId: number | null = null
+    if (role === 'editor') {
+      const parsed = Number(body.siteId)
+      if (!Number.isInteger(parsed) || parsed <= 0) {
+        return NextResponse.json({ error: '子網站管理者必須指定一個子網站' }, { status: 400 })
+      }
+      siteId = parsed
+      const site = await prisma.site.findUnique({ where: { id: siteId } })
+      if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
     }
+
+    const user = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { role, allSites: false },
+        select: { id: true, name: true, email: true, role: true }
+      })
+
+      await tx.siteUser.deleteMany({ where: { userId } })
+      if (role === 'editor' && siteId) {
+        await tx.siteUser.create({ data: { userId, siteId, role: 'admin' } })
+      }
+
+      return updated
+    })
 
     return NextResponse.json(user)
   } catch {

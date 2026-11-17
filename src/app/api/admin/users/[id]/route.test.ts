@@ -117,6 +117,15 @@ describe('changing the global role from the user list', () => {
     userFindUnique.mockReset().mockResolvedValue({ role: 'editor' });
     userUpdate.mockReset().mockResolvedValue({ id: 9, role: 'viewer' });
     userCount.mockReset().mockResolvedValue(2);
+    siteFindUnique.mockReset().mockResolvedValue({ id: 3, slug: 'site-a' });
+    siteUserCreate.mockReset().mockResolvedValue({});
+    siteUserDeleteMany.mockReset().mockResolvedValue({ count: 1 });
+    transaction.mockReset().mockImplementation(async (callback: (tx: unknown) => unknown) =>
+      callback({
+        user: { update: userUpdate },
+        siteUser: { create: siteUserCreate, deleteMany: siteUserDeleteMany },
+      }),
+    );
   });
 
   it('clears the unlimited flag when the role becomes viewer', async () => {
@@ -132,5 +141,20 @@ describe('changing the global role from the user list', () => {
     await PATCH(patchRequest({ role: 'viewer' }), routeContext);
 
     expect(siteUserDeleteMany).toHaveBeenCalledWith({ where: { userId: 9 } });
+  });
+
+  it('rejects changing a user to editor without a site', async () => {
+    const response = await PATCH(patchRequest({ role: 'editor' }), routeContext);
+
+    expect(response.status).toBe(400);
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it('assigns one site admin membership when PATCH changes to editor', async () => {
+    const response = await PATCH(patchRequest({ role: 'editor', siteId: 3 }), routeContext);
+
+    expect(response.status).toBe(200);
+    expect(siteUserDeleteMany).toHaveBeenCalledWith({ where: { userId: 9 } });
+    expect(siteUserCreate).toHaveBeenCalledWith({ data: { userId: 9, siteId: 3, role: 'admin' } });
   });
 });

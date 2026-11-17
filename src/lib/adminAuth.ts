@@ -32,8 +32,14 @@ export const adminAuthOptions: NextAuthOptions = {
           })
           : [];
 
-        if (user.role !== 'admin' && (user.role !== 'editor' || siteUsers.length === 0)) {
+        if (user.role === 'editor' && siteUsers.length === 0) {
           throw new Error('尚未指定可管理的子網站');
+        }
+        if (user.role !== 'admin' && user.role !== 'editor') {
+          throw new Error('只有管理員或子網站管理者可以登入後台');
+        }
+        if (user.role === 'editor' && siteUsers.length !== 1) {
+          throw new Error('只能指定一個子網站');
         }
 
         return {
@@ -88,7 +94,22 @@ export async function getAdminSession() {
   const userId = Number(session.user.id);
   if (!Number.isInteger(userId)) return null;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
-  return user?.role === session.user.role ? session : null;
+  if (user?.role !== session.user.role) return null;
+
+  if (session.user.role === 'editor') {
+    const siteUsers = await prisma.siteUser.findMany({
+      where: { userId },
+      include: { site: { select: { id: true, slug: true } } },
+    });
+    if (siteUsers.length !== 1) return null;
+    session.user.siteRoles = siteUsers.map((siteUser) => ({
+      siteId: siteUser.siteId,
+      slug: siteUser.site.slug,
+      role: siteUser.role,
+    }));
+  }
+
+  return session;
 }
 
 export async function getGlobalAdminSession() {

@@ -101,4 +101,60 @@ describe('admin session authorization', () => {
       credentialsProvider.options.authorize({ email: 'manager@example.com', password: 'pw' }),
     ).rejects.toThrow('尚未指定可管理的子網站');
   });
+
+  it('rejects an editor with multiple site memberships', async () => {
+    userFindUnique.mockResolvedValue({
+      id: 9,
+      email: 'manager@example.com',
+      name: '子網站管理者',
+      password: 'hashed',
+      role: 'editor',
+      allSites: false,
+    });
+    siteUserFindMany.mockResolvedValue([
+      { siteId: 3, role: 'admin', site: { id: 3, slug: 'site-a' } },
+      { siteId: 4, role: 'admin', site: { id: 4, slug: 'site-b' } },
+    ]);
+
+    await expect(
+      credentialsProvider.options.authorize({ email: 'manager@example.com', password: 'pw' }),
+    ).rejects.toThrow('只能指定一個子網站');
+  });
+
+  it('revokes an editor session when its membership is removed', async () => {
+    getServerSession.mockResolvedValue({
+      user: {
+        id: '9',
+        role: 'editor',
+        authType: 'admin',
+        siteRoles: [{ siteId: 3, slug: 'site-a', role: 'admin' }],
+      },
+    });
+    userFindUnique.mockResolvedValue({ role: 'editor' });
+    siteUserFindMany.mockResolvedValue([]);
+
+    await expect(getAdminSession()).resolves.toBeNull();
+  });
+
+  it('refreshes an editor session with its current single membership', async () => {
+    const session = {
+      user: {
+        id: '9',
+        role: 'editor',
+        authType: 'admin',
+        siteRoles: [{ siteId: 3, slug: 'site-a', role: 'admin' }],
+      },
+    };
+    getServerSession.mockResolvedValue(session);
+    userFindUnique.mockResolvedValue({ role: 'editor' });
+    siteUserFindMany.mockResolvedValue([
+      { siteId: 4, role: 'admin', site: { id: 4, slug: 'site-b' } },
+    ]);
+
+    await expect(getAdminSession()).resolves.toMatchObject({
+      user: {
+        siteRoles: [{ siteId: 4, slug: 'site-b', role: 'admin' }],
+      },
+    });
+  });
 });
