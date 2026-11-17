@@ -83,9 +83,13 @@ export async function PATCH(
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: role === 'editor' ? { role } : { role, allSites: false },
+      data: { role, allSites: false },
       select: { id: true, name: true, email: true, role: true }
     })
+
+    if (role !== 'editor') {
+      await prisma.siteUser.deleteMany({ where: { userId } })
+    }
 
     return NextResponse.json(user)
   } catch {
@@ -139,7 +143,6 @@ export async function PUT(
       return NextResponse.json({ error: '無法降低最後一位管理員的權限' }, { status: 400 })
     }
 
-    const siteRole = 'viewer'
     let siteId: number | null = null
     if (body.siteId !== null && body.siteId !== undefined && body.siteId !== '') {
       const parsed = Number(body.siteId)
@@ -149,15 +152,18 @@ export async function PUT(
       siteId = parsed
     }
 
+    if (role === 'editor' && !siteId) {
+      return NextResponse.json({ error: '子網站管理者必須指定一個子網站' }, { status: 400 })
+    }
+
     if (role !== 'admin' && siteId) {
       const site = await prisma.site.findUnique({ where: { id: siteId } })
       if (!site) return NextResponse.json({ error: '找不到子網站' }, { status: 400 })
     }
 
-    const allSites = body.allSites === true
-    if (allSites && (role !== 'editor' || siteId)) {
+    if (body.allSites === true) {
       return NextResponse.json(
-        { error: '只有編輯者可以設為不設限，且不設限時請勿指定單一子網站' },
+        { error: '不再支援所有子網站範圍，子網站管理者請指定一個子網站' },
         { status: 400 }
       )
     }
@@ -166,7 +172,7 @@ export async function PUT(
       name,
       email,
       role,
-      allSites
+      allSites: false
     }
     if (password) data.password = await hash(password, 12)
 
@@ -177,11 +183,9 @@ export async function PUT(
         select: { id: true, name: true, email: true, role: true, allSites: true, createdAt: true }
       })
 
-      if (role !== 'admin') {
-        await tx.siteUser.deleteMany({ where: { userId } })
-        if (siteId) {
-          await tx.siteUser.create({ data: { userId, siteId, role: siteRole } })
-        }
+      await tx.siteUser.deleteMany({ where: { userId } })
+      if (role === 'editor' && siteId) {
+        await tx.siteUser.create({ data: { userId, siteId, role: 'admin' } })
       }
 
       return updated

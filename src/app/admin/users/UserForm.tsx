@@ -4,8 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ROLE_VALUES, roleLabel } from '@/lib/roles'
 
-const ALL_SITES_SCOPE = 'all'
-
 type SiteOption = {
   id: number
   name: string
@@ -21,28 +19,15 @@ type UserFormProps = {
   sites?: SiteOption[]
   initialSite?: {
     siteId: number | null
-    siteRole: string
   }
-  initialAllSites?: boolean
 }
 
-export default function UserForm({ user, sites = [], initialSite, initialAllSites = false }: UserFormProps) {
+export default function UserForm({ user, sites = [], initialSite }: UserFormProps) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [role, setRole] = useState(user?.role || 'editor')
-  const [siteScope, setSiteScope] = useState(
-    initialAllSites ? ALL_SITES_SCOPE : initialSite?.siteId ? String(initialSite.siteId) : ''
-  )
-  const siteRole = 'viewer'
-
-  const isUnlimited = role === 'editor' && siteScope === ALL_SITES_SCOPE
-  const canBeUnlimited = role === 'editor'
-
-  function changeRole(nextRole: string) {
-    setRole(nextRole)
-    if (nextRole !== 'editor') setSiteScope((current) => (current === ALL_SITES_SCOPE ? '' : current))
-  }
+  const [siteId, setSiteId] = useState(initialSite?.siteId ? String(initialSite.siteId) : '')
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -58,9 +43,8 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
         email: formData.get('email'),
         password: formData.get('password'),
         role,
-        siteId: siteScope && siteScope !== ALL_SITES_SCOPE ? Number(siteScope) : null,
-        siteRole,
-        allSites: isUnlimited
+        siteId: siteId ? Number(siteId) : null,
+        allSites: false
       })
     })
 
@@ -102,7 +86,7 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
           <select
             name="role"
             value={role}
-            onChange={(event) => changeRole(event.target.value)}
+             onChange={(event) => setRole(event.target.value)}
              className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             {ROLE_VALUES.map((value) => (
@@ -118,38 +102,22 @@ export default function UserForm({ user, sites = [], initialSite, initialAllSite
             <div>
               <label className="block text-sm font-medium mb-1">管理子網站</label>
               <select
-                value={siteScope}
-                onChange={(event) => setSiteScope(event.target.value)}
+                 value={siteId}
+                 required={role === 'editor'}
+                 onChange={(event) => setSiteId(event.target.value)}
                  className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 <option value="">不指定</option>
-                {canBeUnlimited && <option value={ALL_SITES_SCOPE}>不設限（所有子網站）</option>}
-                {sites.map((site) => (
+                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>{site.name}</option>
                 ))}
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">子網站角色</label>
-              <select
-                value={siteRole}
-                 disabled
-                 className="min-h-11 w-full rounded-lg border px-3 py-2 text-base sm:text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                 <option value="viewer">檢視者</option>
-              </select>
-            </div>
-
-             <p className="col-span-2 text-xs text-gray-500">
-               子網站角色固定為檢視者。
-             </p>
-             <p className="col-span-2 text-xs text-gray-500">
-              {isUnlimited
-                ? '此帳號可在所有子網站編輯內容與調整功能設定，但仍無法使用外層後台的使用者管理。'
-                : canBeUnlimited
-                  ? '一位站點帳號僅能指定一個子網站；編輯者可設為不設限以管理所有子網站。'
-                  : '一位站點帳號僅能指定一個子網站（全域管理員除外）。'}
+              <p className="col-span-2 text-xs text-gray-500">
+               {role === 'editor'
+                 ? '子網站管理者可完整管理指定的子網站。'
+                 : '檢視者可登入指定子網站查看允許的內容。'}
             </p>
           </div>
         )}

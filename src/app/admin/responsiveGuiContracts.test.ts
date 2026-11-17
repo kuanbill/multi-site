@@ -49,11 +49,14 @@ describe('admin responsive list contracts', () => {
     expect(media).toContain('overflow-x-auto');
   });
 
-  it('keeps site roles fixed for new members and global user forms', () => {
+  it('requires a site for site managers and does not expose unlimited scope', () => {
     const userForm = readAdminFile('users', 'UserForm.tsx');
     const members = readAdminFile('sites', '[siteSlug]', 'users', 'SiteUsersClient.tsx');
 
-    expect(userForm).toContain('子網站角色固定為檢視者');
+    expect(userForm).toContain('子網站管理者');
+    expect(userForm).toContain("required={role === 'editor'}");
+    expect(userForm).not.toContain('不設限（所有子網站）');
+    expect(userForm).not.toContain("value=\"viewer\"");
     expect(members).toContain('站內角色：檢視者（固定）');
   });
 
