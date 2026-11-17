@@ -38,3 +38,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - 本次內容：公告、公開展覽、會議記錄、協力廠商與選配作業新增多筆 Google Drive PDF 連結管理及前台檢視入口。
 - 部署前建立 `data/prod.db.pre-deploy-20261020-101900.bak`，SQLite `quick_check` 為 `ok`。
 - `prisma migrate deploy` 套用 `20261020020000_add_content_external_links`；`multi-site-app` 為 `healthy`；正式 HTTPS 首頁跟隨登入導向後回應 `200`。
+- 2026-11-17：PR #2 已合併，`b06e898` 已部署至正式環境。
+- 本次內容：新增子網站管理者權限隔離；`editor` 必須且只能管理一個指定子網站，站內 membership 固定為 `admin`，並禁止存取其他子網站及全域管理功能。
+- 安全補強：後台授權即時查詢 membership；撤銷、缺少或多筆 membership 時拒絕存取，並阻止 stale JWT、`allSites=true` 與使用者 PATCH 成為跨站繞過途徑。
+- 驗證結果：98 個測試檔、495 個測試通過；正式 Docker build、Next.js 編譯與 TypeScript 檢查成功。
+- 部署前建立 `data/prod.db.pre-deploy-20261117-163031.bak`，SQLite `quick_check` 為 `ok`。
+- `prisma migrate deploy` 無待執行 migration；14 個 migrations 均為最新；`multi-site-app` 為 `healthy`；正式 HTTPS 首頁跟隨登入導向後回應 `200`。
