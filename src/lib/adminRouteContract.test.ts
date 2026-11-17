@@ -21,6 +21,20 @@ describe('admin route contract', () => {
     expect(existsSync(join(root, 'src/app/(dashboard)/users/page.tsx'))).toBe(false);
   });
 
+  it('protects global pages from site manager sessions', () => {
+    const dashboard = readFileSync(join(root, 'src/app/admin/page.tsx'), 'utf8');
+    const sites = readFileSync(join(root, 'src/app/admin/sites/page.tsx'), 'utf8');
+    const users = readFileSync(join(root, 'src/app/admin/users/page.tsx'), 'utf8');
+    const features = readFileSync(join(root, 'src/app/admin/features/page.tsx'), 'utf8');
+    const auth = readFileSync(join(root, 'src/lib/auth.ts'), 'utf8');
+
+    expect(dashboard).toContain("session?.user.role === 'editor'");
+    expect(sites).toContain('getAdminSession');
+    expect(users).toContain('getAdminSession');
+    expect(features).toContain('getAdminSession');
+    expect(auth).toContain('getGlobalAdminSession as getAdminSession');
+  });
+
   it('keeps site management pages under the admin namespace', () => {
     expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/page.tsx'))).toBe(true);
     expect(existsSync(join(root, 'src/app/admin/sites/[siteSlug]/layout.tsx'))).toBe(true);

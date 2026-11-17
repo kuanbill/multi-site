@@ -34,4 +34,10 @@ describe('AdminShell', () => {
 
     expect(source).toContain("if (event.key === 'Escape') closeMobileMenu()");
   });
+
+  it('passes global-admin scope to the sidebar', () => {
+    const source = readFileSync(new URL('./AdminShell.tsx', import.meta.url), 'utf8');
+
+    expect(source).toContain('isGlobalAdmin');
+  });
 });

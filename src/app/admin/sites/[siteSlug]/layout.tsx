@@ -22,6 +22,7 @@ export default async function SiteAdminLayout({
       siteSlug={siteSlug}
       siteName={site.name}
       features={features}
+      isGlobalAdmin={session.user.role === 'admin'}
     >
       {children}
     </AdminShell>

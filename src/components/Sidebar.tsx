@@ -23,6 +23,7 @@ interface SidebarProps {
   siteSlug?: string
   siteName?: string
   features?: SiteFeatureLite[]
+  isGlobalAdmin?: boolean
   collapsed?: boolean
   onToggle?: () => void
   mobileOpen?: boolean
@@ -33,6 +34,7 @@ export default function Sidebar({
   siteSlug,
   siteName,
   features,
+  isGlobalAdmin = true,
   collapsed = false,
   onToggle,
   mobileOpen = false,
@@ -164,15 +166,17 @@ export default function Sidebar({
             {renderMobileClose()}
           </div>
           {!collapsed && <p className="text-sm text-gray-400">專案後台</p>}
-          <Link
-            href="/admin/sites"
-            onClick={onMobileClose}
-            title={collapsed ? '返回站點清單' : undefined}
-            aria-label={collapsed ? '返回站點清單' : undefined}
-            className={`text-xs text-blue-400 hover:underline ${collapsed ? 'sr-only' : ''}`}
-          >
-            ← 返回站點清單
-          </Link>
+          {isGlobalAdmin && (
+            <Link
+              href="/admin/sites"
+              onClick={onMobileClose}
+              title={collapsed ? '返回站點清單' : undefined}
+              aria-label={collapsed ? '返回站點清單' : undefined}
+              className={`text-xs text-blue-400 hover:underline ${collapsed ? 'sr-only' : ''}`}
+            >
+              ← 返回站點清單
+            </Link>
+          )}
         </div>
         <nav className={collapsed ? 'p-3' : 'p-4'}>
           {siteMenu.map(renderNavItem)}

@@ -41,4 +41,21 @@ describe('Sidebar', () => {
     expect(html).toContain('bg-black/40');
     expect(html).toContain('translate-x-0');
   });
+
+  it('hides the unrestricted site-list link for a site manager', () => {
+    const html = renderToStaticMarkup(
+      <Sidebar
+        siteSlug="site-a"
+        siteName="子網站 A"
+        features={[]}
+        isGlobalAdmin={false}
+        collapsed={false}
+        onToggle={() => undefined}
+      />,
+    );
+
+    expect(html).toContain('子網站 A');
+    expect(html).not.toContain('返回站點清單');
+    expect(html).not.toContain('href="/admin/sites"');
+  });
 });

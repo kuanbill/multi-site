@@ -77,4 +77,11 @@ describe('admin responsive list contracts', () => {
     expect(sidebar).not.toContain('/icons/icon-512.png');
     expect(login).toContain('更新案子網站管理後台登入');
   });
+
+  it('keeps site manager navigation scoped to the assigned site', () => {
+    const sidebar = readAdminFile('..', '..', 'components', 'Sidebar.tsx');
+
+    expect(sidebar).toContain('isGlobalAdmin');
+    expect(sidebar).toContain('isGlobalAdmin &&');
+  });
 });

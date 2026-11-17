@@ -1,10 +1,13 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
+import { getAdminSession } from '@/lib/auth'
 import DeleteButton from './DeleteButton'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SitesPage() {
+  if (!await getAdminSession()) redirect('/')
   const sites = await prisma.site.findMany({
     orderBy: { createdAt: 'desc' },
   })

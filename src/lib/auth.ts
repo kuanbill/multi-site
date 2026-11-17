@@ -160,4 +160,4 @@ siteAuthOptions.cookies = siteAuthCookies
 export const authOptions = siteAuthOptions
 
 // Compatibility export while global admin routes are moved to the admin namespace.
-export { getAdminSession } from './adminAuth'
+export { getGlobalAdminSession as getAdminSession, getAdminSession as getAdminSiteSession } from './adminAuth'

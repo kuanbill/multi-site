@@ -76,6 +76,7 @@ export default function AdminShell({
         siteSlug={siteSlug}
         siteName={siteName}
         features={features}
+        isGlobalAdmin={user.role === 'admin'}
         collapsed={collapsed}
         onToggle={() => setCollapsed((value) => !value)}
         mobileOpen={mobileOpen}
